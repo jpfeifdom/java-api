@@ -65,7 +65,7 @@ import java.util.function.Function;
  * <p>Implements all the same constructors and methods as the {@code java.util.LinkedList} class,
  * but includes additional methods: {@code longSize} which returns the size of the list as a {@code long},
  * {@code node} which returns a new {@code NodableLinkedList.Node}, {@code linkedNodes} which returns the
- * {@code NodableLinkedList.LinkedNodes} instance associated with this {@code NodableLinkedList},
+ * {@code NodableLinkedList.LinkedNodes} object (list of nodes) backing a {@code NodableLinkedList},
  * and {@code addNode}, {@code addNodeFirst}, {@code addNodeLast}, {@code getFirstNode}, {@code getLastNode},
  * {@code removeFirstNode}, {@code removeLastNode}, {@code addAll(Node)} and {@code listIterator(Node)}
  * which perform operations on a {@code NodableLinkedList.Node}.
@@ -233,9 +233,9 @@ public class NodableLinkedList<E>
 	}	
 
 	/**
-	 * Returns the list of nodes
+	 * Returns the list of nodes which back this {@code NodableLinkedList}
 	 * 
-	 * @return the list of nodes
+	 * @return the list of nodes which back this {@code NodableLinkedList}
 	 */
 	public LinkedNodes linkedNodes() {
 		return linkedNodes;
@@ -748,7 +748,7 @@ public class NodableLinkedList<E>
 	}
 	
 	/**
-     * Retrieves and removes the head (first element) of this list.
+     * Removes and returns the head (first element) of this list.
      *
      * @return the head of this list
      * @throws NoSuchElementException if this list is empty
@@ -759,8 +759,8 @@ public class NodableLinkedList<E>
 	}	
 
 	/**
-     * Removes the element at the specified position in this list.  Shifts any
-     * subsequent elements to the left (subtracts one from their indices).
+     * Removes and returns the element at the specified position in this list.
+     * Shifts any subsequent elements to the left (subtracts one from their indices).
      * Returns the element that was removed from the list.
      *
      * @param index the index of the element to be removed
@@ -917,11 +917,11 @@ public class NodableLinkedList<E>
      * natural ordering should be used.
      * 
      * <p><strong>Implementation Specification:</strong>
-	 * This implementation obtains an array containing all nodes in this list,
-	 * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-	 * and then effectively clears the list and puts the sorted nodes from the array
-	 * back into this list in order. In other words, the nodes of this list are
-	 * effectively reordered.
+     * This implementation obtains an array containing all nodes in this list,
+     * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
+     * and then effectively clears the list and puts the sorted nodes from the array
+     * back into this list in order. In other words, the nodes of this list are
+     * effectively reordered.
      * 
      * <p><strong>Implementation Note:</strong>
      * This implementation is a stable, adaptive, iterative mergesort that
@@ -1044,9 +1044,9 @@ public class NodableLinkedList<E>
      * Obeys the general contract of {@code List.listIterator(int)}.
      * 
      * <p><strong>Implementation Note:</strong>
-	 * The ListIterator returned by this method behaves differently when the
-	 * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-	 * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+     * The ListIterator returned by this method behaves differently when the
+     * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
      *
      * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
      * modified at any time after the Iterator is created, in any way except
@@ -1137,10 +1137,15 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-	 * Doubly-linked list of {@code NodableLinkedList} nodes.
+	 * Doubly-linked list of nodes which back a {@code NodableLinkedList}.
 	 * Implements the {@code List} and {@code Deque} interfaces.
 	 * The elements are of type {@code NodableLinkedList.Node},
 	 * and are never {@code null}.
+	 * 
+	 * Every instance of a {@code NodableLinkedList} has one and only one
+	 * {@code LinkedNodes} object backing it. Method {@link NodableLinkedList#linkedNodes()}
+	 * returns the {@code LinkedNodes} object backing a {@code NodableLinkedList}
+	 * instance.
 	 *
 	 * <p>All of the operations perform as could be expected for a doubly-linked
 	 * list.  Operations that index into the list will traverse the list from
@@ -1708,7 +1713,7 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Retrieves and removes the head (first node) of this list.
+	     * Removes and returns the head (first node) of this list.
 	     *
 	     * @return the head of this list
 	     * @throws NoSuchElementException if this list is empty
@@ -2802,7 +2807,7 @@ public class NodableLinkedList<E>
 		
 		/**
 		 * Swaps this node with the specified node. Both this node and the specified must belong to a list,
-		 * but not necessarily to the same list.
+		 * but they can be different lists.
 		 * 
 		 * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
 		 * different lists. if synchronization is required, both lists should be synchronized by the same
@@ -2838,19 +2843,19 @@ public class NodableLinkedList<E>
 			return (thisElement==null) ? thatElement==null : thisElement.equals(thatElement);
 		}
 		
-		/**
-	     * Compares this node to the specified node for order. Returns a negative integer,
-	     * zero, or a positive integer as this node is less than, equal
-	     * to, or greater than the specified node.
-	     *
-	     * @param node node to be compared to this node.
-	     * @return a negative integer, zero, or a positive integer as the
-	     *         this node is less than, equal to, or greater than the
-	     *         specified node.
-	     * @throws NullPointerException if the specified node is null
-	     * @throws ClassCastException if the nodes' element types prevent them from
-	     *         being compared.
-	     */
+        /**
+         * Compares this node to the specified node for order. Returns a negative integer,
+         * zero, or a positive integer as this node is less than, equal
+         * to, or greater than the specified node.
+         *
+         * @param node node to be compared to this node.
+         * @return a negative integer, zero, or a positive integer as the
+         *         this node is less than, equal to, or greater than the
+         *         specified node.
+         * @throws NullPointerException if the specified node is null
+         * @throws ClassCastException if the nodes' element types prevent them from
+         *         being compared.
+         */
 		@SuppressWarnings("unchecked")
 		@Override
 		public int compareTo(Node<E> node) {
@@ -2864,11 +2869,11 @@ public class NodableLinkedList<E>
 			}
 		}
 
-		 /**
-	     * Returns the hash code value of this node.
-	     *
-	     * @return the hash code value of this node
-	     */
+        /**
+         * Returns the hash code value of this node.
+         *
+         * @return the hash code value of this node
+         */
 		@Override
 		public int hashCode() {
 			return 31 + ((element()==null) ? 0 : element().hashCode());
