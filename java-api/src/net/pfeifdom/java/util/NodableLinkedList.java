@@ -130,12 +130,12 @@ import java.util.function.Function;
  * @param <E> the type of elements held in this collection
  */
 public class NodableLinkedList<E>
-	extends AbstractSequentialList<E>
-	implements List<E>, Deque<E>, Cloneable, Serializable
+extends AbstractSequentialList<E>
+implements List<E>, Deque<E>, Cloneable, Serializable
 {
-	
+
 	//protected int modCount inherited from class java.util.AbstractList (see incrementModCount)	
-	
+
 	private static final long serialVersionUID = 5774068172585494452L;
 
 	private transient final LinkedNodes linkedNodes = new LinkedNodes();
@@ -147,37 +147,37 @@ public class NodableLinkedList<E>
 			throw new AssertionError("linkedNodes field missing? "+e.getMessage(), e);
 		}
 	}
-	
+
 	/**
-     * Constructs an empty list.
-     */
+	 * Constructs an empty list.
+	 */
 	public NodableLinkedList() {
 	}
-	
+
 	/**
-     * Constructs a list containing the elements of the specified
-     * collection, in the order they are returned by the collection's
-     * iterator.
-     *
-     * @param  collection the collection whose elements are to be placed into this list
-     * @throws NullPointerException if the specified collection is null
-     */
+	 * Constructs a list containing the elements of the specified
+	 * collection, in the order they are returned by the collection's
+	 * iterator.
+	 *
+	 * @param  collection the collection whose elements are to be placed into this list
+	 * @throws NullPointerException if the specified collection is null
+	 */
 	public NodableLinkedList(Collection<? extends E> collection) {
 		this();
 		addAll(collection);
 	}
-	
+
 	// serialize
 	/**
-     * Save the state of this {@code NodableLinkedList} instance to a stream
-     * (that is, serialize it).
-     *
-     * @param stream stream to save the state of this instance
-     * @throws IOException I/O error occurred while writing to stream
-     * @serialData The size of the list (the number of elements it
-     *             contains) is emitted (long), followed by all of its
-     *             elements (each an Object) in the proper order.
-     */
+	 * Save the state of this {@code NodableLinkedList} instance to a stream
+	 * (that is, serialize it).
+	 *
+	 * @param stream stream to save the state of this instance
+	 * @throws IOException I/O error occurred while writing to stream
+	 * @serialData The size of the list (the number of elements it
+	 *             contains) is emitted (long), followed by all of its
+	 *             elements (each an Object) in the proper order.
+	 */
 	private void writeObject(ObjectOutputStream stream) throws IOException {
 		stream.defaultWriteObject();
 		stream.writeLong(longSize());
@@ -188,13 +188,13 @@ public class NodableLinkedList<E>
 
 	// deserialize
 	/**
-     * Reconstitute this {@code NodableLinkedList} instance from a stream (that is
-     * deserialize it).
-     * 
-     * @param stream stream to be deserialized
-     * @throws ClassNotFoundException Class of a serialized object cannot be found.
-     * @throws IOException I/O error occurred while reading from stream
-     */
+	 * Reconstitute this {@code NodableLinkedList} instance from a stream (that is
+	 * deserialize it).
+	 * 
+	 * @param stream stream to be deserialized
+	 * @throws ClassNotFoundException Class of a serialized object cannot be found.
+	 * @throws IOException I/O error occurred while reading from stream
+	 */
 	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		stream.defaultReadObject();	
@@ -210,13 +210,13 @@ public class NodableLinkedList<E>
 	}	
 
 	/**
-     * Returns a shallow copy of this {@code NodableLinkedList}. (The elements
-     * themselves are not cloned.)
-     * 
-     * The clone will have different nodes than the original.
-     *
-     * @return a shallow copy of this {@code NodableLinkedList} instance
-     */
+	 * Returns a shallow copy of this {@code NodableLinkedList}. (The elements
+	 * themselves are not cloned.)
+	 * 
+	 * The clone will have different nodes than the original.
+	 *
+	 * @return a shallow copy of this {@code NodableLinkedList} instance
+	 */
 	@Override
 	public Object clone() {
 		try {
@@ -240,23 +240,23 @@ public class NodableLinkedList<E>
 	public LinkedNodes linkedNodes() {
 		return linkedNodes;
 	}
-	
+
 	/**
-     * Returns the number of elements in this list.  If this list contains more than
-     * {@code Integer.MAX_VALUE} elements, {@code Integer.MAX_VALUE} is returned.
-     *
-     * @return the number of elements in this list
-     */
+	 * Returns the number of elements in this list.  If this list contains more than
+	 * {@code Integer.MAX_VALUE} elements, {@code Integer.MAX_VALUE} is returned.
+	 *
+	 * @return the number of elements in this list
+	 */
 	@Override
 	public int size() {
 		return linkedNodes.size();
 	}
-	
+
 	/**
-     * Returns the number of elements in this list.
-     *
-     * @return the number of elements in this list
-     */
+	 * Returns the number of elements in this list.
+	 *
+	 * @return the number of elements in this list
+	 */
 	public long longSize() {
 		return linkedNodes.longSize();
 	}
@@ -274,85 +274,85 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Appends the specified node to the end of this list.
-     *
-     * <p>This method is equivalent to {@link #addNodeLast}.
-     *
-     * @param node node to be appended to the end of this list
-     * @throws IllegalArgumentException if node is null or already an element of a list
-     */
+	 * Appends the specified node to the end of this list.
+	 *
+	 * <p>This method is equivalent to {@link #addNodeLast}.
+	 *
+	 * @param node node to be appended to the end of this list
+	 * @throws IllegalArgumentException if node is null or already an element of a list
+	 */
 	public void addNode(Node<E> node) {
 		addNodeLast(node);
 	}
 
 	/**
-     * Inserts the specified node at the beginning of this list.
-     *
-     * @param node the node to be inserted at the beginning of this list
-     * @throws IllegalArgumentException if node is null or already an element of a list
-     */
+	 * Inserts the specified node at the beginning of this list.
+	 *
+	 * @param node the node to be inserted at the beginning of this list
+	 * @throws IllegalArgumentException if node is null or already an element of a list
+	 */
 	public void addNodeFirst(Node<E> node) {
 		linkedNodes.addFirst(node);
 	}
 
 	/**
-     * Appends the specified node to the end of this list.
-     *
-     * <p>This method is equivalent to {@link #addNode}.
-     *
-     * @param node node to be appended to the end of this list
-     * @throws IllegalArgumentException if node is null or already an element of a list
-     */
+	 * Appends the specified node to the end of this list.
+	 *
+	 * <p>This method is equivalent to {@link #addNode}.
+	 *
+	 * @param node node to be appended to the end of this list
+	 * @throws IllegalArgumentException if node is null or already an element of a list
+	 */
 	public void addNodeLast(Node<E> node) {
 		linkedNodes.addLast(node);
 	}
 
 	/**
-     * Retrieves, but does not remove, the first node of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the first node of this list, or {@code null}
-     *         if this list is empty
-     */
+	 * Retrieves, but does not remove, the first node of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the first node of this list, or {@code null}
+	 *         if this list is empty
+	 */
 	public Node<E> getFirstNode() {
 		return linkedNodes.peekFirst();
 	}
 
 	/**
-     * Retrieves, but does not remove, the last node of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the last node of this list, or {@code null}
-     *         if this list is empty
-     */
+	 * Retrieves, but does not remove, the last node of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the last node of this list, or {@code null}
+	 *         if this list is empty
+	 */
 	public Node<E> getLastNode() {
 		return linkedNodes.peekLast();
 	}
 
 	/**
-     * Removes and returns the first node of this list.
-     * 
-     * Returns the removed node or {@code null} if the list is empty
-     *
-     * @return the first node of this list that was removed,
-     *         or {@code null} if this list is empty
-     */
+	 * Removes and returns the first node of this list.
+	 * 
+	 * Returns the removed node or {@code null} if the list is empty
+	 *
+	 * @return the first node of this list that was removed,
+	 *         or {@code null} if this list is empty
+	 */
 	public Node<E> removeFirstNode() {
 		return linkedNodes.pollFirst();
 	}
 
 	/**
-     * Removes and returns the last node of this list.
-     * 
-     * Returns the removed node or {@code null} if the list is empty
-     *
-     * @return the last node of this list that was removed,
-     *         or {@code null} if this list is empty
-     */
+	 * Removes and returns the last node of this list.
+	 * 
+	 * Returns the removed node or {@code null} if the list is empty
+	 *
+	 * @return the last node of this list that was removed,
+	 *         or {@code null} if this list is empty
+	 */
 	public Node<E> removeLastNode() {
 		return linkedNodes.pollLast();
 	}
-	
+
 	private static <T> void swapNodes(Node<T> node1, Node<T> node2) {
 		//assert (node1 == null || node1.linkedNodes == null) : "node1 is null or not an element of a list";
 		//assert (node2 == null || node2.linkedNodes == null) : "node2 is null or not an element of a list";
@@ -385,16 +385,16 @@ public class NodableLinkedList<E>
 		node2.previous.next = node2;
 		node2.next.previous = node2;
 	}
-	
+
 	/**
-     * Returns {@code true} if this list contains the specified element.
-     * More formally, returns {@code true} if and only if this list contains
-     * at least one element {@code e} such that
-     * {@code (o==null ? e==null : o.equals(e))}.
-     *
-     * @param o element whose presence in this list is to be tested
-     * @return {@code true} if this list contains the specified element
-     */
+	 * Returns {@code true} if this list contains the specified element.
+	 * More formally, returns {@code true} if and only if this list contains
+	 * at least one element {@code e} such that
+	 * {@code (o==null ? e==null : o.equals(e))}.
+	 *
+	 * @param o element whose presence in this list is to be tested
+	 * @return {@code true} if this list contains the specified element
+	 */
 	@Override
 	public boolean contains(Object o) {
 		Node<E> node = getFirstNode();
@@ -411,17 +411,17 @@ public class NodableLinkedList<E>
 	}	
 
 	/**
-     * Returns the index of the first occurrence of the specified element
-     * in this list, or -1 if there is no such index (this list does not
-     * contain the element or the {@code index > Integer.MAX_VALUE}).
-     * More formally, returns the lowest index {@code i} such that
-     * {@code (o==null ? get(i)==null : o.equals(get(i)))},
-     * or -1 if there is no such index.
-     *
-     * @param o element to search for
-     * @return the index of the first occurrence of the specified element in
-     *         this list, or -1 if there is no such index.
-     */
+	 * Returns the index of the first occurrence of the specified element
+	 * in this list, or -1 if there is no such index (this list does not
+	 * contain the element or the {@code index > Integer.MAX_VALUE}).
+	 * More formally, returns the lowest index {@code i} such that
+	 * {@code (o==null ? get(i)==null : o.equals(get(i)))},
+	 * or -1 if there is no such index.
+	 *
+	 * @param o element to search for
+	 * @return the index of the first occurrence of the specified element in
+	 *         this list, or -1 if there is no such index.
+	 */
 	@Override
 	public int indexOf(Object o) {
 		long index = 0;
@@ -439,17 +439,17 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Returns the index of the last occurrence of the specified element
-     * in this list, or -1 if there is no such index (this list does not
-     * contain the element or the {@code index > Integer.MAX_VALUE}).
-     * More formally, returns the highest index {@code i} such that
-     * {@code (o==null ? get(i)==null : o.equals(get(i)))},
-     * or -1 if there is no such index.
-     *
-     * @param o element to search for
-     * @return the index of the last occurrence of the specified element in
-     *         this list, or -1 if there is no such index.
-     */
+	 * Returns the index of the last occurrence of the specified element
+	 * in this list, or -1 if there is no such index (this list does not
+	 * contain the element or the {@code index > Integer.MAX_VALUE}).
+	 * More formally, returns the highest index {@code i} such that
+	 * {@code (o==null ? get(i)==null : o.equals(get(i)))},
+	 * or -1 if there is no such index.
+	 *
+	 * @param o element to search for
+	 * @return the index of the last occurrence of the specified element in
+	 *         this list, or -1 if there is no such index.
+	 */
 	@Override
 	public int lastIndexOf(Object o) {
 		long index = longSize() - 1L;
@@ -467,14 +467,14 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Replaces the element at the specified position in this list with the
-     * specified element.
-     *
-     * @param index index of the element to replace
-     * @param element element to be stored at the specified position
-     * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-     */
+	 * Replaces the element at the specified position in this list with the
+	 * specified element.
+	 *
+	 * @param index index of the element to replace
+	 * @param element element to be stored at the specified position
+	 * @return the element previously at the specified position
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+	 */
 	@Override
 	public E set(int index, E element) {
 		final Node<E> node = linkedNodes.get(index);
@@ -482,49 +482,49 @@ public class NodableLinkedList<E>
 		node.set(element);
 		return originalElement;
 	}
-	
+
 	/**
-     * Removes all of the elements from this list.
-     */
+	 * Removes all of the elements from this list.
+	 */
 	@Override
 	public void clear() {
 		linkedNodes.clear();
 	}
-	
+
 	/**
-     * Appends all of the elements in the specified collection to the end of
-     * this list, in the order that they are returned by the specified
-     * collection's iterator.  The behavior of this operation is undefined if
-     * the specified collection is modified while the operation is in
-     * progress.  (Note that this will occur if the specified collection is
-     * this list, and it's nonempty.)
-     *
-     * @param elements collection containing elements to be added to this list
-     * @return {@code true} if this list changed as a result of the call
-     * @throws NullPointerException if the specified collection is null
-     */
+	 * Appends all of the elements in the specified collection to the end of
+	 * this list, in the order that they are returned by the specified
+	 * collection's iterator.  The behavior of this operation is undefined if
+	 * the specified collection is modified while the operation is in
+	 * progress.  (Note that this will occur if the specified collection is
+	 * this list, and it's nonempty.)
+	 *
+	 * @param elements collection containing elements to be added to this list
+	 * @return {@code true} if this list changed as a result of the call
+	 * @throws NullPointerException if the specified collection is null
+	 */
 	@Override
 	public boolean addAll(Collection<? extends E> elements) {
 		final long initialSize = longSize();
 		for (E element: elements) addLast(element);
 		return longSize() != initialSize;
 	}
-	
+
 	/**
-     * Inserts all of the elements in the specified collection into this
-     * list, starting at the specified position.  Shifts the element
-     * currently at that position (if any) and any subsequent elements to
-     * the right (increases their indices).  The new elements will appear
-     * in the list in the order that they are returned by the
-     * specified collection's iterator.
-     *
-     * @param index index at which to insert the first element
-     *              from the specified collection
-     * @param elements collection containing elements to be added to this list
-     * @return {@code true} if this list changed as a result of the call
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-     * @throws NullPointerException if the specified collection is null
-     */
+	 * Inserts all of the elements in the specified collection into this
+	 * list, starting at the specified position.  Shifts the element
+	 * currently at that position (if any) and any subsequent elements to
+	 * the right (increases their indices).  The new elements will appear
+	 * in the list in the order that they are returned by the
+	 * specified collection's iterator.
+	 *
+	 * @param index index at which to insert the first element
+	 *              from the specified collection
+	 * @param elements collection containing elements to be added to this list
+	 * @return {@code true} if this list changed as a result of the call
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+	 * @throws NullPointerException if the specified collection is null
+	 */
 	@Override
 	public boolean addAll(int index, Collection<? extends E> elements) {
 		if (index < 0 || index > longSize()) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
@@ -537,104 +537,104 @@ public class NodableLinkedList<E>
 		}
 		return longSize() != initialSize;
 	}
-	
+
 	/**
-     * Inserts all of the elements in the specified collection into this
-     * list, before the specified node.  Shifts the element
-     * currently at that position (if any) and any subsequent elements to
-     * the right (increases their indices).  The new elements will appear
-     * in the list in the order that they are returned by the
-     * specified collection's iterator.
-     *
-     * @param node node the specified collection is to be inserted before
-     * @param elements collection containing elements to be added to this list
-     * @return {@code true} if this list changed as a result of the call
-     * @throws IllegalArgumentException if the node is null, or not linked to this list
-     * @throws NullPointerException if the specified collection is null
-     */
+	 * Inserts all of the elements in the specified collection into this
+	 * list, before the specified node.  Shifts the element
+	 * currently at that position (if any) and any subsequent elements to
+	 * the right (increases their indices).  The new elements will appear
+	 * in the list in the order that they are returned by the
+	 * specified collection's iterator.
+	 *
+	 * @param node node the specified collection is to be inserted before
+	 * @param elements collection containing elements to be added to this list
+	 * @return {@code true} if this list changed as a result of the call
+	 * @throws IllegalArgumentException if the node is null, or not linked to this list
+	 * @throws NullPointerException if the specified collection is null
+	 */
 	public boolean addAll(Node<E> node, Collection<? extends E> elements) {
 		if (node == null || node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is either null or not linked to this list");
 		final long initialSize = longSize();
 		for (E element: elements) linkedNodes.addNodeBefore(node(element), node);
 		return longSize() != initialSize;
 	}
-	
+
 	/**
-     * Inserts the specified element at the specified position in this list.
-     * Shifts the element currently at that position (if any) and any
-     * subsequent elements to the right (adds one to their indices).
-     *
-     * @param index index at which the specified element is to be inserted
-     * @param element element to be inserted
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-     */
+	 * Inserts the specified element at the specified position in this list.
+	 * Shifts the element currently at that position (if any) and any
+	 * subsequent elements to the right (adds one to their indices).
+	 *
+	 * @param index index at which the specified element is to be inserted
+	 * @param element element to be inserted
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+	 */
 	@Override
 	public void add(int index, E element) {
 		linkedNodes.add(index, node(element));
 	}	
-	
+
 	/**
-     * Appends the specified element to the end of this list.
-     *
-     * @param element element to be appended to this list
-     * @return {@code true} (as specified by {@link Collection#add})
-     */
+	 * Appends the specified element to the end of this list.
+	 *
+	 * @param element element to be appended to this list
+	 * @return {@code true} (as specified by {@link Collection#add})
+	 */
 	@Override
 	public boolean add(E element) {
 		addLast(element);
 		return true;
 	}	
-	
+
 	/**
-     * Inserts the specified element at the beginning of this list.
-     *
-     * @param element the element to add
-     */
+	 * Inserts the specified element at the beginning of this list.
+	 *
+	 * @param element the element to add
+	 */
 	@Override
 	public void addFirst(E element) {
 		linkedNodes.addFirst(node(element));
 	}
-	
+
 	/**
-     * Appends the specified element to the end of this list.
-     *
-     * @param element the element to add
-     */
+	 * Appends the specified element to the end of this list.
+	 *
+	 * @param element the element to add
+	 */
 	@Override
 	public void addLast(E element) {
 		linkedNodes.addLast(node(element));
 	}
-	
+
 	/**
-     * Pushes an element onto the stack represented by this list.  In other
-     * words, inserts the element at the front of this list.
-     *
-     * <p>This method is equivalent to {@link #addFirst}.
-     *
-     * @param element the element to push
-     */
+	 * Pushes an element onto the stack represented by this list.  In other
+	 * words, inserts the element at the front of this list.
+	 *
+	 * <p>This method is equivalent to {@link #addFirst}.
+	 *
+	 * @param element the element to push
+	 */
 	@Override
 	public void push(E element) {
 		addFirst(element);
 	}
-	
+
 	/**
-     * Adds the specified element as the tail (last element) of this list.
-     *
-     * @param element the element to add
-     * @return {@code true} (as specified by {@link java.util.Queue#offer})
-     */
+	 * Adds the specified element as the tail (last element) of this list.
+	 *
+	 * @param element the element to add
+	 * @return {@code true} (as specified by {@link java.util.Queue#offer})
+	 */
 	@Override
 	public boolean offer(E element) {
 		return offerLast(element);
 	}
 
 	/**
-     * Inserts the specified element at the front of this list.
-     *
-     * @param element the element to insert
-     * @return {@code true} (as specified by {@link Deque#offerFirst})
-     */
+	 * Inserts the specified element at the front of this list.
+	 *
+	 * @param element the element to insert
+	 * @return {@code true} (as specified by {@link Deque#offerFirst})
+	 */
 	@Override
 	public boolean offerFirst(E element) {
 		addFirst(element);
@@ -642,184 +642,184 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Inserts the specified element at the end of this list.
-     *
-     * @param element the element to insert
-     * @return {@code true} (as specified by {@link Deque#offerLast})
-     */
+	 * Inserts the specified element at the end of this list.
+	 *
+	 * @param element the element to insert
+	 * @return {@code true} (as specified by {@link Deque#offerLast})
+	 */
 	@Override
 	public boolean offerLast(E element) {
 		addLast(element);
 		return true;
 	}
-	
+
 	/**
-     * Retrieves, but does not remove, the head (first element) of this list.
-     * 
-     * @return the head of this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Retrieves, but does not remove, the head (first element) of this list.
+	 * 
+	 * @return the head of this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E element() {
 		return getFirst();
 	}
 
 	/**
-     * Returns the element at the specified position in this list.
-     *
-     * @param index index of the element to return
-     * @return the element at the specified position in this list
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-     */
+	 * Returns the element at the specified position in this list.
+	 *
+	 * @param index index of the element to return
+	 * @return the element at the specified position in this list
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+	 */
 	@Override
 	public E get(int index) {
 		return linkedNodes.get(index).element;
 	}	
-	
+
 	/**
-     * Returns the first element in this list.
-     *
-     * @return the first element in this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Returns the first element in this list.
+	 *
+	 * @return the first element in this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E getFirst() {
 		return linkedNodes.getFirst().element;
 	}
-	
+
 	/**
-     * Returns the last element in this list.
-     *
-     * @return the last element in this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Returns the last element in this list.
+	 *
+	 * @return the last element in this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E getLast() {
 		return linkedNodes.getLast().element;
 	}
 
 	/**
-     * Retrieves, but does not remove, the head (first element) of this list.
-     * 
-     * @return the head of this list, or {@code null} if this list is empty
-     */
+	 * Retrieves, but does not remove, the head (first element) of this list.
+	 * 
+	 * @return the head of this list, or {@code null} if this list is empty
+	 */
 	@Override
 	public E peek() {
 		return peekFirst();
 	}
 
 	/**
-     * Retrieves, but does not remove, the first element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the first element of this list, or {@code null}
-     *         if this list is empty
-     */
+	 * Retrieves, but does not remove, the first element of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the first element of this list, or {@code null}
+	 *         if this list is empty
+	 */
 	@Override
 	public E peekFirst() {
 		return (longSize() == 0L) ? null : getFirst();
 	}
-	
+
 	/**
-     * Retrieves, but does not remove, the last element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the last element of this list, or {@code null}
-     *         if this list is empty
-     */
+	 * Retrieves, but does not remove, the last element of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the last element of this list, or {@code null}
+	 *         if this list is empty
+	 */
 	@Override
 	public E peekLast() {
 		return (longSize() == 0L) ? null : getLast();
 	}
-	
+
 	/**
-     * Pops an element from the stack represented by this list.  In other
-     * words, removes and returns the first element of this list.
-     *
-     * <p>This method is equivalent to {@link #removeFirst()}.
-     *
-     * @return the element at the front of this list (which is the top
-     *         of the stack represented by this list)
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Pops an element from the stack represented by this list.  In other
+	 * words, removes and returns the first element of this list.
+	 *
+	 * <p>This method is equivalent to {@link #removeFirst()}.
+	 *
+	 * @return the element at the front of this list (which is the top
+	 *         of the stack represented by this list)
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E pop() {
 		return removeFirst();
 	}
-	
+
 	/**
-     * Removes and returns the head (first element) of this list.
-     *
-     * @return the head of this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Removes and returns the head (first element) of this list.
+	 *
+	 * @return the head of this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E remove() {
 		return removeFirst();
 	}	
 
 	/**
-     * Removes and returns the element at the specified position in this list.
-     * Shifts any subsequent elements to the left (subtracts one from their indices).
-     * Returns the element that was removed from the list.
-     *
-     * @param index the index of the element to be removed
-     * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-     */
+	 * Removes and returns the element at the specified position in this list.
+	 * Shifts any subsequent elements to the left (subtracts one from their indices).
+	 * Returns the element that was removed from the list.
+	 *
+	 * @param index the index of the element to be removed
+	 * @return the element previously at the specified position
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+	 */
 	@Override
 	public E remove(int index) {
 		return linkedNodes.remove(index).element;
 	}	
-	
+
 	/**
-     * Removes and returns the first element from this list.
-     *
-     * @return the first element from this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Removes and returns the first element from this list.
+	 *
+	 * @return the first element from this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E removeFirst() {
 		return linkedNodes.removeFirst().element;
 	}
-	
+
 	/**
-     * Removes and returns the last element from this list.
-     *
-     * @return the last element from this list
-     * @throws NoSuchElementException if this list is empty
-     */
+	 * Removes and returns the last element from this list.
+	 *
+	 * @return the last element from this list
+	 * @throws NoSuchElementException if this list is empty
+	 */
 	@Override
 	public E removeLast() {
 		return linkedNodes.removeLast().element;
 	}
 
 	/**
-     * Removes the first occurrence of the specified element from this list,
-     * if it is present.  If this list does not contain the element, it is
-     * unchanged.  More formally, removes the element with the lowest index
-     * {@code i} such that
-     * {@code (o==null ? get(i)==null : o.equals(get(i)))}
-     * (if such an element exists).  Returns {@code true} if this list
-     * contained the specified element (or equivalently, if this list
-     * changed as a result of the call).
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if this list contained the specified element
-     */
+	 * Removes the first occurrence of the specified element from this list,
+	 * if it is present.  If this list does not contain the element, it is
+	 * unchanged.  More formally, removes the element with the lowest index
+	 * {@code i} such that
+	 * {@code (o==null ? get(i)==null : o.equals(get(i)))}
+	 * (if such an element exists).  Returns {@code true} if this list
+	 * contained the specified element (or equivalently, if this list
+	 * changed as a result of the call).
+	 *
+	 * @param o element to be removed from this list, if present
+	 * @return {@code true} if this list contained the specified element
+	 */
 	@Override
 	public boolean remove(Object o) {
 		return removeFirstOccurrence(o);
 	}
 
 	/**
-     * Removes the first occurrence of the specified element in this
-     * list (when traversing the list from head to tail).  If the list
-     * does not contain the element, it is unchanged.
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if the list contained the specified element
-     */
+	 * Removes the first occurrence of the specified element in this
+	 * list (when traversing the list from head to tail).  If the list
+	 * does not contain the element, it is unchanged.
+	 *
+	 * @param o element to be removed from this list, if present
+	 * @return {@code true} if the list contained the specified element
+	 */
 	@Override
 	public boolean removeFirstOccurrence(Object o) {
 		if (o == null) {
@@ -841,13 +841,13 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Removes the last occurrence of the specified element in this
-     * list (when traversing the list from head to tail).  If the list
-     * does not contain the element, it is unchanged.
-     *
-     * @param o element to be removed from this list, if present
-     * @return {@code true} if the list contained the specified element
-     */
+	 * Removes the last occurrence of the specified element in this
+	 * list (when traversing the list from head to tail).  If the list
+	 * does not contain the element, it is unchanged.
+	 *
+	 * @param o element to be removed from this list, if present
+	 * @return {@code true} if the list contained the specified element
+	 */
 	@Override
 	public boolean removeLastOccurrence(Object o) {
 		if (o == null) {
@@ -867,93 +867,93 @@ public class NodableLinkedList<E>
 		}
 		return false;
 	}
-	
+
 	/**
-     * Retrieves and removes the head (first element) of this list
-     * 
-     * @return the head of this list, or {@code null} if this list is empty
-     */
+	 * Retrieves and removes the head (first element) of this list
+	 * 
+	 * @return the head of this list, or {@code null} if this list is empty
+	 */
 	@Override
 	public E poll() {
 		return pollFirst();
 	}
-	
+
 	/**
-     * Retrieves and removes the first element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the first element of this list, or {@code null} if
-     *     this list is empty
-     */
+	 * Retrieves and removes the first element of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the first element of this list, or {@code null} if
+	 *     this list is empty
+	 */
 	@Override
 	public E pollFirst() {
 		return (longSize() == 0L) ? null : removeFirst();
 	}
-	
+
 	/**
-     * Retrieves and removes the last element of this list,
-     * or returns {@code null} if this list is empty.
-     *
-     * @return the last element of this list, or {@code null} if
-     *     this list is empty
-     */
+	 * Retrieves and removes the last element of this list,
+	 * or returns {@code null} if this list is empty.
+	 *
+	 * @return the last element of this list, or {@code null} if
+	 *     this list is empty
+	 */
 	@Override
 	public E pollLast() {
 		return (longSize() == 0L) ? null : removeLast();
 	}
-	
 
-    /**
-     * Sorts this list according to the order induced by the specified
-     * {@code Comparator}.
-     *
-     * <p>All elements in this list must be <i>mutually comparable</i> using the
-     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-     * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-     * in the list).
-     *
-     * <p>If the specified comparator is {@code null} then all elements in this
-     * list must implement the {@code Comparable} interface and the elements'
-     * natural ordering should be used.
-     * 
-     * <p><strong>Implementation Specification:</strong>
-     * This implementation obtains an array containing all nodes in this list,
-     * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-     * and then effectively clears the list and puts the sorted nodes from the array
-     * back into this list in order. In other words, the nodes of this list are
-     * effectively reordered.
-     * 
-     * <p><strong>Implementation Note:</strong>
-     * This implementation is a stable, adaptive, iterative mergesort that
-     * requires far fewer than n lg(n) comparisons when the input array is
-     * partially sorted, while offering the performance of a traditional
-     * mergesort when the input array is randomly ordered.  If the input array
-     * is nearly sorted, the implementation requires approximately n
-     * comparisons.  Temporary storage requirements vary from a small constant
-     * for nearly sorted input arrays to n/2 object references for randomly
-     * ordered input arrays.
-     *
-     * <p>The implementation takes equal advantage of ascending and
-     * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the same
-     * input array.  It is well-suited to merging two or more sorted arrays:
-     * simply concatenate the arrays and sort the resulting array.
-     *
-     * <p>The implementation was adapted from Tim Peters's list sort for Python
-     * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-     * Sorting and Information Theoretic Complexity", in Proceedings of the
-     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-     * January 1993.
-     *
-     * @see Arrays#sort
-     * @param comparator the {@code Comparator} used to compare list elements.
-     *                   A {@code null} value indicates that the elements'
-     *                   natural ordering should be used
-     * @throws ClassCastException if the list contains elements that are not
-     *         {@code mutually comparable} using the specified comparator
-     * @throws IllegalStateException if the list is too large to fit in an array
-     */
+
+	/**
+	 * Sorts this list according to the order induced by the specified
+	 * {@code Comparator}.
+	 *
+	 * <p>All elements in this list must be <i>mutually comparable</i> using the
+	 * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
+	 * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
+	 * in the list).
+	 *
+	 * <p>If the specified comparator is {@code null} then all elements in this
+	 * list must implement the {@code Comparable} interface and the elements'
+	 * natural ordering should be used.
+	 * 
+	 * <p><strong>Implementation Specification:</strong>
+	 * This implementation obtains an array containing all nodes in this list,
+	 * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
+	 * and then effectively clears the list and puts the sorted nodes from the array
+	 * back into this list in order. In other words, the nodes of this list are
+	 * effectively reordered.
+	 * 
+	 * <p><strong>Implementation Note:</strong>
+	 * This implementation is a stable, adaptive, iterative mergesort that
+	 * requires far fewer than n lg(n) comparisons when the input array is
+	 * partially sorted, while offering the performance of a traditional
+	 * mergesort when the input array is randomly ordered.  If the input array
+	 * is nearly sorted, the implementation requires approximately n
+	 * comparisons.  Temporary storage requirements vary from a small constant
+	 * for nearly sorted input arrays to n/2 object references for randomly
+	 * ordered input arrays.
+	 *
+	 * <p>The implementation takes equal advantage of ascending and
+	 * descending order in its input array, and can take advantage of
+	 * ascending and descending order in different parts of the same
+	 * input array.  It is well-suited to merging two or more sorted arrays:
+	 * simply concatenate the arrays and sort the resulting array.
+	 *
+	 * <p>The implementation was adapted from Tim Peters's list sort for Python
+	 * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+	 * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
+	 * Sorting and Information Theoretic Complexity", in Proceedings of the
+	 * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
+	 * January 1993.
+	 *
+	 * @see Arrays#sort
+	 * @param comparator the {@code Comparator} used to compare list elements.
+	 *                   A {@code null} value indicates that the elements'
+	 *                   natural ordering should be used
+	 * @throws ClassCastException if the list contains elements that are not
+	 *         {@code mutually comparable} using the specified comparator
+	 * @throws IllegalStateException if the list is too large to fit in an array
+	 */
 	@Override
 	public void sort(Comparator<? super E> comparator) {
 		if (comparator == null) {
@@ -964,20 +964,20 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Returns an array containing all of the elements in this list
-     * in proper sequence (from first to last element).
-     *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this list.  (In other words, this method must allocate
-     * a new array).  The caller is thus free to modify the returned array.
-     *
-     * <p>This method acts as bridge between array-based and collection-based
-     * APIs.
-     *
-     * @return an array containing all of the elements in this list
-     *         in proper sequence
-     * @throws IllegalStateException if the list is too large to fit in an array
-     */
+	 * Returns an array containing all of the elements in this list
+	 * in proper sequence (from first to last element).
+	 *
+	 * <p>The returned array will be "safe" in that no references to it are
+	 * maintained by this list.  (In other words, this method must allocate
+	 * a new array).  The caller is thus free to modify the returned array.
+	 *
+	 * <p>This method acts as bridge between array-based and collection-based
+	 * APIs.
+	 *
+	 * @return an array containing all of the elements in this list
+	 *         in proper sequence
+	 * @throws IllegalStateException if the list is too large to fit in an array
+	 */
 	@Override
 	public Object[] toArray() {
 		if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
@@ -988,44 +988,44 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Returns an array containing all of the elements in this list in
-     * proper sequence (from first to last element); the runtime type of
-     * the returned array is that of the specified array.  If the list fits
-     * in the specified array, it is returned therein.  Otherwise, a new
-     * array is allocated with the runtime type of the specified array and
-     * the size of this list.
-     *
-     * <p>If the list fits in the specified array with room to spare (i.e.,
-     * the array has more elements than the list), the element in the array
-     * immediately following the end of the list is set to {@code null}.
-     * (This is useful in determining the length of the list <i>only</i> if
-     * the caller knows that the list does not contain any null elements.)
-     *
-     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-     * array-based and collection-based APIs.  Further, this method allows
-     * precise control over the runtime type of the output array, and may,
-     * under certain circumstances, be used to save allocation costs.
-     *
-     * <p>Suppose <i>x</i> is a list known to contain only strings.
-     * The following code can be used to dump the list into a newly
-     * allocated array of {@code String}:
-     *
-     * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
-     *
-     * Note that {@code toArray(new Object[0])} is identical in function to
-     * {@code toArray()}.
-     *
-     * @param array the array into which the elements of the list are to
-     *          be stored, if it is big enough; otherwise, a new array of the
-     *          same runtime type is allocated for this purpose.
-     * @return an array containing the elements of the list
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this list
-     * @throws IllegalStateException if the list is too large to fit in an array
-     * @throws NullPointerException if the specified array is null
-     */
+	 * Returns an array containing all of the elements in this list in
+	 * proper sequence (from first to last element); the runtime type of
+	 * the returned array is that of the specified array.  If the list fits
+	 * in the specified array, it is returned therein.  Otherwise, a new
+	 * array is allocated with the runtime type of the specified array and
+	 * the size of this list.
+	 *
+	 * <p>If the list fits in the specified array with room to spare (i.e.,
+	 * the array has more elements than the list), the element in the array
+	 * immediately following the end of the list is set to {@code null}.
+	 * (This is useful in determining the length of the list <i>only</i> if
+	 * the caller knows that the list does not contain any null elements.)
+	 *
+	 * <p>Like the {@link #toArray()} method, this method acts as bridge between
+	 * array-based and collection-based APIs.  Further, this method allows
+	 * precise control over the runtime type of the output array, and may,
+	 * under certain circumstances, be used to save allocation costs.
+	 *
+	 * <p>Suppose <i>x</i> is a list known to contain only strings.
+	 * The following code can be used to dump the list into a newly
+	 * allocated array of {@code String}:
+	 *
+	 * <pre>
+	 *     String[] y = x.toArray(new String[0]);</pre>
+	 *
+	 * Note that {@code toArray(new Object[0])} is identical in function to
+	 * {@code toArray()}.
+	 *
+	 * @param array the array into which the elements of the list are to
+	 *          be stored, if it is big enough; otherwise, a new array of the
+	 *          same runtime type is allocated for this purpose.
+	 * @return an array containing the elements of the list
+	 * @throws ArrayStoreException if the runtime type of the specified array
+	 *         is not a supertype of the runtime type of every element in
+	 *         this list
+	 * @throws IllegalStateException if the list is too large to fit in an array
+	 * @throws NullPointerException if the specified array is null
+	 */
 	@Override
 	@SuppressWarnings("unchecked")
 	public <T> T[] toArray(T[] array) {
@@ -1037,33 +1037,33 @@ public class NodableLinkedList<E>
 		if (array.length > size()) array[size()] = null;
 		return array;
 	}	
-	
+
 	/**
-     * Returns a list-iterator of the elements in this list (in proper
-     * sequence), starting at the specified position in the list.
-     * Obeys the general contract of {@code List.listIterator(int)}.
-     * 
-     * <p><strong>Implementation Note:</strong>
-     * The ListIterator returned by this method behaves differently when the
-     * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-     *
-     * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
-     * modified at any time after the Iterator is created, in any way except
-     * through the list-iterator's own {@code remove} or {@code add}
-     * methods, the list-iterator will throw a
-     * {@code ConcurrentModificationException}.  Thus, in the face of
-     * concurrent modification, the iterator fails quickly and cleanly, rather
-     * than risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
-     *
-     * @param index index of the first element to be returned from the
-     *              list-iterator (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper
-     *         sequence), starting at the specified position in the list
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-     * @see List#listIterator(int)
-     */
+	 * Returns a list-iterator of the elements in this list (in proper
+	 * sequence), starting at the specified position in the list.
+	 * Obeys the general contract of {@code List.listIterator(int)}.
+	 * 
+	 * <p><strong>Implementation Note:</strong>
+	 * The ListIterator returned by this method behaves differently when the
+	 * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+	 * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+	 *
+	 * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
+	 * modified at any time after the Iterator is created, in any way except
+	 * through the list-iterator's own {@code remove} or {@code add}
+	 * methods, the list-iterator will throw a
+	 * {@code ConcurrentModificationException}.  Thus, in the face of
+	 * concurrent modification, the iterator fails quickly and cleanly, rather
+	 * than risking arbitrary, non-deterministic behavior at an undetermined
+	 * time in the future.
+	 *
+	 * @param index index of the first element to be returned from the
+	 *              list-iterator (by a call to {@code next})
+	 * @return a ListIterator of the elements in this list (in proper
+	 *         sequence), starting at the specified position in the list
+	 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+	 * @see List#listIterator(int)
+	 */
 	@Override
 	public ListIterator<E> listIterator(int index) {
 		if (index < 0 || index > longSize()) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
@@ -1071,66 +1071,66 @@ public class NodableLinkedList<E>
 	}
 
 	/**
-     * Returns a list-iterator of the elements in this list (in proper
-     * sequence), starting at the specified node in the list.
-     * 
-     * <p><strong>Implementation Note:</strong>
-     * The index returned by {@code nextIndex} and {@code previousIndex}
-     * is relative to the specified node which has an index of 0.
-     * Nodes which come before the specified node in this list, will
-     * have a negative index; nodes that come after will have a positive index. 
-     * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
-     * method {@code previousIndex} returns {@code -longSize()} if at the beginning
-     * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
-     *
-     * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
-     * modified at any time after the Iterator is created, in any way except
-     * through the list-iterator's own {@code remove} or {@code add}
-     * methods, the list-iterator will throw a
-     * {@code ConcurrentModificationException}.  Thus, in the face of
-     * concurrent modification, the iterator fails quickly and cleanly, rather
-     * than risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
-     *
-     * @param node node of the first element to be returned from the list-iterator
-     *             (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper
-     *         sequence), starting at the specified node in the list
-     * @throws IllegalArgumentException if the node is null, or not linked to this list
-     */
+	 * Returns a list-iterator of the elements in this list (in proper
+	 * sequence), starting at the specified node in the list.
+	 * 
+	 * <p><strong>Implementation Note:</strong>
+	 * The index returned by {@code nextIndex} and {@code previousIndex}
+	 * is relative to the specified node which has an index of 0.
+	 * Nodes which come before the specified node in this list, will
+	 * have a negative index; nodes that come after will have a positive index. 
+	 * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
+	 * method {@code previousIndex} returns {@code -longSize()} if at the beginning
+	 * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+	 * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+	 *
+	 * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
+	 * modified at any time after the Iterator is created, in any way except
+	 * through the list-iterator's own {@code remove} or {@code add}
+	 * methods, the list-iterator will throw a
+	 * {@code ConcurrentModificationException}.  Thus, in the face of
+	 * concurrent modification, the iterator fails quickly and cleanly, rather
+	 * than risking arbitrary, non-deterministic behavior at an undetermined
+	 * time in the future.
+	 *
+	 * @param node node of the first element to be returned from the list-iterator
+	 *             (by a call to {@code next})
+	 * @return a ListIterator of the elements in this list (in proper
+	 *         sequence), starting at the specified node in the list
+	 * @throws IllegalArgumentException if the node is null, or not linked to this list
+	 */
 	public ListIterator<E> listIterator(Node<E> node) {
 		if (node == null || node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is either null or not linked to this list");
 		return new NodableLinkedListListIterator(node);
 	}
-	
+
 	/**
-     * Returns an iterator over the elements in this list in reverse
-     * sequential order.  The elements will be returned in order from
-     * last (tail) to first (head).
-     *
-     * @return an iterator over the elements in this list in reverse
-     * sequence
-     */
+	 * Returns an iterator over the elements in this list in reverse
+	 * sequential order.  The elements will be returned in order from
+	 * last (tail) to first (head).
+	 *
+	 * @return an iterator over the elements in this list in reverse
+	 * sequence
+	 */
 	@Override
 	public Iterator<E> descendingIterator() {
 		return new NodableLinkedListDescendingIterator();
 	}
-	
+
 	/**
-     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator}
-     * over the elements in this list.
-     *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#ORDERED}.  Overriding implementations should document
-     * the reporting of additional characteristic values.
-     *
-     * <p><strong>Implementation Note:</strong>
-     * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
-     * and implements {@code trySplit} to permit limited parallelism..
-     *
-     * @return a {@code Spliterator} over the elements in this list
-     */
+	 * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator}
+	 * over the elements in this list.
+	 *
+	 * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
+	 * {@link Spliterator#ORDERED}.  Overriding implementations should document
+	 * the reporting of additional characteristic values.
+	 *
+	 * <p><strong>Implementation Note:</strong>
+	 * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
+	 * and implements {@code trySplit} to permit limited parallelism..
+	 *
+	 * @return a {@code Spliterator} over the elements in this list
+	 */
 	@Override
 	public Spliterator<E> spliterator() {
 		return new NodableLinkedListSpliterator();
@@ -1175,19 +1175,19 @@ public class NodableLinkedList<E>
 	 *
 	 */
 	public class LinkedNodes
-		extends AbstractSequentialList<Node<E>>
-		implements List<Node<E>>, Deque<Node<E>>
+	extends AbstractSequentialList<Node<E>>
+	implements List<Node<E>>, Deque<Node<E>>
 	{
-	
+
 		private long size;
 		private final Node<E> headSentinel = new Node<>();
 		private final Node<E> tailSentinel = new Node<>();
-		
+
 		//protected int modCount inherited from class java.util.AbstractList		
 		private void incrementModCount() {
 			NodableLinkedList.this.modCount = ++modCount; // keep both modCounts in sync
 		}
-	
+
 		private LinkedNodes() {
 			NodableLinkedList.this.modCount = modCount = 0;
 			size = 0L;
@@ -1200,7 +1200,7 @@ public class NodableLinkedList<E>
 			this();
 			addAll(collection);
 		}
-		
+
 		/**
 		 * Returns the {@code NodableLinkedList} this {@code LinkedNodes} instance backs.
 		 *         
@@ -1211,25 +1211,25 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Returns the number of nodes in this list.  If this list contains more than
-	     * Integer.MAX_VALUE nodes, returns Integer.MAX_VALUE.
-	     *
-	     * @return the number of nodes in this list.
-	     */
+		 * Returns the number of nodes in this list.  If this list contains more than
+		 * Integer.MAX_VALUE nodes, returns Integer.MAX_VALUE.
+		 *
+		 * @return the number of nodes in this list.
+		 */
 		@Override
 		public int size() {
 			return (size > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)size;
 		}
 
 		/**
-	     * Returns the number of nodes in this list.
-	     *
-	     * @return the number of nodes in this list.
-	     */
+		 * Returns the number of nodes in this list.
+		 *
+		 * @return the number of nodes in this list.
+		 */
 		public long longSize() {
 			return size;
 		}		
-	
+
 		private void addNodeAfter(Node<E> node, Node<E> afterThisNode) {
 			// assert node == null || node.linkedNodes != null : "Node is null or already an element of a list";
 			// assert afterThisNode.linkedNodes != this : "After Node is not an element of this list";			
@@ -1241,7 +1241,7 @@ public class NodableLinkedList<E>
 			node.next.previous = node;
 			size++;
 		}
-	
+
 		private void addNodeBefore(Node<E> node, Node<E> beforeThisNode) {
 			// assert node == null || node.linkedNodes != null : "Node is null or already an element of a list";
 			// assert beforeThisNode.linkedNodes != this : "Before Node is not an element of this list";			
@@ -1253,7 +1253,7 @@ public class NodableLinkedList<E>
 			node.next.previous = node;
 			size++;
 		}
-	
+
 		private void removeNode(Node<E> node) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";			
 			incrementModCount();			
@@ -1264,7 +1264,7 @@ public class NodableLinkedList<E>
 			node.linkedNodes = null;
 			size--;
 		}
-	
+
 		private void replaceNode(Node<E> node, Node<E> replacementNode) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";
 			// assert replacementNode == null || replacementNode.linkedNodes != null : "Replacement Node is null or already an element of a list";
@@ -1278,22 +1278,22 @@ public class NodableLinkedList<E>
 			node.previous = null;
 			node.linkedNodes = null;
 		}
-		
+
 		private boolean hasNodeAfter(Node<E> node) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";			
 			return (node.next == tailSentinel) ? false : true; 
 		}
-		
+
 		private boolean hasNodeBefore(Node<E> node) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";			
 			return (node.previous == headSentinel) ? false : true; 
 		}	
-		
+
 		private Node<E> getNodeAfter(Node<E> node) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";			
 			return (node.next == tailSentinel) ? null : node.next;
 		}
-		
+
 		private Node<E> getNodeBefore(Node<E> node) {
 			// assert node.linkedNodes != this : "Node is not an element of this list";			
 			return (node.previous == headSentinel) ? null : node.previous;
@@ -1310,15 +1310,15 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Inserts the specified node at the specified position in this list.
-	     * Shifts the node currently at that position (if any) and any
-	     * subsequent nodes to the right (adds one to their indices).
-	     *
-	     * @param index index at which the specified element is to be inserted
-	     * @param node node to be inserted
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Inserts the specified node at the specified position in this list.
+		 * Shifts the node currently at that position (if any) and any
+		 * subsequent nodes to the right (adds one to their indices).
+		 *
+		 * @param index index at which the specified element is to be inserted
+		 * @param node node to be inserted
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public void add(int index, Node<E> node) {
 			if (index == size) {
@@ -1330,12 +1330,12 @@ public class NodableLinkedList<E>
 		}	
 
 		/**
-	     * Returns the node at the specified position in this list.
-	     *
-	     * @param index index of the element to return
-	     * @return the node at the specified position in this list
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-	     */
+		 * Returns the node at the specified position in this list.
+		 *
+		 * @param index index of the element to return
+		 * @return the node at the specified position in this list
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+		 */
 		@Override
 		public Node<E> get(int index) {
 			final long getIndex = index;
@@ -1352,13 +1352,13 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns {@code true} if this list contains the specified node.
-	     * 
-	     * <p>This operation is performed in constant time.
-	     *
-	     * @param o node whose presence in this list is to be tested
-	     * @return {@code true} if this list contains the specified node
-	     */
+		 * Returns {@code true} if this list contains the specified node.
+		 * 
+		 * <p>This operation is performed in constant time.
+		 *
+		 * @param o node whose presence in this list is to be tested
+		 * @return {@code true} if this list contains the specified node
+		 */
 		@Override
 		public boolean contains(Object o) {
 			if (!Node.class.isInstance(o)) return false;
@@ -1367,18 +1367,18 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Returns the index of the specified node in this list,
-	     * or -1 if there is no such index (this list does not
-	     * contain the node or the {@code index > Integer.MAX_VALUE}).
-	     *
-	     * <p>Note that {@code indexOf} is identical in function to
-	     * {@code lastIndexOf}, except {@code indexOf} traverses
-	     * the list forwards from the beginning.
-	     * 
-	     * @param o node to search for
-	     * @return the index of the specified node in this list,
-	     *         or or -1 if there is no such index.
-	     */
+		 * Returns the index of the specified node in this list,
+		 * or -1 if there is no such index (this list does not
+		 * contain the node or the {@code index > Integer.MAX_VALUE}).
+		 *
+		 * <p>Note that {@code indexOf} is identical in function to
+		 * {@code lastIndexOf}, except {@code indexOf} traverses
+		 * the list forwards from the beginning.
+		 * 
+		 * @param o node to search for
+		 * @return the index of the specified node in this list,
+		 *         or or -1 if there is no such index.
+		 */
 		@Override
 		public int indexOf(Object o) {
 			if (!Node.class.isInstance(o)) return -1;
@@ -1391,18 +1391,18 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns the index of the specified node in this list,
-	     * or -1 if there is no such index (this list does not
-	     * contain the node or the {@code index > Integer.MAX_VALUE}.
-	     * 
-	     * <p>Note that {@code lastIndexOf} is identical in function to
-	     * {@code indexOf}, except {@code lastIndexOf} traverses
-	     * the list backwards from the end.
-	     *
-	     * @param o node to search for
-	     * @return the index of the specified node in this list,
-	     *         or -1 if there is no such index.
-	     */
+		 * Returns the index of the specified node in this list,
+		 * or -1 if there is no such index (this list does not
+		 * contain the node or the {@code index > Integer.MAX_VALUE}.
+		 * 
+		 * <p>Note that {@code lastIndexOf} is identical in function to
+		 * {@code indexOf}, except {@code lastIndexOf} traverses
+		 * the list backwards from the end.
+		 *
+		 * @param o node to search for
+		 * @return the index of the specified node in this list,
+		 *         or -1 if there is no such index.
+		 */
 		@Override
 		public int lastIndexOf(Object o) {
 			if (!Node.class.isInstance(o)) return -1;
@@ -1415,14 +1415,14 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Removes the node at the specified position in this list.  Shifts any
-	     * subsequent nodes to the left (subtracts one from their indices).
-	     * Returns the node that was removed from the list.
-	     *
-	     * @param index the index of the element to be removed
-	     * @return the node previously at the specified position
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-	     */
+		 * Removes the node at the specified position in this list.  Shifts any
+		 * subsequent nodes to the left (subtracts one from their indices).
+		 * Returns the node that was removed from the list.
+		 *
+		 * @param index the index of the element to be removed
+		 * @return the node previously at the specified position
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+		 */
 		@Override
 		public Node<E> remove(int index) {
 			final Node<E> node = get(index);
@@ -1431,15 +1431,15 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Replaces the node at the specified position in this list with the
-	     * specified node.
-	     *
-	     * @param index index of the node to replace
-	     * @param node node to be stored at the specified position
-	     * @return the node previously at the specified position
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-	     * @throws IllegalArgumentException if replacement node is null or already an element of a list
-	     */
+		 * Replaces the node at the specified position in this list with the
+		 * specified node.
+		 *
+		 * @param index index of the node to replace
+		 * @param node node to be stored at the specified position
+		 * @return the node previously at the specified position
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+		 * @throws IllegalArgumentException if replacement node is null or already an element of a list
+		 */
 		@Override
 		public Node<E> set(int index, Node<E> node) {
 			if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");			
@@ -1449,12 +1449,12 @@ public class NodableLinkedList<E>
 		}	
 
 		/**
-	     * Appends the specified node to the end of this list.
-	     *
-	     * @param node node to be appended to this list
-	     * @return {@code true} (as specified by {@link Collection#add})
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Appends the specified node to the end of this list.
+		 *
+		 * @param node node to be appended to this list
+		 * @return {@code true} (as specified by {@link Collection#add})
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public boolean add(Node<E> node) {
 			addLast(node);
@@ -1462,19 +1462,19 @@ public class NodableLinkedList<E>
 		}			
 
 		/**
-	     * Appends all of the nodes in the specified collection to the end of
-	     * this list, in the order that they are returned by the specified
-	     * collection's iterator.  The behavior of this operation is undefined if
-	     * the specified collection is modified while the operation is in
-	     * progress.  (Note that this will occur if the specified collection is
-	     * this list, and it's nonempty.)
-	     *
-	     * @param nodes collection containing nodes to be added to this list
-	     * @return {@code true} if this list changed as a result of the call
-	     * @throws NullPointerException if the specified collection is null
-	     * @throws IllegalArgumentException if any node in the collection is null
-	     *                                  or already an element of a list
-	     */
+		 * Appends all of the nodes in the specified collection to the end of
+		 * this list, in the order that they are returned by the specified
+		 * collection's iterator.  The behavior of this operation is undefined if
+		 * the specified collection is modified while the operation is in
+		 * progress.  (Note that this will occur if the specified collection is
+		 * this list, and it's nonempty.)
+		 *
+		 * @param nodes collection containing nodes to be added to this list
+		 * @return {@code true} if this list changed as a result of the call
+		 * @throws NullPointerException if the specified collection is null
+		 * @throws IllegalArgumentException if any node in the collection is null
+		 *                                  or already an element of a list
+		 */
 		@Override
 		public boolean addAll(Collection<? extends Node<E>> nodes) {
 			final long initialSize = size;
@@ -1483,22 +1483,22 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Inserts all of the nodes in the specified collection into this
-	     * list, starting at the specified position.  Shifts the node
-	     * currently at that position (if any) and any subsequent nodes to
-	     * the right (increases their indices).  The new nodes will appear
-	     * in the list in the order that they are returned by the
-	     * specified collection's iterator.
-	     *
-	     * @param index index at which to insert the first element
-	     *              from the specified collection
-	     * @param nodes collection containing nodes to be added to this list
-	     * @return {@code true} if this list changed as a result of the call
-	     * @throws IllegalArgumentException if any node in the collection is null
-	     *                                  or already an element of a list
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-	     * @throws NullPointerException if the specified collection is null
-	     */
+		 * Inserts all of the nodes in the specified collection into this
+		 * list, starting at the specified position.  Shifts the node
+		 * currently at that position (if any) and any subsequent nodes to
+		 * the right (increases their indices).  The new nodes will appear
+		 * in the list in the order that they are returned by the
+		 * specified collection's iterator.
+		 *
+		 * @param index index at which to insert the first element
+		 *              from the specified collection
+		 * @param nodes collection containing nodes to be added to this list
+		 * @return {@code true} if this list changed as a result of the call
+		 * @throws IllegalArgumentException if any node in the collection is null
+		 *                                  or already an element of a list
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+		 * @throws NullPointerException if the specified collection is null
+		 */
 		@Override
 		public boolean addAll(int index, Collection<? extends Node<E>> nodes) {
 			if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
@@ -1514,22 +1514,22 @@ public class NodableLinkedList<E>
 			}
 			return size != initialSize;
 		}
-		
+
 		/**
-	     * Inserts all of the nodes in the specified collection into this
-	     * list, before the specified node.  Shifts the node
-	     * currently at that position and any subsequent nodes to
-	     * the right (increases their indices).  The new nodes will appear
-	     * in the list in the order that they are returned by the
-	     * specified collection's iterator.
-	     *
-	     * @param node node the specified collection is to be inserted before
-	     * @param nodes collection containing nodes to be added to this list
-	     * @return {@code true} if this list changed as a result of the call
-	     * @throws IllegalArgumentException if the specified node is null or not linked to this list, or
-	     *                                  any node in the collection is null or already an element of a list
-	     * @throws NullPointerException if the specified collection is null
-	     */
+		 * Inserts all of the nodes in the specified collection into this
+		 * list, before the specified node.  Shifts the node
+		 * currently at that position and any subsequent nodes to
+		 * the right (increases their indices).  The new nodes will appear
+		 * in the list in the order that they are returned by the
+		 * specified collection's iterator.
+		 *
+		 * @param node node the specified collection is to be inserted before
+		 * @param nodes collection containing nodes to be added to this list
+		 * @return {@code true} if this list changed as a result of the call
+		 * @throws IllegalArgumentException if the specified node is null or not linked to this list, or
+		 *                                  any node in the collection is null or already an element of a list
+		 * @throws NullPointerException if the specified collection is null
+		 */
 		public boolean addAll(Node<E> node, Collection<? extends Node<E>> nodes) {
 			if (node == null || node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is either null or not linked to this list");
 			final long initialSize = longSize();
@@ -1541,8 +1541,8 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Removes all of the nodes from this list.
-	     */
+		 * Removes all of the nodes from this list.
+		 */
 		@Override
 		public void clear() {
 			for (Node<E> node = headSentinel.next; node != tailSentinel;) {
@@ -1553,11 +1553,11 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Inserts the specified node at the beginning of this list.
-	     *
-	     * @param node the node to add
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Inserts the specified node at the beginning of this list.
+		 *
+		 * @param node the node to add
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public void addFirst(Node<E> node) {
 			if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node is null or already an element of a list");
@@ -1565,11 +1565,11 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Appends the specified node to the end of this list.
-	     *
-	     * @param node the node to add
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Appends the specified node to the end of this list.
+		 *
+		 * @param node the node to add
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public void addLast(Node<E> node) {
 			if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node is null or already an element of a list");
@@ -1577,38 +1577,38 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Pushes a node onto the stack represented by this list.  In other
-	     * words, inserts the node at the front of this list.
-	     *
-	     * <p>This method is equivalent to {@link #addFirst}.
-	     *
-	     * @param node the node to push
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Pushes a node onto the stack represented by this list.  In other
+		 * words, inserts the node at the front of this list.
+		 *
+		 * <p>This method is equivalent to {@link #addFirst}.
+		 *
+		 * @param node the node to push
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public void push(Node<E> node) {
 			addFirst(node);
 		}
 
 		/**
-	     * Adds the specified node as the tail (last node) of this list.
-	     *
-	     * @param node the node to add
-	     * @return {@code true} (as specified by {@link java.util.Queue#offer})
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Adds the specified node as the tail (last node) of this list.
+		 *
+		 * @param node the node to add
+		 * @return {@code true} (as specified by {@link java.util.Queue#offer})
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public boolean offer(Node<E> node) {
 			return add(node);
 		}
 
 		/**
-	     * Inserts the specified node at the front of this list.
-	     *
-	     * @param node the node to insert
-	     * @return {@code true} (as specified by {@link Deque#offerFirst})
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Inserts the specified node at the front of this list.
+		 *
+		 * @param node the node to insert
+		 * @return {@code true} (as specified by {@link Deque#offerFirst})
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public boolean offerFirst(Node<E> node) {
 			addFirst(node);
@@ -1616,12 +1616,12 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Inserts the specified node at the end of this list.
-	     *
-	     * @param node the node to insert
-	     * @return {@code true} (as specified by {@link Deque#offerLast})
-	     * @throws IllegalArgumentException if node is null or already an element of a list
-	     */
+		 * Inserts the specified node at the end of this list.
+		 *
+		 * @param node the node to insert
+		 * @return {@code true} (as specified by {@link Deque#offerLast})
+		 * @throws IllegalArgumentException if node is null or already an element of a list
+		 */
 		@Override
 		public boolean offerLast(Node<E> node) {
 			addLast(node);
@@ -1629,22 +1629,22 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Retrieves, but does not remove, the head (first node) of this list.
-	     * 
-	     * @return the head of this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Retrieves, but does not remove, the head (first node) of this list.
+		 * 
+		 * @return the head of this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> element() {
 			return getFirst();
 		}
 
 		/**
-	     * Returns the first node in this list.
-	     *
-	     * @return the first node in this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Returns the first node in this list.
+		 *
+		 * @return the first node in this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> getFirst() {
 			if (size == 0L) throw new NoSuchElementException("List is empty");
@@ -1652,83 +1652,83 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns the last node in this list.
-	     *
-	     * @return the last node in this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Returns the last node in this list.
+		 *
+		 * @return the last node in this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> getLast() {
 			if (size == 0L) throw new NoSuchElementException("List is empty");
 			return tailSentinel.previous;
 		}
-		
+
 		/**
-	     * Retrieves, but does not remove, the head (first node) of this list.
-	     * 
-	     * @return the head of this list, or {@code null} if this list is empty
-	     */
+		 * Retrieves, but does not remove, the head (first node) of this list.
+		 * 
+		 * @return the head of this list, or {@code null} if this list is empty
+		 */
 		@Override
 		public Node<E> peek() {
 			return peekFirst();
 		}
 
 		/**
-	     * Retrieves, but does not remove, the first node of this list,
-	     * or returns {@code null} if this list is empty.
-	     *
-	     * @return the first node of this list, or {@code null}
-	     *         if this list is empty
-	     */
+		 * Retrieves, but does not remove, the first node of this list,
+		 * or returns {@code null} if this list is empty.
+		 *
+		 * @return the first node of this list, or {@code null}
+		 *         if this list is empty
+		 */
 		@Override
 		public Node<E> peekFirst() {
 			return (size == 0L) ? null : headSentinel.next;
 		}
 
 		/**
-	     * Retrieves, but does not remove, the last node of this list,
-	     * or returns {@code null} if this list is empty.
-	     *
-	     * @return the last node of this list, or {@code null}
-	     *         if this list is empty
-	     */
+		 * Retrieves, but does not remove, the last node of this list,
+		 * or returns {@code null} if this list is empty.
+		 *
+		 * @return the last node of this list, or {@code null}
+		 *         if this list is empty
+		 */
 		@Override
 		public Node<E> peekLast() {
 			return (size == 0L) ? null : tailSentinel.previous;
 		}
 
 		/**
-	     * Pops a node from the stack represented by this list.  In other
-	     * words, removes and returns the first node of this list.
-	     *
-	     * <p>This method is equivalent to {@link #removeFirst()}.
-	     *
-	     * @return the node at the front of this list (which is the top
-	     *         of the stack represented by this list)
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Pops a node from the stack represented by this list.  In other
+		 * words, removes and returns the first node of this list.
+		 *
+		 * <p>This method is equivalent to {@link #removeFirst()}.
+		 *
+		 * @return the node at the front of this list (which is the top
+		 *         of the stack represented by this list)
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> pop() {
 			return removeFirst();
 		}
 
 		/**
-	     * Removes and returns the head (first node) of this list.
-	     *
-	     * @return the head of this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Removes and returns the head (first node) of this list.
+		 *
+		 * @return the head of this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> remove() {
 			return removeFirst();
 		}
 
 		/**
-	     * Removes and returns the first node from this list.
-	     *
-	     * @return the first node from this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Removes and returns the first node from this list.
+		 *
+		 * @return the first node from this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> removeFirst() {
 			if (size == 0L) throw new NoSuchElementException("List is empty");
@@ -1738,11 +1738,11 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Removes and returns the last node from this list.
-	     *
-	     * @return the last node from this list
-	     * @throws NoSuchElementException if this list is empty
-	     */
+		 * Removes and returns the last node from this list.
+		 *
+		 * @return the last node from this list
+		 * @throws NoSuchElementException if this list is empty
+		 */
 		@Override
 		public Node<E> removeLast() {
 			if (size == 0L) throw new NoSuchElementException("List is empty");
@@ -1752,14 +1752,14 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Removes the specified node from this list, if it is present.
-	     * If this list does not contain the element, it is unchanged.
-	     * 
-	     * <p>This operation performs in constant time.
-	     *
-	     * @param o node to be removed from this list, if present
-	     * @return {@code true} if this list contained the specified element
-	     */
+		 * Removes the specified node from this list, if it is present.
+		 * If this list does not contain the element, it is unchanged.
+		 * 
+		 * <p>This operation performs in constant time.
+		 *
+		 * @param o node to be removed from this list, if present
+		 * @return {@code true} if this list contained the specified element
+		 */
 		@Override
 		@SuppressWarnings("unchecked")
 		public boolean remove(Object o) {
@@ -1770,54 +1770,54 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Removes the specified node from this list, if it is present.
-	     * If this list does not contain the element, it is unchanged.
-	     * 
-	     * <p>This operation performs in constant time.
-	     * 
-	     * <p>This method is equivalent to {@link #remove(Object o)}.
-	     *
-	     * @param o node to be removed from this list, if present
-	     * @return {@code true} if this list contained the specified element
-	     */
+		 * Removes the specified node from this list, if it is present.
+		 * If this list does not contain the element, it is unchanged.
+		 * 
+		 * <p>This operation performs in constant time.
+		 * 
+		 * <p>This method is equivalent to {@link #remove(Object o)}.
+		 *
+		 * @param o node to be removed from this list, if present
+		 * @return {@code true} if this list contained the specified element
+		 */
 		@Override
 		public boolean removeFirstOccurrence(Object o) {
 			return remove(o);
 		}
 
 		/**
-	     * Removes the specified node from this list, if it is present.
-	     * If this list does not contain the element, it is unchanged.
-	     * 
-	     * <p>This operation performs in constant time.
-	     * 
-	     * <p>This method is equivalent to {@link #remove(Object o)}.
-	     *
-	     * @param o node to be removed from this list, if present
-	     * @return {@code true} if this list contained the specified element
-	     */
+		 * Removes the specified node from this list, if it is present.
+		 * If this list does not contain the element, it is unchanged.
+		 * 
+		 * <p>This operation performs in constant time.
+		 * 
+		 * <p>This method is equivalent to {@link #remove(Object o)}.
+		 *
+		 * @param o node to be removed from this list, if present
+		 * @return {@code true} if this list contained the specified element
+		 */
 		@Override
 		public boolean removeLastOccurrence(Object o) {
 			return remove(o);
 		}		
 
 		/**
-	     * Retrieves and removes the head (first node) of this list
-	     * 
-	     * @return the head of this list, or {@code null} if this list is empty
-	     */
+		 * Retrieves and removes the head (first node) of this list
+		 * 
+		 * @return the head of this list, or {@code null} if this list is empty
+		 */
 		@Override
 		public Node<E> poll() {
 			return pollFirst();
 		}
 
 		/**
-	     * Retrieves and removes the first node of this list,
-	     * or returns {@code null} if this list is empty.
-	     *
-	     * @return the first node of this list, or {@code null} if
-	     *     this list is empty
-	     */
+		 * Retrieves and removes the first node of this list,
+		 * or returns {@code null} if this list is empty.
+		 *
+		 * @return the first node of this list, or {@code null} if
+		 *     this list is empty
+		 */
 		@Override
 		public Node<E> pollFirst() {
 			if (size == 0L) return null;
@@ -1827,12 +1827,12 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Retrieves and removes the last node of this list,
-	     * or returns {@code null} if this list is empty.
-	     *
-	     * @return the last node of this list, or {@code null} if
-	     *     this list is empty
-	     */
+		 * Retrieves and removes the last node of this list,
+		 * or returns {@code null} if this list is empty.
+		 *
+		 * @return the last node of this list, or {@code null} if
+		 *     this list is empty
+		 */
 		@Override
 		public Node<E> pollLast() {
 			if (size == 0L) return null;
@@ -1841,57 +1841,57 @@ public class NodableLinkedList<E>
 			return node;
 		}
 
-	    /**
-	     * Sorts this list according to the order induced by the specified
-	     * {@code Comparator}.
-	     *
-	     * <p>All elements in this list must be <i>mutually comparable</i> using the
-	     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-	     * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-	     * in the list).
-	     *
-	     * <p>If the specified comparator is {@code null} then all elements in this
-	     * list must implement the {@code Comparable} interface and the elements'
-	     * natural ordering should be used.
-	     *
-	     * <p><strong>Implementation Specification:</strong>
-	     * This implementation obtains an array containing all nodes in this list,
-	     * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-	     * and then effectively clears the list and puts the sorted nodes from the array
-	     * back into this list in order. In other words, the nodes of this list are
-	     * effectively reordered.
-	     * 
-	     * <p><strong>Implementation Note:</strong>
-	     * This implementation is a stable, adaptive, iterative mergesort that
-	     * requires far fewer than n lg(n) comparisons when the input array is
-	     * partially sorted, while offering the performance of a traditional
-	     * mergesort when the input array is randomly ordered.  If the input array
-	     * is nearly sorted, the implementation requires approximately n
-	     * comparisons.  Temporary storage requirements vary from a small constant
-	     * for nearly sorted input arrays to n/2 object references for randomly
-	     * ordered input arrays.
-	     *
-	     * <p>The implementation takes equal advantage of ascending and
-	     * descending order in its input array, and can take advantage of
-	     * ascending and descending order in different parts of the same
-	     * input array.  It is well-suited to merging two or more sorted arrays:
-	     * simply concatenate the arrays and sort the resulting array.
-	     *
-	     * <p>The implementation was adapted from Tim Peters's list sort for Python
-	     * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-	     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-	     * Sorting and Information Theoretic Complexity", in Proceedings of the
-	     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-	     * January 1993.
-	     *
-	     * @see Arrays#sort
-	     * @param comparator the {@code Comparator} used to compare list nodes.
-	     *                   A {@code null} value indicates that the elements'
-	     *                   natural ordering should be used
-	     * @throws ClassCastException if the list contains elements that are not
-	     *         <i>mutually comparable</i> using the specified comparator
-	     * @throws IllegalStateException if the list is too large to fit in an array
-	     */
+		/**
+		 * Sorts this list according to the order induced by the specified
+		 * {@code Comparator}.
+		 *
+		 * <p>All elements in this list must be <i>mutually comparable</i> using the
+		 * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
+		 * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
+		 * in the list).
+		 *
+		 * <p>If the specified comparator is {@code null} then all elements in this
+		 * list must implement the {@code Comparable} interface and the elements'
+		 * natural ordering should be used.
+		 *
+		 * <p><strong>Implementation Specification:</strong>
+		 * This implementation obtains an array containing all nodes in this list,
+		 * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
+		 * and then effectively clears the list and puts the sorted nodes from the array
+		 * back into this list in order. In other words, the nodes of this list are
+		 * effectively reordered.
+		 * 
+		 * <p><strong>Implementation Note:</strong>
+		 * This implementation is a stable, adaptive, iterative mergesort that
+		 * requires far fewer than n lg(n) comparisons when the input array is
+		 * partially sorted, while offering the performance of a traditional
+		 * mergesort when the input array is randomly ordered.  If the input array
+		 * is nearly sorted, the implementation requires approximately n
+		 * comparisons.  Temporary storage requirements vary from a small constant
+		 * for nearly sorted input arrays to n/2 object references for randomly
+		 * ordered input arrays.
+		 *
+		 * <p>The implementation takes equal advantage of ascending and
+		 * descending order in its input array, and can take advantage of
+		 * ascending and descending order in different parts of the same
+		 * input array.  It is well-suited to merging two or more sorted arrays:
+		 * simply concatenate the arrays and sort the resulting array.
+		 *
+		 * <p>The implementation was adapted from Tim Peters's list sort for Python
+		 * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+		 * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
+		 * Sorting and Information Theoretic Complexity", in Proceedings of the
+		 * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
+		 * January 1993.
+		 *
+		 * @see Arrays#sort
+		 * @param comparator the {@code Comparator} used to compare list nodes.
+		 *                   A {@code null} value indicates that the elements'
+		 *                   natural ordering should be used
+		 * @throws ClassCastException if the list contains elements that are not
+		 *         <i>mutually comparable</i> using the specified comparator
+		 * @throws IllegalStateException if the list is too large to fit in an array
+		 */
 		@Override
 		public void sort(Comparator<? super Node<E>> comparator) {
 			if (size < 2L) return;
@@ -1912,21 +1912,21 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns an array containing all of the nodes in this list
-	     * in proper sequence (from first to last node). The nodes in the
-	     * array are still linked to this list.
-	     *
-	     * <p>The returned array will be "safe" in that no references to it are
-	     * maintained by this list.  (In other words, this method allocates
-	     * a new array).  The caller is thus free to modify the returned array.
-	     *
-	     * <p>This method acts as bridge between array-based and collection-based
-	     * APIs.
-	     *
-	     * @return an array containing all of the nodes in this list
-	     *         in proper sequence
-	     * @throws IllegalStateException if the list is too large to fit in an array
-	     */
+		 * Returns an array containing all of the nodes in this list
+		 * in proper sequence (from first to last node). The nodes in the
+		 * array are still linked to this list.
+		 *
+		 * <p>The returned array will be "safe" in that no references to it are
+		 * maintained by this list.  (In other words, this method allocates
+		 * a new array).  The caller is thus free to modify the returned array.
+		 *
+		 * <p>This method acts as bridge between array-based and collection-based
+		 * APIs.
+		 *
+		 * @return an array containing all of the nodes in this list
+		 *         in proper sequence
+		 * @throws IllegalStateException if the list is too large to fit in an array
+		 */
 		@Override
 		public Object[] toArray() {
 			if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
@@ -1937,42 +1937,42 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns an array containing all of the nodes in this list in
-	     * proper sequence (from first to last node); the runtime type of
-	     * the returned array is that of the specified array.  If the list fits
-	     * in the specified array, it is returned therein.  Otherwise, a new
-	     * array is allocated with the runtime type of the specified array and
-	     * the size of this list.
-	     *
-	     * <p>If the list fits in the specified array with room to spare (i.e.,
-	     * the array has more elements than the list), the element in the array
-	     * immediately following the end of the list is set to {@code null}.
-	     * (This is useful in determining the length of the list <i>only</i> if
-	     * the caller knows that the list does not contain any null elements.)
-	     *
-	     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-	     * array-based and collection-based APIs.  Further, this method allows
-	     * precise control over the runtime type of the output array, and may,
-	     * under certain circumstances, be used to save allocation costs.
-	     *
-	     * Note that {@code toArray(new Object[0])} is identical in function to
-	     * {@code toArray()}.
-	     *
-	     * @param array the array into which the nodes of the list are to
-	     *              be stored, if it is big enough; otherwise, a new array of the
-	     *              same runtime type is allocated for this purpose.
-	     * @return an array containing the nodes of the list
-	     * @throws ArrayStoreException if the runtime type of the specified array
-	     *         is not a supertype of the runtime type of every node in
-	     *         this list
-	     * @throws IllegalStateException if the list is too large to fit in an array
-	     * @throws NullPointerException if the specified array is null
-	     */
+		 * Returns an array containing all of the nodes in this list in
+		 * proper sequence (from first to last node); the runtime type of
+		 * the returned array is that of the specified array.  If the list fits
+		 * in the specified array, it is returned therein.  Otherwise, a new
+		 * array is allocated with the runtime type of the specified array and
+		 * the size of this list.
+		 *
+		 * <p>If the list fits in the specified array with room to spare (i.e.,
+		 * the array has more elements than the list), the element in the array
+		 * immediately following the end of the list is set to {@code null}.
+		 * (This is useful in determining the length of the list <i>only</i> if
+		 * the caller knows that the list does not contain any null elements.)
+		 *
+		 * <p>Like the {@link #toArray()} method, this method acts as bridge between
+		 * array-based and collection-based APIs.  Further, this method allows
+		 * precise control over the runtime type of the output array, and may,
+		 * under certain circumstances, be used to save allocation costs.
+		 *
+		 * Note that {@code toArray(new Object[0])} is identical in function to
+		 * {@code toArray()}.
+		 *
+		 * @param array the array into which the nodes of the list are to
+		 *              be stored, if it is big enough; otherwise, a new array of the
+		 *              same runtime type is allocated for this purpose.
+		 * @return an array containing the nodes of the list
+		 * @throws ArrayStoreException if the runtime type of the specified array
+		 *         is not a supertype of the runtime type of every node in
+		 *         this list
+		 * @throws IllegalStateException if the list is too large to fit in an array
+		 * @throws NullPointerException if the specified array is null
+		 */
 		@Override
 		@SuppressWarnings("unchecked")
 		public <T> T[] toArray(T[] array) {
 			if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
-//			if (!Node.class.isAssignableFrom(array.getClass().getComponentType())) throw new ArrayStoreException();			
+			//			if (!Node.class.isAssignableFrom(array.getClass().getComponentType())) throw new ArrayStoreException();			
 			if (array.length < size) array = (T[]) java.lang.reflect.Array.newInstance(array.getClass(), (int)size);
 			int index = 0;
 			Object[] nodes = array;
@@ -1982,107 +1982,107 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns a list-iterator of the nodes in this list (in proper
-	     * sequence), starting at the specified position in the list.
-	     * Obeys the general contract of {@code List.listIterator(int)}.
-	     * 
-	     * <p><strong>Implementation Note:</strong>
-	     * The ListIterator returned by this method behaves differently when the
-	     * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-	     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-	     *
-	     * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
-	     * modified at any time after the Iterator is created, in any way except
-	     * through the list-iterator's own {@code remove} or {@code add}
-	     * methods, the list-iterator will throw a
-	     * {@code ConcurrentModificationException}.  Thus, in the face of
-	     * concurrent modification, the iterator fails quickly and cleanly, rather
-	     * than risking arbitrary, non-deterministic behavior at an undetermined
-	     * time in the future.
-	     *
-	     * @param index index of the first node to be returned from the
-	     *              list-iterator (by a call to {@code next})
-	     * @return a ListIterator of the nodes in this list (in proper
-	     *         sequence), starting at the specified position in the list
-	     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-	     * @see List#listIterator(int)
-	     */
+		 * Returns a list-iterator of the nodes in this list (in proper
+		 * sequence), starting at the specified position in the list.
+		 * Obeys the general contract of {@code List.listIterator(int)}.
+		 * 
+		 * <p><strong>Implementation Note:</strong>
+		 * The ListIterator returned by this method behaves differently when the
+		 * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+		 * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+		 *
+		 * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
+		 * modified at any time after the Iterator is created, in any way except
+		 * through the list-iterator's own {@code remove} or {@code add}
+		 * methods, the list-iterator will throw a
+		 * {@code ConcurrentModificationException}.  Thus, in the face of
+		 * concurrent modification, the iterator fails quickly and cleanly, rather
+		 * than risking arbitrary, non-deterministic behavior at an undetermined
+		 * time in the future.
+		 *
+		 * @param index index of the first node to be returned from the
+		 *              list-iterator (by a call to {@code next})
+		 * @return a ListIterator of the nodes in this list (in proper
+		 *         sequence), starting at the specified position in the list
+		 * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+		 * @see List#listIterator(int)
+		 */
 		@Override
 		public ListIterator<Node<E>> listIterator(int index) {
 			if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
 			return new LinkedNodesListIterator(index);
 		}
-		
+
 		/**
-	     * Returns a list-iterator of the nodes in this list (in proper
-	     * sequence), starting at the specified node in the list.
-	     * 
-	     * <p><strong>Implementation Note:</strong>
-	     * The index returned by {@code nextIndex} and {@code previousIndex}
-	     * is relative to the specified node which has an index of 0.
-	     * Nodes which come before the specified node in this list, will
-	     * have a negative index; nodes that come after will have a positive index. 
-	     * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
-	     * method {@code previousIndex} returns {@code -longSize()} if at the beginning
-	     * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-	     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
-	     *
-	     * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
-	     * modified at any time after the Iterator is created, in any way except
-	     * through the list-iterator's own {@code remove} or {@code add}
-	     * methods, the list-iterator will throw a
-	     * {@code ConcurrentModificationException}.  Thus, in the face of
-	     * concurrent modification, the iterator fails quickly and cleanly, rather
-	     * than risking arbitrary, non-deterministic behavior at an undetermined
-	     * time in the future.
-	     *
-	     * @param node first node to be returned from the list-iterator (by a call to {@code next})
-	     * @return a ListIterator of the nodes in this list (in proper
-	     *         sequence), starting at the specified node in the list
-	     * @throws IllegalArgumentException if the node is null, or not linked to this list
-	     */
+		 * Returns a list-iterator of the nodes in this list (in proper
+		 * sequence), starting at the specified node in the list.
+		 * 
+		 * <p><strong>Implementation Note:</strong>
+		 * The index returned by {@code nextIndex} and {@code previousIndex}
+		 * is relative to the specified node which has an index of 0.
+		 * Nodes which come before the specified node in this list, will
+		 * have a negative index; nodes that come after will have a positive index. 
+		 * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
+		 * method {@code previousIndex} returns {@code -longSize()} if at the beginning
+		 * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+		 * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+		 *
+		 * <p>The list-iterator is <i>fail-fast</i>: if the list is structurally
+		 * modified at any time after the Iterator is created, in any way except
+		 * through the list-iterator's own {@code remove} or {@code add}
+		 * methods, the list-iterator will throw a
+		 * {@code ConcurrentModificationException}.  Thus, in the face of
+		 * concurrent modification, the iterator fails quickly and cleanly, rather
+		 * than risking arbitrary, non-deterministic behavior at an undetermined
+		 * time in the future.
+		 *
+		 * @param node first node to be returned from the list-iterator (by a call to {@code next})
+		 * @return a ListIterator of the nodes in this list (in proper
+		 *         sequence), starting at the specified node in the list
+		 * @throws IllegalArgumentException if the node is null, or not linked to this list
+		 */
 		public ListIterator<Node<E>> listIterator(Node<E> node) {
 			if (node == null || node.linkedNodes != this) throw new IllegalArgumentException("Specified node is either null or not linked to this list");
 			return new LinkedNodesListIterator(node);
 		}
-		
+
 		/**
-	     * Returns an iterator over the nodes in this list in reverse
-	     * sequential order.  The elements will be returned in order from
-	     * last (tail) to first (head).
-	     *
-	     * @return an iterator over the nodes in this list in reverse
-	     *         sequence
-	     */
+		 * Returns an iterator over the nodes in this list in reverse
+		 * sequential order.  The elements will be returned in order from
+		 * last (tail) to first (head).
+		 *
+		 * @return an iterator over the nodes in this list in reverse
+		 *         sequence
+		 */
 		@Override
 		public Iterator<Node<E>> descendingIterator() {
 			return new LinkedNodesDescendingIterator();
 		}
-		
+
 		/**
-	     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator}
-	     * over the nodes in this list.
-	     *
-	     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-	     * {@link Spliterator#ORDERED}.  Overriding implementations should document
-	     * the reporting of additional characteristic values.
-	     *
-	     * <p><strong>Implementation Note:</strong>
-	     * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED} and
-	     * {@link Spliterator#NONNULL}, and implements {@code trySplit} to permit
-	     * limited parallelism..
-	     *
-	     * @return a {@code Spliterator} over the nodes in this list
-	     */
+		 * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator}
+		 * over the nodes in this list.
+		 *
+		 * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
+		 * {@link Spliterator#ORDERED}.  Overriding implementations should document
+		 * the reporting of additional characteristic values.
+		 *
+		 * <p><strong>Implementation Note:</strong>
+		 * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED} and
+		 * {@link Spliterator#NONNULL}, and implements {@code trySplit} to permit
+		 * limited parallelism..
+		 *
+		 * @return a {@code Spliterator} over the nodes in this list
+		 */
 		@Override
 		public Spliterator<Node<E>> spliterator() {
 			return new LinkedNodesSpliterator();
 		}		
-		
+
 		private ListIteratorFramework listIteratorFramework(int index) {
 			return new ListIteratorFramework(index);
 		}
-		
+
 		private ListIteratorFramework listIteratorFramework(Node<E> node) {
 			return new ListIteratorFramework(node);
 		}
@@ -2448,119 +2448,119 @@ public class NodableLinkedList<E>
 	} // LinkedNodes
 	
 	private class NodableLinkedListListIterator implements ListIterator<E> {
-		
+
 		private final LinkedNodes.ListIteratorFramework listIterator;
-		
+
 		public NodableLinkedListListIterator(int index) {
 			listIterator = linkedNodes.listIteratorFramework(index);
 		}
-		
+
 		public NodableLinkedListListIterator(Node<E> node) {
 			listIterator = linkedNodes.listIteratorFramework(node);
 		}
-		
+
 		@Override
 		public boolean hasNext() {
 			return listIterator.hasNext();
 		}
-		
+
 		@Override
 		public boolean hasPrevious() {
 			return listIterator.hasPrevious();
 		}
-		
+
 		@Override
 		public E next() {
 			return listIterator.next().element();
 		}
-		
+
 		@Override
 		public E previous() {
 			return listIterator.previous().element();
 		}		
-		
+
 		@Override
 		public int nextIndex() {
 			return listIterator.nextIndex();
 		}
-		
+
 		@Override
 		public int previousIndex() {
 			return listIterator.previousIndex();
 		}
-		
+
 		@Override
 		public void add(E element) {
 			listIterator.add(node(element));
 		}
-		
+
 		@Override
 		public void remove() {
 			listIterator.remove();
 		}
-		
+
 		@Override
 		public void set(E element) {
 			listIterator.set(element);
 		}
-		
+
 		@Override
 		public void forEachRemaining(Consumer<? super E> action) {
 			listIterator.forEachRemaining( (node) -> { action.accept(node.element); } );
 		}		
-		
+
 	} // NodableLinkedListListIterator	
-	
+
 	private class NodableLinkedListDescendingIterator implements Iterator<E> {
-		
+
 		private final LinkedNodes.ListIteratorFramework listIterator = linkedNodes.listIteratorFramework(-1); // start at end of list
-		
+
 		@Override
 		public boolean hasNext() {
 			return listIterator.hasPrevious();
 		}
-		
+
 		@Override
 		public E next() {
 			return listIterator.previous().element;
 		}
-		
+
 		@Override
 		public void remove() {
 			listIterator.remove();
 		}
-		
+
 	} // NodableLinkedListDescendingIterator
-	
+
 	private class NodableLinkedListSpliterator implements Spliterator<E> {
-		
+
 		private final LinkedNodes.SpliteratorFramework spliterator = linkedNodes.spliteratorFramework();
-		
+
 		@Override
 		public int characteristics() {
 			return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
 		}
-		
+
 		@Override
 		public long estimateSize() {
 			return spliterator.estimatedSize();
 		}
-		
+
 		@Override
 		public boolean tryAdvance(Consumer<? super E> action) {
 			return spliterator.tryAdvance( (node) -> { action.accept(node.element); } );
 		}
-		
+
 		@Override
 		public void forEachRemaining(Consumer<? super E> action) {
 			spliterator.forEachRemaining( (node) -> { action.accept(node.element); } );
 		}
-		
+
 		@Override
 		public Spliterator<E> trySplit() {
 			return spliterator.trySplitElements();
 		}
-		
+
 	} // NodableLinkedListSpliterator
 
 	/**
