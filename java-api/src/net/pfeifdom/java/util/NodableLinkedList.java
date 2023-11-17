@@ -134,12 +134,12 @@ extends AbstractSequentialList<E>
 implements List<E>, Deque<E>, Cloneable, Serializable
 {
 
-	//protected int modCount inherited from class java.util.AbstractList (see incrementModCount)	
+    //protected int modCount inherited from class java.util.AbstractList (see incrementModCount)	
 
-	private static final long serialVersionUID = 5774068172585494452L;
+    private static final long serialVersionUID = 5774068172585494452L;
 
-	private transient final LinkedNodes linkedNodes = new LinkedNodes();
-	private static final Field linkedNodesField;
+    private transient final LinkedNodes linkedNodes = new LinkedNodes();
+    private static final Field linkedNodesField;
 	static {
 		try {
 			linkedNodesField = NodableLinkedList.class.getDeclaredField("linkedNodes");
@@ -2583,9 +2583,9 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 	public static class Node<E> implements Serializable, Cloneable, Comparable<Node<E>> {
 
 		private static final long serialVersionUID = 5774389459071333685L;
-
+		
 		private E element;
-
+		
 		private transient Node<E> next = null;
 		private transient Node<E> previous = null;		
 		private transient NodableLinkedList<E>.LinkedNodes linkedNodes = null;
@@ -2596,7 +2596,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 		public Node() {
 			this.element = null;
 		}
-
+		
 		/**
 		 * Constructs a node containing the specified element.
 		 * 
@@ -2616,7 +2616,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 		public Node(Node<E> node) {
 			this.element = node.element;
 		}
-
+		
 		/**
 		 * Returns the element contained within this node.
 		 * 
@@ -2634,7 +2634,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 		public boolean isLinked() {
 			return linkedNodes != null;
 		}
-
+		
 		/**
 		 * Returns the {@code LinkedNodes} list this node
 		 *         belongs to, or {@code null} if not linked.
@@ -2685,7 +2685,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 		public void set(E element) {
 			this.element = element;
 		}
-
+		
 		/**
 		 * Inserts this node after the specified node. This node must not already belong to a
 		 * list, and the specified node must belong to a list.
@@ -2713,7 +2713,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 			if (node == null || node.linkedNodes == null) throw new IllegalArgumentException("Before Node is null or not an element of a list");		
 			node.linkedNodes.addNodeBefore(this, node);
 		}
-
+		
 		/**
 		 * Returns {@code true} if there exists a node which comes after this node
 		 * in a list.  In other words, returns {@code true} if this node is not
@@ -2739,7 +2739,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 			if (linkedNodes == null) throw new IllegalStateException("This node is not an element of a list");
 			return linkedNodes.hasNodeBefore(this);
 		}
-
+		
 		/**
 		 * Returns the index of this node in a list,
 		 * or -1 if this node does not belong to a list or
@@ -2766,7 +2766,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 			if (linkedNodes == null) throw new IllegalStateException("This node is not an element of a list");
 			return linkedNodes.getNodeAfter(this);
 		}
-
+		
 		/**
 		 * Returns the node which comes before this node in a list.  if this node is
 		 * the first or only node, {@code null} is returned.
@@ -2789,7 +2789,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 			if (linkedNodes == null) throw new IllegalStateException("This node is not an element of a list");
 			linkedNodes.removeNode(this);
 		}
-
+		
 		/**
 		 * Replaces this node, in a list, with the specified node.  This node must belong to a
 		 * list, and the replacement node must not already belong to a list.
