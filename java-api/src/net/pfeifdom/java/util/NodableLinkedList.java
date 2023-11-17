@@ -2581,31 +2581,31 @@ public class NodableLinkedList<E>
 	 * @param <E> the type of element held in this node.
 	 */
 	public static class Node<E> implements Serializable, Cloneable, Comparable<Node<E>> {
-		
+
 		private static final long serialVersionUID = 5774389459071333685L;
-		
+
 		private E element;
-		
+
 		private transient Node<E> next = null;
 		private transient Node<E> previous = null;		
 		private transient NodableLinkedList<E>.LinkedNodes linkedNodes = null;
 
 		/**
-	     * Constructs a node containing a null element.
-	     */
+		 * Constructs a node containing a null element.
+		 */
 		public Node() {
 			this.element = null;
 		}
 
 		/**
-	     * Constructs a node containing the specified element.
-	     * 
-	     * @param element element to be stored in this node
-	     */
+		 * Constructs a node containing the specified element.
+		 * 
+		 * @param element element to be stored in this node
+		 */
 		public Node(E element) {
 			this.element = element;
 		}
-		
+
 		/**
 		 * Constructs a node as a copy of the specified node.
 		 * The constructed node will contain the same element
@@ -2645,7 +2645,7 @@ public class NodableLinkedList<E>
 		public NodableLinkedList<E>.LinkedNodes linkedNodes() {
 			return linkedNodes;
 		}
-		
+
 		/**
 		 * Returns the {@code NodableLinkedList} this node
 		 *         belongs to, or {@code null} if not linked.
@@ -2658,11 +2658,11 @@ public class NodableLinkedList<E>
 		}		
 
 		/**
-	     * Returns a shallow copy of this node.  The clone will have the
-	     * same element as this node, but will not be linked to any list.
-	     *
-	     * @return a shallow copy of this node.
-	     */
+		 * Returns a shallow copy of this node.  The clone will have the
+		 * same element as this node, but will not be linked to any list.
+		 *
+		 * @return a shallow copy of this node.
+		 */
 		@Override
 		public Object clone() {
 			try {
@@ -2741,14 +2741,14 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Returns the index of this node in a list,
-	     * or -1 if this node does not belong to a list or
-	     * the {@code index > Integer.MAX_VALUE}.
-	     *
-	     * @return the index of this node in a list,
-	     *         or -1 if this node does not belong to a list or
-	     *         the {@code index > Integer.MAX_VALUE}.
-	     */
+		 * Returns the index of this node in a list,
+		 * or -1 if this node does not belong to a list or
+		 * the {@code index > Integer.MAX_VALUE}.
+		 *
+		 * @return the index of this node in a list,
+		 *         or -1 if this node does not belong to a list or
+		 *         the {@code index > Integer.MAX_VALUE}.
+		 */
 		public int index() {
 			if (linkedNodes == null) return -1;
 			return linkedNodes.indexOfNode(this);			
@@ -2804,7 +2804,7 @@ public class NodableLinkedList<E>
 			if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Replacement node is null or already an element of a list");
 			linkedNodes.replaceNode(this, node);			
 		}
-		
+
 		/**
 		 * Swaps this node with the specified node. Both this node and the specified must belong to a list,
 		 * but they can be different lists.
@@ -2824,15 +2824,15 @@ public class NodableLinkedList<E>
 		}
 
 		/**
-	     * Compares this node with the specified object for equality.  Returns
-	     * {@code true} if and only if the specified object is also a node,
-	     * and both pairs of elements in the two nodes are <i>equal</i>.
-	     * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
-	     * {@code (e1==null ? e2==null : e1.equals(e2))}.)
-	     *
-	     * @param object object to be compared for equality with this node
-	     * @return {@code true} if the specified object is equal to this node
-	     */
+		 * Compares this node with the specified object for equality.  Returns
+		 * {@code true} if and only if the specified object is also a node,
+		 * and both pairs of elements in the two nodes are <i>equal</i>.
+		 * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
+		 * {@code (e1==null ? e2==null : e1.equals(e2))}.)
+		 *
+		 * @param object object to be compared for equality with this node
+		 * @return {@code true} if the specified object is equal to this node
+		 */
 		@Override
 		public boolean equals(Object object) {
 			if (this == object) return true;
@@ -2842,20 +2842,20 @@ public class NodableLinkedList<E>
 			final Object thatElement = ((Node<?>)object).element();
 			return (thisElement==null) ? thatElement==null : thisElement.equals(thatElement);
 		}
-		
-        /**
-         * Compares this node to the specified node for order. Returns a negative integer,
-         * zero, or a positive integer as this node is less than, equal
-         * to, or greater than the specified node.
-         *
-         * @param node node to be compared to this node.
-         * @return a negative integer, zero, or a positive integer as the
-         *         this node is less than, equal to, or greater than the
-         *         specified node.
-         * @throws NullPointerException if the specified node is null
-         * @throws ClassCastException if the nodes' element types prevent them from
-         *         being compared.
-         */
+
+		/**
+		 * Compares this node to the specified node for order. Returns a negative integer,
+		 * zero, or a positive integer as this node is less than, equal
+		 * to, or greater than the specified node.
+		 *
+		 * @param node node to be compared to this node.
+		 * @return a negative integer, zero, or a positive integer as the
+		 *         this node is less than, equal to, or greater than the
+		 *         specified node.
+		 * @throws NullPointerException if the specified node is null
+		 * @throws ClassCastException if the nodes' element types prevent them from
+		 *         being compared.
+		 */
 		@SuppressWarnings("unchecked")
 		@Override
 		public int compareTo(Node<E> node) {
@@ -2869,16 +2869,16 @@ public class NodableLinkedList<E>
 			}
 		}
 
-        /**
-         * Returns the hash code value of this node.
-         *
-         * @return the hash code value of this node
-         */
+		/**
+		 * Returns the hash code value of this node.
+		 *
+		 * @return the hash code value of this node
+		 */
 		@Override
 		public int hashCode() {
 			return 31 + ((element()==null) ? 0 : element().hashCode());
 		}
-		
+
 	} // Node
 
 } // NodableLinkedList
