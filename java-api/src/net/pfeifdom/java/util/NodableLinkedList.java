@@ -2009,7 +2009,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
         @Override
         public ListIterator<Node<E>> listIterator(int index) {
             if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
-            return new LinkedNodesListIterator(index);
+            return linkedNodesListIterator(index);
         }
 
         /**
@@ -2042,7 +2042,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
          */
         public ListIterator<Node<E>> listIterator(Node<E> node) {
             if (node == null || node.linkedNodes != this) throw new IllegalArgumentException("Specified node is either null or not linked to this list");
-            return new LinkedNodesListIterator(node);
+            return linkedNodesListIterator(node);
         }
 
         /**
@@ -2075,18 +2075,18 @@ implements List<E>, Deque<E>, Cloneable, Serializable
          */
         @Override
         public Spliterator<Node<E>> spliterator() {
-            return new LinkedNodesSpliterator();
+            return linkedNodesSpliterator();
         }		
-
-        private ListIteratorFramework listIteratorFramework(int index) {
-            return new ListIteratorFramework(index);
+        
+        private LinkedNodesListIterator linkedNodesListIterator(int index) {
+            return new LinkedNodesListIterator(index);
         }
+        
+        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node) {
+            return new LinkedNodesListIterator(node);
+        }        
 
-        private ListIteratorFramework listIteratorFramework(Node<E> node) {
-            return new ListIteratorFramework(node);
-        }
-
-        private class ListIteratorFramework {
+        private class LinkedNodesListIterator implements ListIterator<Node<E>> {
 
             private long cursorIndex;
             private Node<E> cursorNode;
@@ -2094,7 +2094,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
             private int expectedModCount = modCount;
             private boolean relativeIndex = false;
 
-            private ListIteratorFramework(int index) {
+            private LinkedNodesListIterator(int index) {
                 //assert (index < -1 || index > size) : "index out of range; index=" + index + ", size=" + size;
                 if (index == -1) { // start at last node
                     cursorIndex = size - 1L;
@@ -2102,7 +2102,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 } else if (index <= (size >> 1)) {
                     cursorIndex = -1L;
                     cursorNode = headSentinel;
-                    while (cursorIndex < index - 1) next();				
+                    while (cursorIndex < index - 1) next();             
                 } else {
                     cursorIndex = size - 1L;
                     cursorNode = tailSentinel.previous;
@@ -2111,29 +2111,35 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 targetNode = null;
             }
 
-            private ListIteratorFramework(Node<E> node) {
+            private LinkedNodesListIterator(Node<E> node) {
                 //assert (node == null) : "Specified node is null";
                 //assert (node.linkedNodes != LinkedNodes.this) : "Specified node is not linked to this list";
                 cursorIndex = -1L;
                 cursorNode = node.previous;
                 targetNode = null;
                 relativeIndex = true;
+            }            
+            
+            private Node<E> targetNode() {
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
+                if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                return targetNode;
             }
 
-            // @Override
-            private boolean hasNext() {
+            @Override
+            public boolean hasNext() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 return cursorNode.next != tailSentinel;
             }
 
-            // @Override
-            private boolean hasPrevious() {
+            @Override
+            public boolean hasPrevious() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 return cursorNode != headSentinel;
             }
 
-            // @Override
-            private Node<E> next() {
+            @Override
+            public Node<E> next() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 targetNode = null;
                 if (!hasNext()) throw new NoSuchElementException();
@@ -2143,8 +2149,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 return targetNode;
             }
 
-            // @Override
-            private Node<E> previous() {
+            @Override
+            public Node<E> previous() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 targetNode = null;
                 if (!hasPrevious()) throw new NoSuchElementException();
@@ -2154,8 +2160,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 return targetNode;
             }		
 
-            // @Override
-            private int nextIndex() {
+            @Override
+            public int nextIndex() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (relativeIndex) {
                     if (!hasNext()) return (size >= Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)size;
@@ -2169,8 +2175,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 return (int)(cursorIndex+1);
             }
 
-            // @Override
-            private int previousIndex() {
+            @Override
+            public int previousIndex() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (relativeIndex) {
                     if (!hasPrevious()) return (size <= Integer.MIN_VALUE) ? Integer.MIN_VALUE : -(int)size;
@@ -2184,8 +2190,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 return (int)cursorIndex;
             }
 
-            // @Override
-            private void add(Node<E> node) {
+            @Override
+            public void add(Node<E> node) {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node is null or already an element of a list");
                 addNodeAfter(node, cursorNode);
@@ -2195,8 +2201,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 expectedModCount = modCount;
             }
 
-            // @Override
-            private void remove() {
+            @Override
+            public void remove() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
                 if (cursorNode == targetNode) {
@@ -2208,21 +2214,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 expectedModCount = modCount;
             }
 
-            //@Override
-            private void forEachRemaining(Consumer<? super Node<E>> action) {
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (action == null) throw new NullPointerException();
-                while (modCount == expectedModCount && cursorNode.next != tailSentinel) {
-                    action.accept(cursorNode.next);
-                    cursorNode = cursorNode.next;
-                    cursorIndex++;
-                    targetNode = cursorNode;					
-                }
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-            }
-
-            // @Override
-            private void set(Node<E> node) {
+            @Override
+            public void set(Node<E> node) {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
                 if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");
@@ -2232,169 +2225,24 @@ implements List<E>, Deque<E>, Cloneable, Serializable
                 expectedModCount = modCount;
             }
 
-            // @Override
-            private void set(E element) {
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
-                targetNode.set(element);
-            }			
-
-        } // ListIteratorFramework
-
-        private SpliteratorFramework spliteratorFramework() {
-            return new SpliteratorFramework();
-        }
-
-        private class SpliteratorFramework {
-
-            private static final int BATCH_INCREMENT = 1 << 10;
-            private static final int MAX_BATCH_SIZE  = 1 << 25;
-
-            private Node<E> cursor = headSentinel;
-            private long remainingSize = -1L;
-            private int batchSize = 0;
-            private int expectedModCount;
-
-            private SpliteratorFramework() {
-            }
-
-            private void bind() {
-                this.remainingSize = size;
-                this.expectedModCount = modCount;
-            }
-
-            // @Override
-            private long estimatedSize() {
-                if (remainingSize < 0L) bind();
-                return remainingSize;
-            }
-
-            // @Override
-            private boolean tryAdvance(Consumer<? super Node<E>> action) {
-                if (remainingSize < 0L) bind();
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (action == null) throw new NullPointerException();
-                if (cursor.next == tailSentinel || remainingSize < 1L) return false;
-                remainingSize--;
-                cursor = cursor.next;
-                action.accept(cursor);
-                return true;
-            }
-
-            // @Override
-            private void forEachRemaining(Consumer<? super Node<E>> action) {
-                if (remainingSize < 0L) bind();
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (action == null) throw new NullPointerException();
-                Node<E> node = cursor;
-                while (node.next != tailSentinel && remainingSize-- > 0L) {
-                    node = node.next;
-                    action.accept(node);					
-                }
-                cursor = node;
-                if (modCount != expectedModCount) throw new ConcurrentModificationException();
-            }
-
-            // @Override
-            private Spliterator<Node<E>> trySplitNodes() {
-                final Object[] array = trySplit( (node) -> { return node; } );
-                return (array == null) ? null : Spliterators.spliterator(array, 0, batchSize, Spliterator.ORDERED | Spliterator.NONNULL);
-            }
-
-            // @Override
-            private Spliterator<E> trySplitElements() {
-                final Object[] array = trySplit( (node) -> { return node.element; } );
-                return (array == null) ? null : Spliterators.spliterator(array, 0, batchSize, Spliterator.ORDERED);
-            }
-
-            private Object[] trySplit(Function<Node<E>, Object> action) {
-                if (remainingSize < 0L) bind();
-                if (remainingSize <= 1L) return null;
-                int arraySize = batchSize + BATCH_INCREMENT;
-                if (arraySize > remainingSize) arraySize = (int)remainingSize;
-                if (arraySize > MAX_BATCH_SIZE) arraySize = MAX_BATCH_SIZE;
-                Object[] array = new Object[arraySize];
-                int index = 0;
-                Node<E> node = cursor;
-                while (index < arraySize && node.next != tailSentinel) {
-                    node = node.next;
-                    array[index++] = action.apply(node);					
-                }				
-                cursor = node;
-                batchSize = index;
-                remainingSize =- batchSize;
-                return array;
-            }			
-
-        } // SpliteratorFramework
-
-        private class LinkedNodesListIterator implements ListIterator<Node<E>> {
-
-            private final ListIteratorFramework listIterator;
-
-            public LinkedNodesListIterator(int index) {
-                listIterator = listIteratorFramework(index);
-            }
-
-            private LinkedNodesListIterator(Node<E> node) {
-                listIterator = listIteratorFramework(node);
-            }
-
-            @Override
-            public boolean hasNext() {
-                return listIterator.hasNext();
-            }
-
-            @Override
-            public boolean hasPrevious() {
-                return listIterator.hasPrevious();
-            }
-
-            @Override
-            public Node<E> next() {
-                return listIterator.next();
-            }
-
-            @Override
-            public Node<E> previous() {
-                return listIterator.previous();
-            }		
-
-            @Override
-            public int nextIndex() {
-                return listIterator.nextIndex();
-            }
-
-            @Override
-            public int previousIndex() {
-                return listIterator.previousIndex();
-            }
-
-            @Override
-            public void add(Node<E> node) {
-                listIterator.add(node);
-            }
-
-            @Override
-            public void remove() {
-                listIterator.remove();
-            }
-
-            @Override
-            public void set(Node<E> node) {
-                listIterator.set(node);
-            }
-
             @Override
             public void forEachRemaining(Consumer<? super Node<E>> action) {
-                listIterator.forEachRemaining(action);
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
+                if (action == null) throw new NullPointerException();
+                while (modCount == expectedModCount && cursorNode.next != tailSentinel) {
+                    action.accept(cursorNode.next);
+                    cursorNode = cursorNode.next;
+                    cursorIndex++;
+                    targetNode = cursorNode;                    
+                }
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
             }
 
         } // LinkedNodesListIterator
 
         private class LinkedNodesDescendingIterator implements Iterator<Node<E>> {
 
-            private final ListIteratorFramework listIterator = listIteratorFramework(-1); // start at end of list
+            private final LinkedNodesListIterator listIterator = linkedNodesListIterator(-1); // start at end of list
 
             @Override
             public boolean hasNext() {
@@ -2412,10 +2260,32 @@ implements List<E>, Deque<E>, Cloneable, Serializable
             }
 
         } // LinkedNodesDescendingIterator
+        
+        private LinkedNodesSpliterator linkedNodesSpliterator() {
+            return new LinkedNodesSpliterator();
+        }
 
         private class LinkedNodesSpliterator implements Spliterator<Node<E>> {
 
-            private final SpliteratorFramework spliterator = spliteratorFramework();
+            private static final int BATCH_INCREMENT = 1 << 10;
+            private static final int MAX_BATCH_SIZE  = 1 << 25;
+
+            private Node<E> cursor = headSentinel;
+            private long remainingSize = -1L;
+            private int batchSize = 0;
+            private int expectedModCount;
+
+            private LinkedNodesSpliterator() {
+            }
+
+            private void bind() {
+                this.remainingSize = size;
+                this.expectedModCount = modCount;
+            }
+            
+            private int batchSize() {
+                return batchSize;
+            }
 
             @Override
             public int characteristics() {
@@ -2424,23 +2294,60 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
             @Override
             public long estimateSize() {
-                return spliterator.estimatedSize();
+                if (remainingSize < 0L) bind();
+                return remainingSize;
             }
 
             @Override
             public boolean tryAdvance(Consumer<? super Node<E>> action) {
-                return spliterator.tryAdvance(action);
+                if (remainingSize < 0L) bind();
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
+                if (action == null) throw new NullPointerException();
+                if (cursor.next == tailSentinel || remainingSize < 1L) return false;
+                remainingSize--;
+                cursor = cursor.next;
+                action.accept(cursor);
+                return true;
             }
 
             @Override
             public void forEachRemaining(Consumer<? super Node<E>> action) {
-                spliterator.forEachRemaining(action);
+                if (remainingSize < 0L) bind();
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
+                if (action == null) throw new NullPointerException();
+                Node<E> node = cursor;
+                while (node.next != tailSentinel && remainingSize-- > 0L) {
+                    node = node.next;
+                    action.accept(node);                    
+                }
+                cursor = node;
+                if (modCount != expectedModCount) throw new ConcurrentModificationException();
             }
 
             @Override
             public Spliterator<Node<E>> trySplit() {
-                return spliterator.trySplitNodes();
+                final Object[] array = trySplit( (node) -> { return node; } );
+                return (array == null) ? null : Spliterators.spliterator(array, 0, batchSize, Spliterator.ORDERED | Spliterator.NONNULL);
             }
+
+            private Object[] trySplit(Function<Node<E>, Object> action) {
+                if (remainingSize < 0L) bind();
+                if (remainingSize <= 1L) return null;
+                int arraySize = batchSize + BATCH_INCREMENT;
+                if (arraySize > remainingSize) arraySize = (int)remainingSize;
+                if (arraySize > MAX_BATCH_SIZE) arraySize = MAX_BATCH_SIZE;
+                Object[] array = new Object[arraySize];
+                int index = 0;
+                Node<E> node = cursor;
+                while (index < arraySize && node.next != tailSentinel) {
+                    node = node.next;
+                    array[index++] = action.apply(node);                    
+                }               
+                cursor = node;
+                batchSize = index;
+                remainingSize =- batchSize;
+                return array;
+            }            
 
         } // LinkedNodesSpliterator		
 
@@ -2448,14 +2355,14 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
     private class NodableLinkedListListIterator implements ListIterator<E> {
 
-        private final LinkedNodes.ListIteratorFramework listIterator;
+        private final LinkedNodes.LinkedNodesListIterator listIterator;
 
-        public NodableLinkedListListIterator(int index) {
-            listIterator = linkedNodes.listIteratorFramework(index);
+        private NodableLinkedListListIterator(int index) {
+            listIterator = linkedNodes.linkedNodesListIterator(index);
         }
 
-        public NodableLinkedListListIterator(Node<E> node) {
-            listIterator = linkedNodes.listIteratorFramework(node);
+        private NodableLinkedListListIterator(Node<E> node) {
+            listIterator = linkedNodes.linkedNodesListIterator(node);
         }
 
         @Override
@@ -2500,7 +2407,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
         @Override
         public void set(E element) {
-            listIterator.set(element);
+            listIterator.targetNode().set(element);
         }
 
         @Override
@@ -2512,7 +2419,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
     private class NodableLinkedListDescendingIterator implements Iterator<E> {
 
-        private final LinkedNodes.ListIteratorFramework listIterator = linkedNodes.listIteratorFramework(-1); // start at end of list
+        private final LinkedNodes.LinkedNodesListIterator listIterator = linkedNodes.linkedNodesListIterator(-1); // start at end of list
 
         @Override
         public boolean hasNext() {
@@ -2533,7 +2440,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
     private class NodableLinkedListSpliterator implements Spliterator<E> {
 
-        private final LinkedNodes.SpliteratorFramework spliterator = linkedNodes.spliteratorFramework();
+        private final LinkedNodes.LinkedNodesSpliterator spliterator = linkedNodes.linkedNodesSpliterator();
 
         @Override
         public int characteristics() {
@@ -2542,7 +2449,7 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
         @Override
         public long estimateSize() {
-            return spliterator.estimatedSize();
+            return spliterator.estimateSize();
         }
 
         @Override
@@ -2557,7 +2464,8 @@ implements List<E>, Deque<E>, Cloneable, Serializable
 
         @Override
         public Spliterator<E> trySplit() {
-            return spliterator.trySplitElements();
+            final Object[] array = spliterator.trySplit( (node) -> { return node.element; } );
+            return (array == null) ? null : Spliterators.spliterator(array, 0, spliterator.batchSize(), Spliterator.ORDERED);
         }
 
     } // NodableLinkedListSpliterator
