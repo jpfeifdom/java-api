@@ -70,7 +70,7 @@ public interface NodableList<E> extends List<E> {
      * specified collection's iterator. if the specified node is null,
      * the elements will be appended to the end of this list.
      *
-     * @param T type of element held in the specified node
+     * @param <T> type of element held in the specified node
      * @param node node the specified collection is to be inserted before
      * @param c collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
@@ -91,7 +91,7 @@ public interface NodableList<E> extends List<E> {
      * if the specified node is {@code null}, the list-iterator will
      * start with the first node in this list.
      *
-     * @param T type of element held in the specified node
+     * @param <T> type of element held in the specified node
      * @param node first node whose element is to be returned from the list-iterator (by a call to {@code next})
      * @return a ListIterator of the elements in this list (in proper
      *         sequence), starting at the specified node in the list
@@ -134,7 +134,7 @@ public interface NodableList<E> extends List<E> {
      * A {@code ConcurrentModificationException} is thrown for any operation on
      * the returned sublist if this list is structurally modified.
      *
-     * @param T type of element held in the specified first and last nodes
+     * @param <T> type of element held in the specified first and last nodes
      * @param firstNode low endpoint (inclusive) of the subList
      * @param lastNode high endpoint (inclusive) of the subList
      * @return a view of the specified range within this list

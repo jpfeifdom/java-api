@@ -196,7 +196,6 @@ public class NodableLinkedList<E>
      * @throws ClassNotFoundException Class of a serialized object cannot be found.
      * @throws IOException I/O error occurred while reading from stream
      */
-    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         stream.defaultReadObject();	
         try {
@@ -207,7 +206,11 @@ public class NodableLinkedList<E>
             throw new AssertionError("linkedNodesField not initialized? "+e.getMessage(), e);
         }
         long nodeCount = stream.readLong();
-        while (nodeCount-- > 0) addLast((E)stream.readObject());			
+        while (nodeCount-- > 0) {
+            @SuppressWarnings("unchecked")
+            final E element = (E)stream.readObject();
+            addLast(element);			
+        }
     }	
 
     /**
@@ -552,7 +555,7 @@ public class NodableLinkedList<E>
      * Note that {@code addAll(null, Collection)} is identical in function to
      * {@code addAll(Collection)}.
      *
-     * @param T type of element held in the specified node
+     * @param <T> type of element held in the specified node
      * @param node node the specified collection is to be inserted before
      * @param elements collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
@@ -1011,14 +1014,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
-        if (fromIndex < 0) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-        if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-        if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
-        final long size = toIndex - fromIndex;
-        if (fromIndex == longSize()) return new NodableLinkedListSubList(linkedNodes.tailSentinel.previous, linkedNodes.tailSentinel, null, size);
-        final Node<E> headSentinel = linkedNodes.get(fromIndex).previous;
-        final Node<E> tailSentinel = (size == 0L) ? headSentinel.next : null; // tailSentinel is currently unknown
-        return new NodableLinkedListSubList(headSentinel, tailSentinel, null, size);
+        return linkedNodes.newSubList(fromIndex, toIndex);
     }
     
     /**
@@ -1064,7 +1060,7 @@ public class NodableLinkedList<E>
      * A {@code ConcurrentModificationException} is thrown for any operation on
      * the returned sublist if this list is structurally modified.
      *
-     * @param T type of element held in the specified first and last nodes
+     * @param <T> type of element held in the specified first and last nodes
      * @param firstNode low endpoint (inclusive) of the subList
      * @param lastNode high endpoint (inclusive) of the subList
      * @return a view of the specified range within this list
@@ -1074,18 +1070,10 @@ public class NodableLinkedList<E>
     @Override
     public <T> NodableList<E> subList(Node<T> firstNode, Node<T> lastNode) {
         @SuppressWarnings("unchecked")
-        Node<E> firstNodeE = (Node<E>)firstNode;
+        final Node<E> firstNodeE = (Node<E>)firstNode;
         @SuppressWarnings("unchecked")
-        Node<E> lastNodeE = (Node<E>)lastNode;
-        if (firstNodeE == null) firstNodeE = linkedNodes.headSentinel.next;
-        if (lastNodeE == null) lastNodeE = linkedNodes.tailSentinel.previous;
-        if (firstNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
-        if (lastNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
-        if (lastNodeE.next == firstNodeE && firstNodeE != linkedNodes.headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-        final Node<E> headSentinel = firstNodeE.previous;
-        final Node<E> tailSentinel = lastNodeE.next;
-        final long size = (headSentinel.next == tailSentinel) ? 0L : -1L; // size is unknown
-        return new NodableLinkedListSubList(headSentinel, tailSentinel, null, size);
+        final Node<E> lastNodeE = (Node<E>)lastNode;
+        return linkedNodes.newSubList(firstNodeE, lastNodeE);
     }    
 
     /**
@@ -1220,7 +1208,7 @@ public class NodableLinkedList<E>
      * than risking arbitrary, non-deterministic behavior at an undetermined
      * time in the future.
      *
-     * @param T type of element held in the specified node
+     * @param <T> type of element held in the specified node
      * @param node node of the first element to be returned from the list-iterator
      *             (by a call to {@code next})
      * @return a ListIterator of the elements in this list (in proper
@@ -1659,7 +1647,7 @@ public class NodableLinkedList<E>
          * Note that {@code addAll(null, Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param T type of element held in the specified node
+         * @param <T> type of element held in the specified node
          * @param node node the specified collection is to be inserted before
          * @param nodes collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
@@ -1902,11 +1890,12 @@ public class NodableLinkedList<E>
          * @return {@code true} if this list contained the specified element
          */
         @Override
-        @SuppressWarnings("unchecked")
         public boolean remove(Object o) {
             if (!Node.class.isInstance(o)) return false;
-            if (((Node<E>) o).linkedNodes != this) return false;
-            removeNode((Node<E>) o);
+            @SuppressWarnings("unchecked")
+            final Node<E> node = (Node<E>)o;
+            if (node.linkedNodes != this) return false;
+            removeNode(node);
             return true;		
         }
 
@@ -2090,14 +2079,18 @@ public class NodableLinkedList<E>
          */        
         @Override
         public List<Node<E>> subList(int fromIndex, int toIndex) {
+            return newSubList(fromIndex, toIndex).linkedNodesSubList;
+        }
+        
+        private SubList newSubList(int fromIndex, int toIndex) {
             if (fromIndex < 0) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
             if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
             if (fromIndex > toIndex) throw new IllegalArgumentException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
             final long size = toIndex - fromIndex;
-            if (fromIndex == longSize()) return new LinkedNodesSubList(tailSentinel.previous, tailSentinel, null, size);
+            if (fromIndex == longSize()) return new SubList(tailSentinel.previous, tailSentinel, null, size);
             final Node<E> headSentinel = get(fromIndex).previous;
             final Node<E> tailSentinel = (size == 0L) ? headSentinel.next : null; // tailSentinel is currently unknown
-            return new LinkedNodesSubList(headSentinel, tailSentinel, null, size);
+            return new SubList(headSentinel, tailSentinel, null, size);
         }
         
         /**
@@ -2143,7 +2136,7 @@ public class NodableLinkedList<E>
          * A {@code ConcurrentModificationException} is thrown for any operation on
          * the returned sublist if this list is structurally modified.
          *
-         * @param T type of element held in the specified first and last nodes
+         * @param <T> type of element held in the specified first and last nodes
          * @param firstNode low endpoint (inclusive) of the subList
          * @param lastNode high endpoint (inclusive) of the subList
          * @return a view of the specified range within this list
@@ -2153,18 +2146,22 @@ public class NodableLinkedList<E>
         @Override
         public <T> NodableList<Node<E>> subList(Node<T> firstNode, Node<T> lastNode) {
             @SuppressWarnings("unchecked")
-            Node<E> firstNodeE = (Node<E>)firstNode;
+            final Node<E> firstNodeE = (Node<E>)firstNode;
             @SuppressWarnings("unchecked")
-            Node<E> lastNodeE = (Node<E>)lastNode;
-            if (firstNodeE == null) firstNodeE = this.headSentinel.next;
-            if (lastNodeE == null) lastNodeE = this.tailSentinel.previous;
-            if (firstNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
-            if (lastNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
-            if (lastNodeE.next == firstNode && firstNodeE != this.headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-            final Node<E> headSentinel = firstNodeE.previous;
-            final Node<E> tailSentinel = lastNodeE.next;
+            final Node<E> lastNodeE = (Node<E>)lastNode;
+            return newSubList(firstNodeE, lastNodeE).linkedNodesSubList;
+        }
+        
+        private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
+            if (firstNode == null) firstNode = this.headSentinel.next;
+            if (lastNode == null) lastNode = this.tailSentinel.previous;
+            if (firstNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
+            if (lastNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
+            if (lastNode.next == firstNode && firstNode != this.headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
+            final Node<E> headSentinel = firstNode.previous;
+            final Node<E> tailSentinel = lastNode.next;
             final long size = (headSentinel.next == tailSentinel) ? 0L : -1L; // size is unknown
-            return new LinkedNodesSubList(headSentinel, tailSentinel, null, size);
+            return new SubList(headSentinel, tailSentinel, null, size);
         }
 
         /**
@@ -2228,7 +2225,7 @@ public class NodableLinkedList<E>
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
             if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
-            //			if (!Node.class.isAssignableFrom(array.getClass().getComponentType())) throw new ArrayStoreException();			
+            //if (!Node.class.isAssignableFrom(array.getClass().getComponentType())) throw new ArrayStoreException();			
             if (array.length < size) array = (T[]) java.lang.reflect.Array.newInstance(array.getClass(), (int)size);
             int index = 0;
             Object[] nodes = array;
@@ -2294,7 +2291,7 @@ public class NodableLinkedList<E>
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
-         * @param T type of element held in the specified node
+         * @param <T> type of element held in the specified node
          * @param node first node to be returned from the list-iterator (by a call to {@code next})
          * @return a ListIterator of the nodes in this list (in proper
          *         sequence), starting at the specified node in the list
@@ -2665,966 +2662,6 @@ public class NodableLinkedList<E>
         } // LinkedNodesSpliterator		
 
     } // LinkedNodes
-    
-    private class LinkedNodesSubList extends AbstractSequentialList<Node<E>> implements NodableList<Node<E>> {
-        
-        //protected int modCount inherited from class java.util.AbstractList (see updateSizeAndModCount)
-        
-        private Node<E> headSentinel;
-        private Node<E> tailSentinel;
-        private LinkedNodesSubList parent;
-        private long size;
-        
-        private LinkedNodesSubList(Node<E> headSentinel, Node<E> tailSentinel, LinkedNodesSubList parent, long size) {
-            //assert (headSentinel == null) : "headSentinel is null";
-            //assert (tailSentinel == null) : "tailSentinel is null";
-            //assert (headSentinel.linkedNodes != linkedNodes) : "headSentinel not linked to this linkedList";
-            //assert (tailSentinel.linkedNodes != linkedNodes) : "tailSentinel not linked to this linkedList";
-            //the tailSentinel(null) and size(-1) may be unknown, but never both at the same time
-            //no guarantee that headSentinel comes before tailSentinel in the parent list
-            this.headSentinel = headSentinel;
-            this.tailSentinel = tailSentinel; 
-            this.parent = parent;
-            this.size = size;
-            this.modCount = NodableLinkedList.this.modCount;
-        }
-
-        private void updateSizeAndModCount(long sizeChange) {
-            LinkedNodesSubList sublist = this;
-            do {
-                if (sublist.sizeIsKnown()) sublist.size += sizeChange;
-                sublist.modCount = NodableLinkedList.this.modCount;
-                sublist = sublist.parent;
-            } while (sublist != null);
-        }
-        
-        private void checkForConcurrentModificationException() {
-            if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
-        }
-        
-        private boolean tailSentinelIsKnown() {
-            return this.tailSentinel != null;
-        }
-        
-        private Node<E> tailSentinel() {
-            if (!tailSentinelIsKnown()) { // tailSentinel unknown?
-                //assert (size < 0) : "sublist size is unknown";
-                long remaining = size;
-                tailSentinel = headSentinel.next;
-                while (remaining > 0 && tailSentinel != linkedNodes.tailSentinel) {
-                    remaining--;
-                    tailSentinel = tailSentinel.next;
-                }
-                if (remaining > 0) throw new IllegalStateException("End of list reached unexpectedly");
-            }
-            return tailSentinel;
-        }
-        
-        private boolean sizeIsKnown() {
-            return size >= 0L;
-        }
-
-        /**
-         * Returns the number of nodes in this sublist.  If this sublist contains more than
-         * Integer.MAX_VALUE nodes, returns Integer.MAX_VALUE.
-         *
-         * @return the number of nodes in this sublist.
-         */
-        @Override
-        public int size() {
-            return (longSize() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)longSize();
-        }
-
-        /**
-         * Returns the number of nodes in this sublist.
-         *
-         * @return the number of nodes in this sublist.
-         */
-        @Override
-        public long longSize() {
-            checkForConcurrentModificationException();
-            if (!sizeIsKnown()) { // size unknown?
-                //assert (tailSentinel == null) : "tail sentinel shouldn't be null";
-                Node<E> node;
-                size = 0L;
-                for (node = headSentinel.next; node != tailSentinel && node != linkedNodes.tailSentinel; node = node.next) size++;
-                if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-            }
-            return size;
-        }
-        
-        @Override
-        public boolean isEmpty() {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown()) return size == 0L;
-            return headSentinel.next == tailSentinel;
-        }
-        
-        @Override
-        public void clear() {
-            checkForConcurrentModificationException();
-            Node<E> node = headSentinel.next;
-            if (sizeIsKnown()) {
-                long remaining = size;
-                while (remaining > 0) {
-                    final Node<E> nodeToRemove = node;
-                    node = node.next;
-                    linkedNodes.removeNode(nodeToRemove);
-                    remaining--;
-                }
-            } else {
-                size = 0L;
-                while (node != tailSentinel && node != linkedNodes.tailSentinel) {
-                    final Node<E> nodeToRemove = node;
-                    node = node.next;
-                    linkedNodes.removeNode(nodeToRemove);
-                    size++;
-                }
-                if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-            }
-            updateSizeAndModCount(size);
-        }
-        
-        private Node<E> getNode(long index) {
-            //assert (index < 0L || index > longSize());
-            //Note, this routine returns the tailSentinel if index = longSize() (the size of the list) or if the list is empty
-            if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
-            Node<E> node;
-            long cursorIndex;
-            if (sizeIsKnown() && tailSentinelIsKnown()) {
-                // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
-                if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                if (index <= ((longSize()) >> 1)) {
-                    cursorIndex = 0L;
-                    node = headSentinel.next;
-                    while (cursorIndex < index) { node = node.next; cursorIndex++; }
-                } else {
-                    cursorIndex = longSize();
-                    node = tailSentinel();
-                    while (cursorIndex > index) { node = node.previous; cursorIndex--; }
-                }
-            } else if (sizeIsKnown()) {
-                // size is known, tailSentinel is unknown
-                if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                cursorIndex = 0L;
-                node = headSentinel.next;
-                while (cursorIndex < index) { node = node.next; cursorIndex++; }
-                if (index == longSize()) this.tailSentinel = node;
-                if (index == longSize()-1) this.tailSentinel = node.next;
-            } else {
-                // size is unknown, tailSentinel is known
-                cursorIndex = 0L;
-                node = headSentinel.next;
-                while (cursorIndex < index && node != tailSentinel && node != linkedNodes.tailSentinel) { node = node.next; cursorIndex++; }
-                if (cursorIndex < index) {
-                    if (node == tailSentinel) {
-                        throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
-                    } else {
-                        throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                    }
-                }
-                if (node == tailSentinel) this.size = cursorIndex;
-                if (node.next == tailSentinel) this.size = cursorIndex + 1;
-            }
-            return node;
-        }
-        
-        private long getIndex(Node<E> node) {
-            long cursorIndex = 0L;
-            Node<E> cursorNode = this.headSentinel.next;
-            if (sizeIsKnown() && tailSentinelIsKnown()) {
-                // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
-                while (cursorNode != node && cursorNode != this.tailSentinel) { cursorIndex++; cursorNode = cursorNode.next; }
-                if (cursorNode == this.tailSentinel) cursorIndex = -1L; // node not found
-            } else if (sizeIsKnown()) {
-                // size is known, tailSentinel is unknown
-                while (cursorNode != node && cursorIndex < longSize()) { cursorIndex++; cursorNode = cursorNode.next; }
-                if (cursorIndex == longSize()-1) this.tailSentinel = cursorNode.next;
-                if (cursorIndex == longSize()) {
-                    this.tailSentinel = cursorNode;
-                    cursorIndex = -1L; // node not found
-                }
-            } else {
-                // size is unknown, tailSentinel is known
-                while (cursorNode != node && cursorNode != this.tailSentinel && cursorNode != linkedNodes.tailSentinel) {
-                    cursorIndex++;
-                    cursorNode = cursorNode.next;
-                }
-                if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1;
-                if (cursorNode == this.tailSentinel) {
-                    this.size = cursorIndex;
-                    cursorIndex = -1L; // node not found
-                }
-            }
-            return cursorIndex;
-        }        
-        
-        @Override
-        public Node<E> get(int index) {
-            checkForConcurrentModificationException();
-            final long getIndex = index;
-            if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
-            Node<E> node = getNode(index);
-            if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
-            return node;        
-        }
-        
-        @Override
-        public int indexOf(Object o) {
-            checkForConcurrentModificationException();
-            if (!Node.class.isInstance(o)) return -1;
-            if (((Node<?>) o).linkedNodes != linkedNodes) return -1;
-            @SuppressWarnings("unchecked")
-            final long index = getIndex(((Node<E>) o));
-            return (index > Integer.MAX_VALUE) ? -1 : (int)index;
-        }
-        
-        @Override
-        public int lastIndexOf(Object o) {
-            return indexOf(o);
-        }
-        
-        @Override
-        public Node<E> set(int index, Node<E> node) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
-            final Node<E> originalNode = get(index);
-            linkedNodes.replaceNode(originalNode, node);
-            updateSizeAndModCount(0L);
-            return originalNode;
-        }
-        
-        @Override
-        public void add(int index, Node<E> node) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node is null or already an element of a list");
-            linkedNodes.addNodeBefore(node, getNode(index));
-            updateSizeAndModCount(1L);
-        }
-        
-        @Override
-        public Node<E> remove(int index) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            final Node<E> node = get(index);
-            linkedNodes.removeNode(node);
-            return node;
-        }
-        
-        @Override
-        public boolean addAll(int index, Collection<? extends Node<E>> nodes) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0 || index > size)) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
-            long collectionSize = 0L;            
-            final Node<E> targetNode = getNode(index);
-            for (Node<E> node: nodes) {
-                if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                linkedNodes.addNodeBefore(node, targetNode);
-                collectionSize++;
-            }
-            updateSizeAndModCount(collectionSize);
-            return collectionSize > 0L;
-        }
-        
-        @Override
-        public boolean addAll(Collection<? extends Node<E>> nodes) {
-            checkForConcurrentModificationException();
-            final long initialSize = longSize();
-            final Node<E> targetNode = getNode(longSize());
-            for (Node<E> node: nodes) linkedNodes.addNodeBefore(node, targetNode);
-            updateSizeAndModCount(longSize() - initialSize);
-            return longSize() != initialSize;
-        }
-        
-        @Override
-        public <T> boolean addAll(Node<T> targetNode, Collection<? extends Node<E>> nodes) {
-            checkForConcurrentModificationException();
-            if (nodes == null) return addAll(nodes);
-            if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> targetNodeE = (Node<E>)targetNode;
-            if (getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
-            long collectionSize = 0L;
-            for (Node<E> node: nodes) {
-                if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                linkedNodes.addNodeBefore(node, targetNodeE);
-                collectionSize++;
-            }
-            return collectionSize > 0L;
-        }
-        
-        @Override
-        public List<Node<E>> subList(int fromIndex, int toIndex) {
-            checkForConcurrentModificationException();
-            if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-            if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-            if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
-            final long size = toIndex - fromIndex;
-            final Node<E> headSentinel = getNode(fromIndex).previous;
-            final Node<E> tailSentinel = (size == 0L) ? headSentinel.next : null; // tailSentinel is unknown
-            return new LinkedNodesSubList(headSentinel, tailSentinel, this, size);
-        }
-        
-        public <T> NodableList<Node<E>> subList(Node<T> firstNode, Node<T> lastNode) {
-            checkForConcurrentModificationException();
-            @SuppressWarnings("unchecked")
-            Node<E> firstNodeE = (Node<E>)firstNode;
-            @SuppressWarnings("unchecked")
-            Node<E> lastNodeE = (Node<E>)lastNode;
-            if (firstNodeE == null) firstNodeE = headSentinel.next;
-            if (lastNodeE == null) lastNodeE = tailSentinel().previous;
-            if (firstNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
-            if (lastNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
-            if (lastNodeE.next == firstNodeE && firstNodeE != headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-            long size = 0;
-            boolean foundFirstNode = false;
-            boolean foundLastNode = false;
-            for (Node<E> node = headSentinel.next; node != tailSentinel(); node = node.next) {
-                if (node == firstNodeE) foundFirstNode = true;
-                if (node == lastNodeE) { foundLastNode = true; break; }
-                if (foundFirstNode) size++;
-            }
-            if (size > 0) {
-                if (foundLastNode && !foundFirstNode) throw new IllegalArgumentException(
-                        "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
-                if (!foundFirstNode) throw new IllegalArgumentException("specified first node is not part of this sublist");
-                if (!foundLastNode) throw new IllegalArgumentException("specified last node is not part of this sublist");
-            }
-            return new LinkedNodesSubList(firstNodeE.previous, lastNodeE.next, this, size);
-        }
-        
-        @Override
-        public ListIterator<Node<E>> listIterator() {
-            return listIterator(0);
-        }
-        
-        @Override
-        public ListIterator<Node<E>> listIterator(int index) {
-            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            return linkedNodesSubListIterator(index);
-        }
-        
-        @Override
-        public <T> ListIterator<Node<E>> listIterator(Node<T> node) {
-            if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> nodeE = (Node<E>)node;
-            return linkedNodesSubListIterator(nodeE);
-        }            
-        
-        private LinkedNodesSubListIterator linkedNodesSubListIterator(long index) {
-            checkForConcurrentModificationException();
-            Node<E> node;
-            if (index < 0L) {
-                index = longSize();
-                node = tailSentinel();                
-            } else {
-                node = getNode(index);
-            }
-            return new LinkedNodesSubListIterator(index, node, this.headSentinel, this.tailSentinel, this.size);
-        }
-        
-        private LinkedNodesSubListIterator linkedNodesSubListIterator(Node<E> node) {
-            checkForConcurrentModificationException();
-            if (node == null) return new LinkedNodesSubListIterator(this.headSentinel.next, this.headSentinel, this.tailSentinel, this.size);;
-            //assert (node.linkedNodes != linkedNodes) : "node not linked to this list";
-            if (getIndex(node) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
-            return new LinkedNodesSubListIterator(node, this.headSentinel, this.tailSentinel, this.size);
-        }            
-        
-        private class LinkedNodesSubListIterator implements ListIterator<Node<E>> {
-            
-            private LinkedNodes.LinkedNodesListIterator listIterator;
-            
-            // size(-1) or tailSentinel(null) might be unknown but not both at the same time.
-            // tailSentinel might also come before headSentinel in the list.
-            private long size; // unknown if < 0
-            private Node<E> tailSentinel; // unknown if null
-            
-            private LinkedNodesSubListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
-                //assert (index < 0 || index > longSize()) : "index out of range; index=" + index + ", size=" + longSize();
-                //assert (node == null || node.linkedNodes != linkedNodes) : "Specified node is null or is not linked to this list";
-                //assert (headSentinel == null || headSentinel.linkedNodes != linkedNodes) : "head sentinel is null or is not linked to this list";
-                //assert (tailSentinel == null || tailSentinel.linkedNodes != linkedNodes) : "tail sentinel is null or is not linked to this list";
-                //not guaranteed that the tailSentinel is known
-                //not guaranteed that the tailSentinel, if known, comes after the headSentinel in the list
-                //guaranteed that the node comes after the headSentinel in the list
-                //                         and before the tailSentinel unless the tailSentinel comes before the headSentinel
-                this.tailSentinel = tailSentinel;
-                this.size = size;
-                this.listIterator = linkedNodes.linkedNodesListIterator(index, node, headSentinel, knownTailSentinel(tailSentinel));
-                // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
-            }
-            
-            private LinkedNodesSubListIterator(Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
-                this.tailSentinel = tailSentinel;
-                this.size = size;
-                this.listIterator = linkedNodes.linkedNodesListIterator(node, headSentinel, knownTailSentinel(tailSentinel));
-                // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
-            }
-            
-            private Node<E> knownTailSentinel(Node<E> tailSentinel) {
-                if (tailSentinel != null) return tailSentinel;
-                LinkedNodesSubList sublist = LinkedNodesSubList.this;
-                while (sublist != null) {
-                    if (sublist.tailSentinel != null) break;
-                    sublist = sublist.parent;
-                }
-                if (sublist == null) return null;
-                return sublist.tailSentinel;
-            }
-            
-            @Override
-            public boolean hasNext() {
-                checkForConcurrentModificationException();
-                if (size >= 0 && listIterator.cursorIndex() >= (size - 1L)) return false;
-                final boolean hasNext = listIterator.hasNext();
-                if (tailSentinel != null) {
-                    if (hasNext) {
-                        if (listIterator.cursorNode().next == tailSentinel) return false;
-                    } else {
-                        if (listIterator.cursorNode().next != tailSentinel) {
-                            throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                        }
-                    }
-                }
-                return hasNext;
-            }
-
-            @Override
-            public boolean hasPrevious() {
-                return listIterator.hasPrevious();
-            }
-
-            @Override
-            public Node<E> next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                return listIterator.next();
-            }
-
-            @Override
-            public Node<E> previous() {
-                return listIterator.previous();
-            }       
-
-            @Override
-            public int nextIndex() {
-                return listIterator.nextIndex();
-            }
-
-            @Override
-            public int previousIndex() {
-                return listIterator.previousIndex();
-            }
-
-            @Override
-            public void add(Node<E> node) {
-                listIterator.add(node);
-                updateSizeAndModCount(1L);
-            }
-
-            @Override
-            public void remove() {
-                listIterator.remove();
-                updateSizeAndModCount(-1L);
-            }
-
-            @Override
-            public void set(Node<E> node) {
-                listIterator.set(node);
-                updateSizeAndModCount(0L);
-            }
-
-            @Override
-            //public void forEachRemaining(Consumer<? super Node<E>> action) {
-            //    listIterator.forEachRemaining( (node) -> { action.accept(node); } );
-            //}
-            public void forEachRemaining(Consumer<? super Node<E>> action) {
-                checkForConcurrentModificationException();
-                if (action == null) throw new NullPointerException();
-                while (hasNext()) {
-                    action.accept(next());
-                }
-                checkForConcurrentModificationException();
-            }
-            
-        } // LinkedNodesSubListIterator
-        
-    } // LinkedNodesSubList
-    
-    private class NodableLinkedListSubList extends AbstractSequentialList<E> implements NodableList<E> {
-        
-        //protected int modCount inherited from class java.util.AbstractList (see updateSizeAndModCount)
-        
-        private Node<E> headSentinel;
-        private Node<E> tailSentinel;
-        private NodableLinkedListSubList parent;
-        private long size;
-        
-        private NodableLinkedListSubList(Node<E> headSentinel, Node<E> tailSentinel, NodableLinkedListSubList parent, long size) {
-            //assert (headSentinel == null) : "headSentinel is null";
-            //assert (tailSentinel == null) : "tailSentinel is null";
-            //assert (headSentinel.linkedNodes != linkedNodes) : "headSentinel not linked to this linkedList";
-            //assert (tailSentinel.linkedNodes != linkedNodes) : "tailSentinel not linked to this linkedList";
-            //the tailSentinel(null) and size(-1) may be unknown, but never both at the same time
-            //no guarantee that tailSentinel comes after headSentinel in the parent list
-            this.headSentinel = headSentinel;
-            this.tailSentinel = tailSentinel; 
-            this.parent = parent;
-            this.size = size;
-            this.modCount = NodableLinkedList.this.modCount;
-        }
-
-        private void updateSizeAndModCount(long sizeChange) {
-            NodableLinkedListSubList sublist = this;
-            do {
-                if (sublist.sizeIsKnown()) sublist.size += sizeChange;
-                sublist.modCount = NodableLinkedList.this.modCount;
-                sublist = sublist.parent;
-            } while (sublist != null);
-        }
-        
-        private void checkForConcurrentModificationException() {
-            if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
-        }
-        
-        private boolean tailSentinelIsKnown() {
-            return this.tailSentinel != null;
-        }
-        
-        private Node<E> tailSentinel() {
-            if (!tailSentinelIsKnown()) { // tailSentinel unknown?
-                //assert (size < 0) : "sublist size is unknown";
-                long remaining = size;
-                tailSentinel = headSentinel.next;
-                while (remaining > 0 && tailSentinel != linkedNodes.tailSentinel) {
-                    remaining--;
-                    tailSentinel = tailSentinel.next;
-                }
-                if (remaining > 0) throw new IllegalStateException("End of list reached unexpectedly");
-            }
-            return tailSentinel;
-        }
-        
-        private boolean sizeIsKnown() {
-            return size >= 0L;
-        }
-
-        /**
-         * Returns the number of nodes in this sublist.  If this sublist contains more than
-         * Integer.MAX_VALUE nodes, returns Integer.MAX_VALUE.
-         *
-         * @return the number of nodes in this sublist.
-         */
-        @Override
-        public int size() {
-            return (longSize() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)longSize();
-        }
-
-        /**
-         * Returns the number of nodes in this sublist.
-         *
-         * @return the number of nodes in this sublist.
-         */
-        @Override
-        public long longSize() {
-            checkForConcurrentModificationException();
-            if (!sizeIsKnown()) { // size unknown?
-                //assert (tailSentinel == null) : "tail sentinel shouldn't be null";
-                Node<E> node;
-                size = 0L;
-                for (node = headSentinel.next; node != tailSentinel && node != linkedNodes.tailSentinel; node = node.next) size++;
-                if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-            }
-            return size;
-        }
-        
-        @Override
-        public boolean isEmpty() {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown()) return size == 0L;
-            return headSentinel.next == tailSentinel;
-        }
-        
-        @Override
-        public void clear() {
-            checkForConcurrentModificationException();
-            Node<E> node = headSentinel.next;
-            if (sizeIsKnown()) {
-                long remaining = size;
-                while (remaining > 0) {
-                    final Node<E> nodeToRemove = node;
-                    node = node.next;
-                    linkedNodes.removeNode(nodeToRemove);
-                    remaining--;
-                }
-            } else {
-                size = 0L;
-                while (node != tailSentinel && node != linkedNodes.tailSentinel) {
-                    final Node<E> nodeToRemove = node;
-                    node = node.next;
-                    linkedNodes.removeNode(nodeToRemove);
-                    size++;
-                }
-                if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-            }
-            updateSizeAndModCount(size);
-        }
-        
-        private Node<E> getNode(long index) {
-            //assert (index < 0L || index > longSize());
-            //Note, this routine returns the tailSentinel if index = longSize() (the size of the list) or if the list is empty
-            if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
-            Node<E> node;
-            long cursorIndex;
-            if (sizeIsKnown() && tailSentinelIsKnown()) {
-                // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
-                if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                if (index <= ((longSize()) >> 1)) {
-                    cursorIndex = 0L;
-                    node = headSentinel.next;
-                    while (cursorIndex < index) { node = node.next; cursorIndex++; }
-                } else {
-                    cursorIndex = longSize();
-                    node = tailSentinel();
-                    while (cursorIndex > index) { node = node.previous; cursorIndex--; }
-                }
-            } else if (sizeIsKnown()) {
-                // size is known, tailSentinel is unknown
-                if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                cursorIndex = 0L;
-                node = headSentinel.next;
-                while (cursorIndex < index) { node = node.next; cursorIndex++; }
-                if (index == longSize()) this.tailSentinel = node;
-                if (index == longSize()-1) this.tailSentinel = node.next;
-            } else {
-                // size is unknown, tailSentinel is known
-                cursorIndex = 0L;
-                node = headSentinel.next;
-                while (cursorIndex < index && node != tailSentinel && node != linkedNodes.tailSentinel) { node = node.next; cursorIndex++; }
-                if (cursorIndex < index) {
-                    if (node == tailSentinel) {
-                        throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
-                    } else {
-                        throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                    }
-                }
-                if (node == tailSentinel) this.size = cursorIndex;
-                if (node.next == tailSentinel) this.size = cursorIndex + 1;
-            }
-            return node;
-        }
-        
-        private long getIndex(Node<E> node) {
-            long cursorIndex = 0L;
-            Node<E> cursorNode = this.headSentinel.next;
-            if (sizeIsKnown() && tailSentinelIsKnown()) {
-                // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
-                while (cursorNode != node && cursorNode != this.tailSentinel) { cursorIndex++; cursorNode = cursorNode.next; }
-                if (cursorNode == this.tailSentinel) cursorIndex = -1L; // node not found
-            } else if (sizeIsKnown()) {
-                // size is known, tailSentinel is unknown
-                while (cursorNode != node && cursorIndex < longSize()) { cursorIndex++; cursorNode = cursorNode.next; }
-                if (cursorIndex == longSize()-1) this.tailSentinel = cursorNode.next;
-                if (cursorIndex == longSize()) {
-                    this.tailSentinel = cursorNode;
-                    cursorIndex = -1L; // node not found
-                }
-            } else {
-                // size is unknown, tailSentinel is known
-                while (cursorNode != node && cursorNode != this.tailSentinel && cursorNode != linkedNodes.tailSentinel) {
-                    cursorIndex++;
-                    cursorNode = cursorNode.next;
-                }
-                if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1;
-                if (cursorNode == this.tailSentinel) {
-                    this.size = cursorIndex;
-                    cursorIndex = -1L; // node not found
-                }
-            }
-            return cursorIndex;
-        }
-        
-        @Override
-        public E get(int index) {
-            checkForConcurrentModificationException();
-            final long getIndex = index;
-            if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
-            Node<E> node = getNode(index);
-            if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
-            return node.element;        
-        }
-        
-        @Override
-        public void add(int index, E element) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            linkedNodes.addNodeBefore(node(element), getNode(index));
-            updateSizeAndModCount(1L);
-        }
-        
-        @Override
-        public E remove(int index) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            final Node<E> node = getNode(index);
-            if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
-            linkedNodes.removeNode(node);
-            updateSizeAndModCount(-1L);
-            return node.element;
-        }
-        
-        @Override
-        public E set(int index, E element) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            final Node<E> node = getNode(index);
-            if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
-            final E originalElement = node.element;
-            node.set(element);
-            return originalElement;
-        }
-        
-        @Override
-        public boolean addAll(int index, Collection<? extends E> elements) {
-            checkForConcurrentModificationException();
-            if (sizeIsKnown() && (index < 0 || index > size)) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
-            long collectionSize = 0L;            
-            final Node<E> targetNode = getNode(index);
-            for (E element: elements) {
-                linkedNodes.addNodeBefore(node(element), targetNode);
-                collectionSize++;
-            }
-            updateSizeAndModCount(collectionSize);
-            return collectionSize > 0L;
-        }
-        
-        @Override
-        public boolean addAll(Collection<? extends E> elements) {
-            checkForConcurrentModificationException();
-            final long initialSize = longSize();
-            final Node<E> targetNode = getNode(longSize());
-            for (E element: elements) linkedNodes.addNodeBefore(node(element), targetNode);
-            updateSizeAndModCount(longSize() - initialSize);
-            return longSize() != initialSize;
-        }
-        
-        @Override
-        public <T> boolean addAll(Node<T> targetNode, Collection<? extends E> elements) {
-            checkForConcurrentModificationException();
-            if (elements == null) return addAll(elements);
-            if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> targetNodeE = (Node<E>)targetNode;
-            if (getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
-            long collectionSize = 0L;
-            for (E element: elements) {
-                linkedNodes.addNodeBefore(node(element), targetNodeE);
-                collectionSize++;
-            }
-            return collectionSize > 0L;
-        }
-        
-        @Override
-        public List<E> subList(int fromIndex, int toIndex) {
-            checkForConcurrentModificationException();
-            if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-            if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-            if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
-            final long size = toIndex - fromIndex;
-            final Node<E> headSentinel = getNode(fromIndex).previous;
-            final Node<E> tailSentinel = (size == 0L) ? headSentinel.next : null; // tailSentinel is unknown
-            return new NodableLinkedListSubList(headSentinel, tailSentinel, this, size);
-        }
-        
-        @Override
-        public <T> NodableList<E> subList(Node<T> firstNode, Node<T> lastNode) {
-            checkForConcurrentModificationException();
-            @SuppressWarnings("unchecked")
-            Node<E> firstNodeE = (Node<E>)firstNode;
-            @SuppressWarnings("unchecked")
-            Node<E> lastNodeE = (Node<E>)lastNode;
-            if (firstNodeE == null) firstNodeE = headSentinel.next;
-            if (lastNodeE == null) lastNodeE = tailSentinel().previous;
-            if (firstNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
-            if (lastNodeE.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
-            if (lastNodeE.next == firstNodeE && firstNodeE != headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-            long size = 0;
-            boolean foundFirstNode = false;
-            boolean foundLastNode = false;
-            for (Node<E> node = headSentinel.next; node != tailSentinel(); node = node.next) {
-                if (node == firstNodeE) foundFirstNode = true;
-                if (node == lastNodeE) { foundLastNode = true; break; }
-                if (foundFirstNode) size++;
-            }
-            if (size > 0) {
-                if (foundLastNode && !foundFirstNode) throw new IllegalArgumentException(
-                        "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
-                if (!foundFirstNode) throw new IllegalArgumentException("specified first node is not part of this sublist");
-                if (!foundLastNode) throw new IllegalArgumentException("specified last node is not part of this sublist");
-            }
-            return new NodableLinkedListSubList(firstNodeE.previous, lastNodeE.next, this, size);
-        }
-        
-        @Override
-        public ListIterator<E> listIterator() {
-            return listIterator(0);
-        }
-        
-        @Override
-        public ListIterator<E> listIterator(int index) {
-            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            return NodableLinkedListSubListIterator(index);
-        }
-        
-        @Override
-        public <T> ListIterator<E> listIterator(Node<T> node) {
-            if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> nodeE = (Node<E>)node;
-            return NodableLinkedListSubListIterator(nodeE);
-        }            
-        
-        private NodableLinkedListSubListIterator NodableLinkedListSubListIterator(long index) {
-            checkForConcurrentModificationException();
-            Node<E> node;
-            if (index < 0L) {
-                index = longSize();
-                node = tailSentinel();                
-            } else {
-                node = getNode(index);
-            }
-            return new NodableLinkedListSubListIterator(index, node, this.headSentinel, this.tailSentinel, this.size);
-        }
-        
-        private NodableLinkedListSubListIterator NodableLinkedListSubListIterator(Node<E> node) {
-            checkForConcurrentModificationException();
-            if (node == null) return new NodableLinkedListSubListIterator(this.headSentinel.next, this.headSentinel, this.tailSentinel, this.size);
-            //assert (node.linkedNodes != linkedNodes) : "node not linked to this list";
-            if (getIndex(node) < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
-            return new NodableLinkedListSubListIterator(node, this.headSentinel, this.tailSentinel, this.size);
-        }            
-        
-        private class NodableLinkedListSubListIterator implements ListIterator<E> {
-            
-            private LinkedNodes.LinkedNodesListIterator listIterator;
-            
-            // size(-1) or tailSentinel(null) might be unknown but not both at the same time.
-            // tailSentinel might also come before headSentinel in the list.
-            private long size; // unknown if < 0
-            private Node<E> tailSentinel; // unknown if null
-            
-            private NodableLinkedListSubListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
-                //assert (index < 0 || index > longSize()) : "index out of range; index=" + index + ", size=" + longSize();
-                //assert (node == null || node.linkedNodes != linkedNodes) : "Specified node is null or is not linked to this list";
-                //assert (headSentinel == null || headSentinel.linkedNodes != linkedNodes) : "head sentinel is null or is not linked to this list";
-                //assert (tailSentinel == null || tailSentinel.linkedNodes != linkedNodes) : "tail sentinel is null or is not linked to this list";
-                //not guaranteed that the tailSentinel is known
-                //not guaranteed that the tailSentinel, if known, comes after the headSentinel in the list
-                //guaranteed that the node comes after the headSentinel in the list
-                //                         and before the tailSentinel unless the tailSentinel comes before the headSentinel
-                this.tailSentinel = tailSentinel;
-                this.size = size;
-                this.listIterator = linkedNodes.linkedNodesListIterator(index, node, headSentinel, knownTailSentinel(tailSentinel));
-                // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
-            }
-            
-            private NodableLinkedListSubListIterator(Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
-                this.tailSentinel = tailSentinel;
-                this.size = size;
-                this.listIterator = linkedNodes.linkedNodesListIterator(node, headSentinel, knownTailSentinel(tailSentinel));
-                // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
-            }
-            
-            private Node<E> knownTailSentinel(Node<E> tailSentinel) {
-                if (tailSentinel != null) return tailSentinel;
-                NodableLinkedListSubList sublist = NodableLinkedListSubList.this;
-                while (sublist != null) {
-                    if (sublist.tailSentinel != null) break;
-                    sublist = sublist.parent;
-                }
-                if (sublist == null) return null;
-                return sublist.tailSentinel;
-            }
-            
-            @Override
-            public boolean hasNext() {
-                checkForConcurrentModificationException();
-                if (size >= 0 && listIterator.cursorIndex() >= (size - 1L)) return false;
-                final boolean hasNext = listIterator.hasNext();
-                if (tailSentinel != null) {
-                    if (hasNext) {
-                        if (listIterator.cursorNode().next == tailSentinel) return false;
-                    } else {
-                        if (listIterator.cursorNode().next != tailSentinel) {
-                            throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
-                        }
-                    }
-                }
-                return hasNext;
-            }
-
-            @Override
-            public boolean hasPrevious() {
-                return listIterator.hasPrevious();
-            }
-
-            @Override
-            public E next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                return listIterator.next().element;
-            }
-
-            @Override
-            public E previous() {
-                return listIterator.previous().element;
-            }       
-
-            @Override
-            public int nextIndex() {
-                return listIterator.nextIndex();
-            }
-
-            @Override
-            public int previousIndex() {
-                return listIterator.previousIndex();
-            }
-
-            @Override
-            public void add(E element) {
-                listIterator.add(node(element));
-                updateSizeAndModCount(1L);
-            }
-
-            @Override
-            public void remove() {
-                listIterator.remove();
-                updateSizeAndModCount(-1L);
-            }
-
-            @Override
-            public void set(E element) {
-                listIterator.targetNode().set(element);
-                updateSizeAndModCount(0L);
-            }
-
-            @Override
-            public void forEachRemaining(Consumer<? super E> action) {
-                checkForConcurrentModificationException();
-                if (action == null) throw new NullPointerException();
-                while (hasNext()) {
-                    action.accept(next());
-                }
-                checkForConcurrentModificationException();
-            }
-            
-        } // NodableLinkedListSubListIterator
-        
-    } // NodableLinkedListSubList
 
     private class NodableLinkedListListIterator implements ListIterator<E> {
 
@@ -3742,6 +2779,737 @@ public class NodableLinkedList<E>
         }
 
     } // NodableLinkedListSpliterator
+    
+    private class SubList extends AbstractSequentialList<E> implements NodableList<E> {
+        
+        
+        //protected int modCount inherited from class java.util.AbstractList (see updateModCount)
+        
+        private LinkedNodesSubList linkedNodesSubList;
+        
+        private SubList(Node<E> headSentinel, Node<E> tailSentinel, SubList parent, long size) {
+            linkedNodesSubList = new LinkedNodesSubList(headSentinel, tailSentinel, parent, size);
+        }
+        
+        private LinkedNodesSubList linkedNodesSubList() {
+            return linkedNodesSubList;
+        }
+        
+        private void checkForConcurrentModificationException() {
+            if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
+        }
+
+        /**
+         * Returns the number of elements in this sublist.  If this sublist contains more than
+         * Integer.MAX_VALUE elements, returns Integer.MAX_VALUE.
+         *
+         * @return the number of elements in this sublist.
+         */
+        @Override
+        public int size() {
+            return linkedNodesSubList.size();
+        }
+
+        /**
+         * Returns the number of elements in this sublist.
+         *
+         * @return the number of elements in this sublist.
+         */
+        @Override
+        public long longSize() {
+            return linkedNodesSubList.longSize();
+        }
+        
+        @Override
+        public boolean isEmpty() {
+            return linkedNodesSubList.isEmpty();
+        }
+        
+        @Override
+        public void clear() {
+            linkedNodesSubList.clear();
+        }
+        
+        @Override
+        public E get(int index) {
+            return linkedNodesSubList.get(index).element;
+        }
+        
+        @Override
+        public void add(int index, E element) {
+            linkedNodesSubList.add(index, node(element));
+        }
+        
+        @Override
+        public E remove(int index) {
+            return linkedNodesSubList.remove(index).element;
+        }
+        
+        @Override
+        public E set(int index, E element) {
+            final Node<E> node = linkedNodes.get(index);
+            final E originalElement = node.element;
+            node.set(element);
+            return originalElement;
+        }
+        
+        @Override
+        public boolean addAll(Collection<? extends E> elements) {
+            checkForConcurrentModificationException();
+            boolean changed = false;
+            final Node<E> targetNode = linkedNodesSubList.getNode(longSize());
+            for (E element: elements) {
+                linkedNodesSubList.addNodeBefore(node(element), targetNode);
+                changed = true;
+            }
+            return changed;
+        }
+        
+        @Override
+        public boolean addAll(int index, Collection<? extends E> elements) {
+            checkForConcurrentModificationException();
+            if (linkedNodesSubList.sizeIsKnown() && (index < 0 || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            boolean changed = false;            
+            final Node<E> targetNode = linkedNodesSubList.getNode(index);
+            for (E element: elements) {
+                linkedNodesSubList.addNodeBefore(node(element), targetNode);
+                changed = true;
+            }
+            return changed;
+        }
+        
+        @Override
+        public <T> boolean addAll(Node<T> targetNode, Collection<? extends E> elements) {
+            checkForConcurrentModificationException();
+            if (elements == null) return addAll(elements);
+            if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
+            @SuppressWarnings("unchecked")
+            final Node<E> targetNodeE = (Node<E>)targetNode;
+            if (linkedNodesSubList.getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
+            boolean changed = false;
+            for (E element: elements) {
+                linkedNodesSubList.addNodeBefore(node(element), targetNodeE);
+                changed = true;
+            }
+            return changed;
+        }
+        
+        @Override
+        public List<E> subList(int fromIndex, int toIndex) {
+            return linkedNodesSubList.newSubList(fromIndex, toIndex);
+        }
+        
+        @Override
+        public <T> NodableList<E> subList(Node<T> firstNode, Node<T> lastNode) {
+            checkForConcurrentModificationException();
+            @SuppressWarnings("unchecked")
+            final Node<E> firstNodeE = (Node<E>)firstNode;
+            @SuppressWarnings("unchecked")
+            final Node<E> lastNodeE = (Node<E>)lastNode;
+            return linkedNodesSubList.newSubList(firstNodeE, lastNodeE);
+        }
+        
+        @Override
+        public ListIterator<E> listIterator() {
+            return listIterator(0);
+        }
+        
+        @Override
+        public ListIterator<E> listIterator(int index) {
+            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            return new SubListIterator(index);
+        }
+        
+        @Override
+        public <T> ListIterator<E> listIterator(Node<T> node) {
+            if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
+            @SuppressWarnings("unchecked")
+            final Node<E> nodeE = (Node<E>)node;
+            return new SubListIterator(nodeE);
+        }
+        
+        private class LinkedNodesSubList extends AbstractSequentialList<Node<E>> implements NodableList<Node<E>> {
+            
+            private Node<E> headSentinel;
+            private Node<E> tailSentinel;
+            private LinkedNodesSubList parent;
+            private long size;
+            
+            private LinkedNodesSubList(Node<E> headSentinel, Node<E> tailSentinel, SubList parent, long size) {
+                //assert (headSentinel == null) : "headSentinel is null";
+                //assert (tailSentinel == null) : "tailSentinel is null";
+                //assert (headSentinel.linkedNodes != linkedNodes) : "headSentinel not linked to this linkedList";
+                //assert (tailSentinel.linkedNodes != linkedNodes) : "tailSentinel not linked to this linkedList";
+                //the tailSentinel(null) and size(-1) may be unknown, but never both at the same time
+                //no guarantee that headSentinel comes before tailSentinel in the parent list
+                this.headSentinel = headSentinel;
+                this.tailSentinel = tailSentinel; 
+                this.parent = (parent == null) ? null : parent.linkedNodesSubList();
+                this.size = size;
+                updateModCount();
+            }
+            
+            //protected int modCount inherited from class java.util.AbstractList        
+            private void updateModCount() {
+                SubList.this.modCount = (this.modCount = NodableLinkedList.this.modCount); // keep all modCounts in sync
+            }
+
+            private void updateSizeAndModCount(long sizeChange) {
+                LinkedNodesSubList sublist = this;
+                do {
+                    if (sublist.sizeIsKnown()) sublist.size += sizeChange;
+                    sublist.updateModCount();
+                    sublist = sublist.parent;
+                } while (sublist != null);
+            }
+            
+            private void checkForConcurrentModificationException() {
+                if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
+            }
+            
+            private boolean tailSentinelIsKnown() {
+                return this.tailSentinel != null;
+            }
+            
+            private Node<E> tailSentinel() {
+                if (!tailSentinelIsKnown()) { // tailSentinel unknown?
+                    //assert (size < 0) : "sublist size is unknown";
+                    long remaining = size;
+                    tailSentinel = headSentinel.next;
+                    while (remaining > 0 && tailSentinel != linkedNodes.tailSentinel) {
+                        remaining--;
+                        tailSentinel = tailSentinel.next;
+                    }
+                    if (remaining > 0) throw new IllegalStateException("End of list reached unexpectedly");
+                }
+                return tailSentinel;
+            }
+
+            private void addNodeBefore(Node<E> node, Node<E> beforeThisNode) {
+                // assert node == null || node.linkedNodes != null : "Node is null or already an element of a list";
+                // assert beforeThisNode.linkedNodes != this : "Before Node is not an element of this list";
+                linkedNodes.addNodeBefore(node, beforeThisNode);
+                updateSizeAndModCount(1L);
+            }
+            
+            private boolean sizeIsKnown() {
+                return size >= 0L;
+            }
+
+            /**
+             * Returns the number of nodes in this sublist.  If this sublist contains more than
+             * Integer.MAX_VALUE nodes, returns Integer.MAX_VALUE.
+             *
+             * @return the number of nodes in this sublist.
+             */
+            @Override
+            public int size() {
+                return (longSize() > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)longSize();
+            }
+
+            /**
+             * Returns the number of nodes in this sublist.
+             *
+             * @return the number of nodes in this sublist.
+             */
+            @Override
+            public long longSize() {
+                checkForConcurrentModificationException();
+                if (!sizeIsKnown()) { // size unknown?
+                    //assert (tailSentinel == null) : "tail sentinel shouldn't be null";
+                    Node<E> node;
+                    size = 0L;
+                    for (node = headSentinel.next; node != tailSentinel && node != linkedNodes.tailSentinel; node = node.next) size++;
+                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
+                }
+                return size;
+            }
+            
+            @Override
+            public boolean isEmpty() {
+                checkForConcurrentModificationException();
+                if (sizeIsKnown()) return size == 0L;
+                return headSentinel.next == tailSentinel;
+            }
+            
+            @Override
+            public void clear() {
+                checkForConcurrentModificationException();
+                Node<E> node = headSentinel.next;
+                if (sizeIsKnown()) {
+                    long remaining = size;
+                    while (remaining > 0) {
+                        final Node<E> nodeToRemove = node;
+                        node = node.next;
+                        linkedNodes.removeNode(nodeToRemove);
+                        remaining--;
+                    }
+                } else {
+                    size = 0L;
+                    while (node != tailSentinel && node != linkedNodes.tailSentinel) {
+                        final Node<E> nodeToRemove = node;
+                        node = node.next;
+                        linkedNodes.removeNode(nodeToRemove);
+                        size++;
+                    }
+                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
+                }
+                updateSizeAndModCount(-size);
+            }
+            
+            private Node<E> getNode(long index) {
+                //assert (index < 0L || index > longSize());
+                //Note, this routine returns the tailSentinel if index = longSize() (the size of the list) or if the list is empty
+                if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
+                Node<E> node;
+                long cursorIndex;
+                if (sizeIsKnown() && tailSentinelIsKnown()) {
+                    // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
+                    if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
+                    if (index <= ((longSize()) >> 1)) {
+                        cursorIndex = 0L;
+                        node = headSentinel.next;
+                        while (cursorIndex < index) { node = node.next; cursorIndex++; }
+                    } else {
+                        cursorIndex = longSize();
+                        node = tailSentinel();
+                        while (cursorIndex > index) { node = node.previous; cursorIndex--; }
+                    }
+                } else if (sizeIsKnown()) {
+                    // size is known, tailSentinel is unknown
+                    if (index > longSize()) throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
+                    cursorIndex = 0L;
+                    node = headSentinel.next;
+                    while (cursorIndex < index) { node = node.next; cursorIndex++; }
+                    if (index == longSize()) this.tailSentinel = node;
+                    if (index == longSize()-1) this.tailSentinel = node.next;
+                } else {
+                    // size is unknown, tailSentinel is known
+                    cursorIndex = 0L;
+                    node = headSentinel.next;
+                    while (cursorIndex < index && node != tailSentinel && node != linkedNodes.tailSentinel) { node = node.next; cursorIndex++; }
+                    if (cursorIndex < index) {
+                        if (node == tailSentinel) {
+                            throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
+                        } else {
+                            throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
+                        }
+                    }
+                    if (node == tailSentinel) this.size = cursorIndex;
+                    if (node.next == tailSentinel) this.size = cursorIndex + 1;
+                }
+                return node;
+            }
+            
+            private long getIndex(Node<E> node) {
+                long cursorIndex = 0L;
+                Node<E> cursorNode = this.headSentinel.next;
+                if (sizeIsKnown() && tailSentinelIsKnown()) {
+                    // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
+                    while (cursorNode != node && cursorNode != this.tailSentinel) { cursorIndex++; cursorNode = cursorNode.next; }
+                    if (cursorNode == this.tailSentinel) cursorIndex = -1L; // node not found
+                } else if (sizeIsKnown()) {
+                    // size is known, tailSentinel is unknown
+                    while (cursorNode != node && cursorIndex < longSize()) { cursorIndex++; cursorNode = cursorNode.next; }
+                    if (cursorIndex == longSize()-1) this.tailSentinel = cursorNode.next;
+                    if (cursorIndex == longSize()) {
+                        this.tailSentinel = cursorNode;
+                        cursorIndex = -1L; // node not found
+                    }
+                } else {
+                    // size is unknown, tailSentinel is known
+                    while (cursorNode != node && cursorNode != this.tailSentinel && cursorNode != linkedNodes.tailSentinel) {
+                        cursorIndex++;
+                        cursorNode = cursorNode.next;
+                    }
+                    if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
+                    if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1;
+                    if (cursorNode == this.tailSentinel) {
+                        this.size = cursorIndex;
+                        cursorIndex = -1L; // node not found
+                    }
+                }
+                return cursorIndex;
+            }        
+            
+            @Override
+            public Node<E> get(int index) {
+                checkForConcurrentModificationException();
+                final long getIndex = index;
+                if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
+                Node<E> node = getNode(index);
+                if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
+                return node;        
+            }
+            
+            @Override
+            public int indexOf(Object o) {
+                checkForConcurrentModificationException();
+                if (!Node.class.isInstance(o)) return -1;
+                if (((Node<?>) o).linkedNodes != linkedNodes) return -1;
+                @SuppressWarnings("unchecked")
+                final long index = getIndex(((Node<E>) o));
+                return (index > Integer.MAX_VALUE) ? -1 : (int)index;
+            }
+            
+            @Override
+            public int lastIndexOf(Object o) {
+                return indexOf(o);
+            }
+            
+            @Override
+            public Node<E> set(int index, Node<E> node) {
+                checkForConcurrentModificationException();
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
+                final Node<E> originalNode = get(index);
+                linkedNodes.replaceNode(originalNode, node);
+                updateSizeAndModCount(0L);
+                return originalNode;
+            }
+            
+            @Override
+            public void add(int index, Node<E> node) {
+                checkForConcurrentModificationException();
+                if (sizeIsKnown() && (index < 0L || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node is null or already an element of a list");
+                linkedNodes.addNodeBefore(node, getNode(index));
+                updateSizeAndModCount(1L);
+            }
+            
+            @Override
+            public Node<E> remove(int index) {
+                checkForConcurrentModificationException();
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                final Node<E> node = get(index);
+                linkedNodes.removeNode(node);
+                return node;
+            }
+            
+            @Override
+            public boolean addAll(int index, Collection<? extends Node<E>> nodes) {
+                checkForConcurrentModificationException();
+                if (sizeIsKnown() && (index < 0 || index > size)) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+                long collectionSize = 0L;            
+                final Node<E> targetNode = getNode(index);
+                for (Node<E> node: nodes) {
+                    if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    linkedNodes.addNodeBefore(node, targetNode);
+                    collectionSize++;
+                }
+                updateSizeAndModCount(collectionSize);
+                return collectionSize > 0L;
+            }
+            
+            @Override
+            public boolean addAll(Collection<? extends Node<E>> nodes) {
+                checkForConcurrentModificationException();
+                final long initialSize = longSize();
+                final Node<E> targetNode = getNode(longSize());
+                for (Node<E> node: nodes) linkedNodes.addNodeBefore(node, targetNode);
+                updateSizeAndModCount(longSize() - initialSize);
+                return longSize() != initialSize;
+            }
+            
+            @Override
+            public <T> boolean addAll(Node<T> targetNode, Collection<? extends Node<E>> nodes) {
+                checkForConcurrentModificationException();
+                if (nodes == null) return addAll(nodes);
+                if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
+                @SuppressWarnings("unchecked")
+                final Node<E> targetNodeE = (Node<E>)targetNode;
+                if (getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
+                long collectionSize = 0L;
+                for (Node<E> node: nodes) {
+                    if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    linkedNodes.addNodeBefore(node, targetNodeE);
+                    collectionSize++;
+                }
+                updateSizeAndModCount(collectionSize);
+                return collectionSize > 0L;
+            }
+            
+            @Override
+            public List<Node<E>> subList(int fromIndex, int toIndex) {
+                return newSubList(fromIndex, toIndex).linkedNodesSubList;
+            }
+            
+            private SubList newSubList(int fromIndex, int toIndex) {
+                checkForConcurrentModificationException();
+                if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+                if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
+                if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
+                final long size = toIndex - fromIndex;
+                final Node<E> headSentinel = getNode(fromIndex).previous;
+                final Node<E> tailSentinel = (size == 0L) ? headSentinel.next : null; // tailSentinel is unknown
+                return new SubList(headSentinel, tailSentinel, SubList.this, size);
+            }
+            
+            public <T> NodableList<Node<E>> subList(Node<T> firstNode, Node<T> lastNode) {
+                checkForConcurrentModificationException();
+                @SuppressWarnings("unchecked")
+                final Node<E> firstNodeE = (Node<E>)firstNode;
+                @SuppressWarnings("unchecked")
+                final Node<E> lastNodeE = (Node<E>)lastNode;
+                return newSubList(firstNodeE, lastNodeE).linkedNodesSubList;
+            }
+            
+            private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
+                checkForConcurrentModificationException();
+                if (firstNode == null) firstNode = headSentinel.next;
+                if (lastNode == null) lastNode = tailSentinel().previous;
+                if (firstNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified first node is not linked to this list");
+                if (lastNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified last node is not linked to this list");
+                if (lastNode.next == firstNode && firstNode != headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
+                long size = 0;
+                boolean foundFirstNode = false;
+                boolean foundLastNode = false;
+                for (Node<E> node = headSentinel.next; node != tailSentinel(); node = node.next) {
+                    if (node == firstNode) foundFirstNode = true;
+                    if (node == lastNode) { foundLastNode = true; break; }
+                    if (foundFirstNode) size++;
+                }
+                if (size > 0) {
+                    if (foundLastNode && !foundFirstNode) throw new IllegalArgumentException(
+                            "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
+                    if (!foundFirstNode) throw new IllegalArgumentException("specified first node is not part of this sublist");
+                    if (!foundLastNode) throw new IllegalArgumentException("specified last node is not part of this sublist");
+                }
+                return new SubList(firstNode.previous, lastNode.next, SubList.this, size);
+            }
+            
+            @Override
+            public ListIterator<Node<E>> listIterator() {
+                return listIterator(0);
+            }
+            
+            @Override
+            public ListIterator<Node<E>> listIterator(int index) {
+                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+                return linkedNodesSubListIterator(index);
+            }
+            
+            @Override
+            public <T> ListIterator<Node<E>> listIterator(Node<T> node) {
+                if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
+                @SuppressWarnings("unchecked")
+                final Node<E> nodeE = (Node<E>)node;
+                return linkedNodesSubListIterator(nodeE);
+            }            
+            
+            private LinkedNodesSubListIterator linkedNodesSubListIterator(long index) {
+                checkForConcurrentModificationException();
+                Node<E> node;
+                if (index < 0L) {
+                    index = longSize();
+                    node = tailSentinel();                
+                } else {
+                    node = getNode(index);
+                }
+                return new LinkedNodesSubListIterator(index, node, this.headSentinel, this.tailSentinel, this.size);
+            }
+            
+            private LinkedNodesSubListIterator linkedNodesSubListIterator(Node<E> node) {
+                checkForConcurrentModificationException();
+                if (node == null) return new LinkedNodesSubListIterator(this.headSentinel.next, this.headSentinel, this.tailSentinel, this.size);;
+                //assert (node.linkedNodes != linkedNodes) : "node not linked to this list";
+                if (getIndex(node) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
+                return new LinkedNodesSubListIterator(node, this.headSentinel, this.tailSentinel, this.size);
+            }            
+            
+            private class LinkedNodesSubListIterator implements ListIterator<Node<E>> {
+                
+                private LinkedNodes.LinkedNodesListIterator listIterator;
+                
+                // size(-1) or tailSentinel(null) might be unknown but not both at the same time.
+                // tailSentinel might also come before headSentinel in the list.
+                private long size; // unknown if < 0
+                private Node<E> tailSentinel; // unknown if null
+                
+                private LinkedNodesSubListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
+                    //assert (index < 0 || index > longSize()) : "index out of range; index=" + index + ", size=" + longSize();
+                    //assert (node == null || node.linkedNodes != linkedNodes) : "Specified node is null or is not linked to this list";
+                    //assert (headSentinel == null || headSentinel.linkedNodes != linkedNodes) : "head sentinel is null or is not linked to this list";
+                    //assert (tailSentinel == null || tailSentinel.linkedNodes != linkedNodes) : "tail sentinel is null or is not linked to this list";
+                    //not guaranteed that the tailSentinel is known
+                    //not guaranteed that the tailSentinel, if known, comes after the headSentinel in the list
+                    //guaranteed that the node comes after the headSentinel in the list
+                    //                         and before the tailSentinel unless the tailSentinel comes before the headSentinel
+                    this.tailSentinel = tailSentinel;
+                    this.size = size;
+                    this.listIterator = linkedNodes.linkedNodesListIterator(index, node, headSentinel, knownTailSentinel(tailSentinel));
+                    // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
+                }
+                
+                private LinkedNodesSubListIterator(Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
+                    this.tailSentinel = tailSentinel;
+                    this.size = size;
+                    this.listIterator = linkedNodes.linkedNodesListIterator(node, headSentinel, knownTailSentinel(tailSentinel));
+                    // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
+                }
+                
+                private Node<E> knownTailSentinel(Node<E> tailSentinel) {
+                    if (tailSentinel != null) return tailSentinel;
+                    LinkedNodesSubList sublist = LinkedNodesSubList.this;
+                    while (sublist != null) {
+                        if (sublist.tailSentinel != null) break;
+                        sublist = sublist.parent;
+                    }
+                    if (sublist == null) return null;
+                    return sublist.tailSentinel;
+                }
+                
+                private Node<E> targetNode() {
+                    return listIterator.targetNode();
+                }
+                
+                @Override
+                public boolean hasNext() {
+                    checkForConcurrentModificationException();
+                    if (size >= 0 && listIterator.cursorIndex() >= (size - 1L)) return false;
+                    final boolean hasNext = listIterator.hasNext();
+                    if (tailSentinel != null) {
+                        if (hasNext) {
+                            if (listIterator.cursorNode().next == tailSentinel) return false;
+                        } else {
+                            if (listIterator.cursorNode().next != tailSentinel) {
+                                throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the first node in the list");
+                            }
+                        }
+                    }
+                    return hasNext;
+                }
+
+                @Override
+                public boolean hasPrevious() {
+                    return listIterator.hasPrevious();
+                }
+
+                @Override
+                public Node<E> next() {
+                    if (!hasNext()) throw new NoSuchElementException();
+                    return listIterator.next();
+                }
+
+                @Override
+                public Node<E> previous() {
+                    return listIterator.previous();
+                }       
+
+                @Override
+                public int nextIndex() {
+                    return listIterator.nextIndex();
+                }
+
+                @Override
+                public int previousIndex() {
+                    return listIterator.previousIndex();
+                }
+
+                @Override
+                public void add(Node<E> node) {
+                    listIterator.add(node);
+                    if (size >= 0) size++;
+                    updateSizeAndModCount(1L);
+                }
+
+                @Override
+                public void remove() {
+                    listIterator.remove();
+                    if (size >= 0) size--;
+                    updateSizeAndModCount(-1L);
+                }
+
+                @Override
+                public void set(Node<E> node) {
+                    listIterator.set(node);
+                    updateSizeAndModCount(0L);
+                }
+
+                @Override
+                public void forEachRemaining(Consumer<? super Node<E>> action) {
+                    checkForConcurrentModificationException();
+                    if (action == null) throw new NullPointerException();
+                    while (hasNext()) {
+                        action.accept(next());
+                    }
+                    checkForConcurrentModificationException();
+                }
+                
+            } // LinkedNodesSubListIterator
+            
+        } // LinkedNodesSubList
+        
+        private class SubListIterator implements ListIterator<E> {
+            
+            private LinkedNodesSubList.LinkedNodesSubListIterator listIterator;
+            
+            private SubListIterator(long index) {
+                listIterator = linkedNodesSubList.linkedNodesSubListIterator(index);
+            }
+            
+            private SubListIterator(Node<E> node) {
+                listIterator = linkedNodesSubList.linkedNodesSubListIterator(node);
+            }
+            
+            @Override
+            public boolean hasNext() {
+                return listIterator.hasNext();
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return listIterator.hasPrevious();
+            }
+
+            @Override
+            public E next() {
+                return listIterator.next().element;
+            }
+
+            @Override
+            public E previous() {
+                return listIterator.previous().element;
+            }       
+
+            @Override
+            public int nextIndex() {
+                return listIterator.nextIndex();
+            }
+
+            @Override
+            public int previousIndex() {
+                return listIterator.previousIndex();
+            }
+
+            @Override
+            public void add(E element) {
+                listIterator.add(node(element));
+            }
+
+            @Override
+            public void remove() {
+                listIterator.remove();
+            }
+
+            @Override
+            public void set(E element) {
+                listIterator.targetNode().set(element);
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super E> action) {
+                checkForConcurrentModificationException();
+                if (action == null) throw new NullPointerException();
+                while (hasNext()) {
+                    action.accept(next());
+                }
+                checkForConcurrentModificationException();
+            }
+            
+        } // NodableLinkedListSubListIterator
+        
+    } // SubList
 
     /**
      * Node of a {@code NodableLinkedList}. Contains references to the
@@ -4036,14 +3804,16 @@ public class NodableLinkedList<E>
          * @throws ClassCastException if the nodes' element types prevent them from
          *         being compared.
          */
-        @SuppressWarnings("unchecked")
+        //@SuppressWarnings("unchecked")
         @Override
         public int compareTo(Node<E> node) {
             if (node == null) throw new NullPointerException("The specified node is null");
             if (this == node) return 0;
             final Object thisElement = this.element();
             if (!(thisElement instanceof Comparable)) throw new ClassCastException("This node's element is not Comparable");
-            try { return ((Comparable<E>)thisElement).compareTo(node.element()); }
+            @SuppressWarnings("unchecked")
+            final Comparable<E> comparableThisElement = (Comparable<E>)thisElement;
+            try { return (comparableThisElement).compareTo(node.element()); }
             catch (IllegalArgumentException e) {
                 throw new ClassCastException("The specified node's element type is not compatible for comparison: "+e.getMessage());
             }
