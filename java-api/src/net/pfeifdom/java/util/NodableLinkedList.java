@@ -132,7 +132,7 @@ import java.util.function.Function;
  */
 public class NodableLinkedList<E>
     extends AbstractSequentialList<E>
-    implements NodableList<E>, Deque<E>, Cloneable, Serializable
+    implements List<E>, Deque<E>, Cloneable, Serializable
 {
 
     //protected int modCount inherited from class java.util.AbstractList (see incrementModCount)	
@@ -261,7 +261,6 @@ public class NodableLinkedList<E>
      *
      * @return the number of elements in this list
      */
-    @Override
     public long longSize() {
         return linkedNodes.longSize();
     }
@@ -555,21 +554,17 @@ public class NodableLinkedList<E>
      * Note that {@code addAll(null, Collection)} is identical in function to
      * {@code addAll(Collection)}.
      *
-     * @param <T> type of element held in the specified node
      * @param node node the specified collection is to be inserted before
      * @param elements collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
      * @throws IllegalArgumentException if the specified node is not linked to this list
      * @throws NullPointerException if the specified collection is null
      */
-    @Override
-    public <T> boolean addAll(Node<T> node, Collection<? extends E> elements) {
+    public boolean addAll(Node<E> node, Collection<? extends E> elements) {
         if (node == null) return addAll(elements);
         if (node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
         final long initialSize = longSize();
-        @SuppressWarnings("unchecked")
-        final Node<E> nodeE = (Node<E>)node;
-        for (E element: elements) linkedNodes.addNodeBefore(node(element), nodeE);
+        for (E element: elements) linkedNodes.addNodeBefore(node(element), node);
         return longSize() != initialSize;
     }
 
@@ -1060,20 +1055,14 @@ public class NodableLinkedList<E>
      * A {@code ConcurrentModificationException} is thrown for any operation on
      * the returned sublist if this list is structurally modified.
      *
-     * @param <T> type of element held in the specified first and last nodes
      * @param firstNode low endpoint (inclusive) of the subList
      * @param lastNode high endpoint (inclusive) of the subList
      * @return a view of the specified range within this list
      * @throws IllegalArgumentException if any specified node is not linked to this list or
      *                                  if the lastNode comes before the firstNode in this list.
      */
-    @Override
-    public <T> NodableList<E> subList(Node<T> firstNode, Node<T> lastNode) {
-        @SuppressWarnings("unchecked")
-        final Node<E> firstNodeE = (Node<E>)firstNode;
-        @SuppressWarnings("unchecked")
-        final Node<E> lastNodeE = (Node<E>)lastNode;
-        return linkedNodes.newSubList(firstNodeE, lastNodeE);
+    public List<E> subList(Node<E> firstNode, Node<E> lastNode) {
+        return linkedNodes.newSubList(firstNode, lastNode);
     }    
 
     /**
@@ -1208,19 +1197,15 @@ public class NodableLinkedList<E>
      * than risking arbitrary, non-deterministic behavior at an undetermined
      * time in the future.
      *
-     * @param <T> type of element held in the specified node
      * @param node node of the first element to be returned from the list-iterator
      *             (by a call to {@code next})
      * @return a ListIterator of the elements in this list (in proper
      *         sequence), starting at the specified node in the list
      * @throws IllegalArgumentException if the specified node is not linked to this list
      */
-    @Override
-    public <T> ListIterator<E> listIterator(Node<T> node) {
+    public ListIterator<E> listIterator(Node<E> node) {
         if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-        @SuppressWarnings("unchecked")
-        final Node<E> nodeE = (Node<E>)node;
-        return new NodableLinkedListListIterator(nodeE);
+        return new NodableLinkedListListIterator(node);
     }
 
     /**
@@ -1295,7 +1280,7 @@ public class NodableLinkedList<E>
      */
     public class LinkedNodes
         extends AbstractSequentialList<Node<E>>
-        implements NodableList<Node<E>>, Deque<Node<E>>
+        implements List<Node<E>>, Deque<Node<E>>
     {
 
         private long size;
@@ -1345,7 +1330,6 @@ public class NodableLinkedList<E>
          *
          * @return the number of nodes in this list.
          */
-        @Override
         public long longSize() {
             return size;
         }		
@@ -1650,7 +1634,6 @@ public class NodableLinkedList<E>
          * Note that {@code addAll(null, Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param <T> type of element held in the specified node
          * @param node node the specified collection is to be inserted before
          * @param nodes collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
@@ -1658,16 +1641,13 @@ public class NodableLinkedList<E>
          *                                  any node in the collection is null or already an element of a list
          * @throws NullPointerException if the specified collection is null
          */
-        @Override
-        public <T> boolean addAll(Node<T> node, Collection<? extends Node<E>> nodes) {
+        public boolean addAll(Node<E> node, Collection<? extends Node<E>> nodes) {
             if (node == null) return addAll(nodes);
             if (node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
             final long initialSize = longSize();
             for (Node<E> collectionNode: nodes) {
                 if (collectionNode == null || collectionNode.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                @SuppressWarnings("unchecked")
-                final Node<E> nodeE = (Node<E>)node;
-                linkedNodes.addNodeBefore(collectionNode, nodeE);
+                linkedNodes.addNodeBefore(collectionNode, node);
             }
             return longSize() != initialSize;
         }		
@@ -2139,20 +2119,14 @@ public class NodableLinkedList<E>
          * A {@code ConcurrentModificationException} is thrown for any operation on
          * the returned sublist if this list is structurally modified.
          *
-         * @param <T> type of element held in the specified first and last nodes
          * @param firstNode low endpoint (inclusive) of the subList
          * @param lastNode high endpoint (inclusive) of the subList
          * @return a view of the specified range within this list
          * @throws IllegalArgumentException if any specified node is not linked to this list or
          *                                  if the lastNode comes before the firstNode in this list.
          */
-        @Override
-        public <T> NodableList<Node<E>> subList(Node<T> firstNode, Node<T> lastNode) {
-            @SuppressWarnings("unchecked")
-            final Node<E> firstNodeE = (Node<E>)firstNode;
-            @SuppressWarnings("unchecked")
-            final Node<E> lastNodeE = (Node<E>)lastNode;
-            return newSubList(firstNodeE, lastNodeE).linkedNodesSubList;
+        public List<Node<E>> subList(Node<E> firstNode, Node<E> lastNode) {
+            return newSubList(firstNode, lastNode).linkedNodesSubList;
         }
         
         private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
@@ -2294,18 +2268,14 @@ public class NodableLinkedList<E>
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
-         * @param <T> type of element held in the specified node
          * @param node first node to be returned from the list-iterator (by a call to {@code next})
          * @return a ListIterator of the nodes in this list (in proper
          *         sequence), starting at the specified node in the list
          * @throws IllegalArgumentException if the specified is node not linked to this list
          */
-        @Override
-        public <T> ListIterator<Node<E>> listIterator(Node<T> node) {
+        public ListIterator<Node<E>> listIterator(Node<E> node) {
             if (node != null && node.linkedNodes != this) throw new IllegalArgumentException("Specified is node not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> nodeE = (Node<E>)node;
-            return linkedNodesListIterator(nodeE);
+            return linkedNodesListIterator(node);
         }
 
         /**
@@ -2822,7 +2792,7 @@ public class NodableLinkedList<E>
      * @author James Pfeifer
      *
      */
-    public class SubList extends AbstractSequentialList<E> implements NodableList<E> {
+    public class SubList extends AbstractSequentialList<E> implements List<E> {
         
         //protected int modCount inherited from class java.util.AbstractList (see updateModCount)
         
@@ -2870,7 +2840,6 @@ public class NodableLinkedList<E>
          *
          * @return the number of elements in this sublist.
          */
-        @Override
         public long longSize() {
             return linkedNodesSubList.longSize();
         }
@@ -3014,24 +2983,20 @@ public class NodableLinkedList<E>
          * Note that {@code addAll(null, Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param <T> type of element held in the specified node
          * @param targetNode node the specified collection is to be inserted before
          * @param elements collection containing elements to be added to this list
          * @return {@code true} if this list changed as a result of the call
          * @throws IllegalArgumentException if the specified node is not linked to this list
          * @throws NullPointerException if the specified collection is null
          */
-        @Override
-        public <T> boolean addAll(Node<T> targetNode, Collection<? extends E> elements) {
+        public boolean addAll(Node<E> targetNode, Collection<? extends E> elements) {
             checkForConcurrentModificationException();
             if (targetNode == null) return addAll(elements);
             if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> targetNodeE = (Node<E>)targetNode;
-            if (linkedNodesSubList.getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
+            if (linkedNodesSubList.getIndex(targetNode) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
             boolean changed = false;
             for (E element: elements) {
-                linkedNodesSubList.addNodeBefore(node(element), targetNodeE);
+                linkedNodesSubList.addNodeBefore(node(element), targetNode);
                 changed = true;
             }
             return changed;
@@ -3113,21 +3078,15 @@ public class NodableLinkedList<E>
          * A {@code ConcurrentModificationException} is thrown for any operation on
          * the returned sublist if this sublist is structurally modified.
          *
-         * @param <T> type of element held in the specified first and last nodes
          * @param firstNode low endpoint (inclusive) of the subList
          * @param lastNode high endpoint (inclusive) of the subList
          * @return a view of the specified range within this sublist
          * @throws IllegalArgumentException if any specified node is not linked to this sublist or
          *                                  if the lastNode comes before the firstNode in this sublist.
          */
-        @Override
-        public <T> NodableList<E> subList(Node<T> firstNode, Node<T> lastNode) {
+        public List<E> subList(Node<E> firstNode, Node<E> lastNode) {
             checkForConcurrentModificationException();
-            @SuppressWarnings("unchecked")
-            final Node<E> firstNodeE = (Node<E>)firstNode;
-            @SuppressWarnings("unchecked")
-            final Node<E> lastNodeE = (Node<E>)lastNode;
-            return linkedNodesSubList.newSubList(firstNodeE, lastNodeE);
+            return linkedNodesSubList.newSubList(firstNode, lastNode);
         }
         
         /**
@@ -3187,19 +3146,15 @@ public class NodableLinkedList<E>
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
-         * @param <T> type of element held in the specified node
          * @param node node of the first element to be returned from the list-iterator
          *             (by a call to {@code next})
          * @return a ListIterator of the elements in this list (in proper
          *         sequence), starting at the specified node in the list
          * @throws IllegalArgumentException if the specified node is not linked to this list
          */
-        @Override
-        public <T> ListIterator<E> listIterator(Node<T> node) {
+        public ListIterator<E> listIterator(Node<E> node) {
             if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-            @SuppressWarnings("unchecked")
-            final Node<E> nodeE = (Node<E>)node;
-            return new SubListIterator(nodeE);
+            return new SubListIterator(node);
         }
         
         /**
@@ -3234,7 +3189,7 @@ public class NodableLinkedList<E>
          * @author James Pfeifer
          *
          */
-        public class LinkedNodesSubList extends AbstractSequentialList<Node<E>> implements NodableList<Node<E>> {
+        public class LinkedNodesSubList extends AbstractSequentialList<Node<E>> implements List<Node<E>> {
             
             private Node<E> headSentinel;
             private Node<E> tailSentinel;
@@ -3474,7 +3429,6 @@ public class NodableLinkedList<E>
              *
              * @return the number of nodes in this sublist.
              */
-            @Override
             public long longSize() {
                 checkForConcurrentModificationException();
                 if (!sizeIsKnown()) { // size unknown?
@@ -3701,7 +3655,6 @@ public class NodableLinkedList<E>
              * Note that {@code addAll(null, Collection)} is identical in function to
              * {@code addAll(Collection)}.
              *
-             * @param <T> type of element held in the specified node
              * @param targetNode node the specified collection is to be inserted before
              * @param nodes collection containing nodes to be added to this sublist
              * @return {@code true} if this sublist changed as a result of the call
@@ -3709,18 +3662,15 @@ public class NodableLinkedList<E>
              *                                  any node in the collection is null or already an element of a list
              * @throws NullPointerException if the specified collection is null
              */
-            @Override
-            public <T> boolean addAll(Node<T> targetNode, Collection<? extends Node<E>> nodes) {
+            public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> nodes) {
                 checkForConcurrentModificationException();
                 if (targetNode == null) return addAll(nodes);
                 if (targetNode.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-                @SuppressWarnings("unchecked")
-                final Node<E> targetNodeE = (Node<E>)targetNode;
-                if (getIndex(targetNodeE) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
+                if (getIndex(targetNode) < 0L) throw new IllegalArgumentException("specified node is not part of this sublist");
                 long collectionSize = 0L;
                 for (Node<E> node: nodes) {
                     if (node == null || node.linkedNodes != null) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                    addNodeBefore(node, targetNodeE);
+                    addNodeBefore(node, targetNode);
                     collectionSize++;
                 }
                 return collectionSize > 0L;
@@ -3834,20 +3784,15 @@ public class NodableLinkedList<E>
              * A {@code ConcurrentModificationException} is thrown for any operation on
              * the returned sublist if this list is structurally modified.
              *
-             * @param <T> type of element held in the specified first and last nodes
              * @param firstNode low endpoint (inclusive) of the subList
              * @param lastNode high endpoint (inclusive) of the subList
              * @return a view of the specified range within this sublist
              * @throws IllegalArgumentException if any specified node is not linked to this sublist or
              *                                  if the lastNode comes before the firstNode in this sublist.
              */
-            public <T> NodableList<Node<E>> subList(Node<T> firstNode, Node<T> lastNode) {
+            public List<Node<E>> subList(Node<E> firstNode, Node<E> lastNode) {
                 checkForConcurrentModificationException();
-                @SuppressWarnings("unchecked")
-                final Node<E> firstNodeE = (Node<E>)firstNode;
-                @SuppressWarnings("unchecked")
-                final Node<E> lastNodeE = (Node<E>)lastNode;
-                return newSubList(firstNodeE, lastNodeE).linkedNodesSubList;
+                return newSubList(firstNode, lastNode).linkedNodesSubList;
             }
             
             private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
@@ -3931,18 +3876,14 @@ public class NodableLinkedList<E>
              * than risking arbitrary, non-deterministic behavior at an undetermined
              * time in the future.
              *
-             * @param <T> type of element held in the specified node
              * @param node first node to be returned from the list-iterator (by a call to {@code next})
              * @return a ListIterator of the nodes in this list (in proper
              *         sequence), starting at the specified node in the list
              * @throws IllegalArgumentException if the specified is node not linked to this list
              */
-            @Override
-            public <T> ListIterator<Node<E>> listIterator(Node<T> node) {
+            public ListIterator<Node<E>> listIterator(Node<E> node) {
                 if (node != null && node.linkedNodes != linkedNodes) throw new IllegalArgumentException("Specified node is not linked to this list");
-                @SuppressWarnings("unchecked")
-                final Node<E> nodeE = (Node<E>)node;
-                return linkedNodesSubListIterator(nodeE);
+                return linkedNodesSubListIterator(node);
             }            
             
             private LinkedNodesSubListIterator linkedNodesSubListIterator(long index) {
