@@ -4101,6 +4101,310 @@ public class NodableLinkedList<E>
     } // SubList
 
     /**
+     * Sublist node of a {@code NodableLinkedList.SubList}.
+     * Every sublist node has a parent node which backs the sublist node, and
+     * is associated with one and only one {@code NodableLinkedList.SubList} instance.
+     * Any operation performed on a {@code SubListNode} is performed on in its
+     * associated {@code NodableLinkedList.SubList}.
+     * 
+     * <p>Unlike its parent node, operations on a sublist node are not necessarily
+     * performed in constant time because it be necessary to confirm, in linear time,
+     * that the sublist node is still an element of its associated sublist.
+     * 
+     * @author James Pfeifer
+     */
+    public static class SubListNode<E> implements Comparable<Node<E>> {
+        
+        private final Node<E> parentNode;
+        private final NodableLinkedList<E>.SubList subList;
+        
+        private int expectedModCount;
+        
+        private SubListNode(Node<E> parentNode, NodableLinkedList<E>.SubList subList) {
+            this.parentNode = parentNode;
+            this.subList = subList;
+            updateExpectedModCount();
+        }
+        
+        private void updateExpectedModCount() {
+            this.expectedModCount = subList.nodableLinkedList().modCount;
+        }
+                    
+        private void stillNodeOfSubList() {
+            if (expectedModCount == subList.nodableLinkedList().modCount) return;
+            if (!subList.linkedNodesSubList().contains(parentNode)) throw new IllegalStateException("This SubListNode is no longer an element of its sublist");
+            updateExpectedModCount();
+        }
+        
+        /**
+         * Returns the parent node of this sublist node. In other words,
+         * returns the node backing this sublist node.
+         * 
+         * @return the parent node of this sublist node.
+         */
+        public Node<E> parentNode() {
+            return parentNode;
+        }
+        
+        /**
+         * Returns the element contained within this sublist node.
+         * 
+         * @return the element contained within this sublist node.
+         */
+        public E element() {
+            return parentNode.element();
+        }
+
+        /**
+         * Returns {@code true} if this sublist node belongs to a list.
+         * 
+         * @return {@code true} if this sublist node belongs to a list.
+         */
+        public boolean isLinked() {
+            return parentNode.isLinked();
+        }
+
+        /**
+         * Returns the {@code SubList} this sublist node belongs to
+         * 
+         * @return the {@code SubList} this sublist node belongs to
+         */
+        public NodableLinkedList<E>.SubList subList() {
+            return subList;
+        }
+
+        /**
+         * Replaces the element of this sublist node with the specified element.
+         * 
+         * @param element element to be stored in this sublist node.
+         */
+        public void set(E element) {
+            parentNode.set(element);
+        }
+
+        /**
+         * Inserts the specified node after this sublist node. This sublist node must
+         * belong to a sublist and the specified node must not already belong to a list.
+         * 
+         * @param node the node to be inserted after this sublist node.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         * @throws IllegalArgumentException if the specified node is null or is already an element of a list.
+         */
+        public void addNodeAfterMe(Node<E> node) {
+            subList.checkForConcurrentModificationException();
+            if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already an element of a list");
+            stillNodeOfSubList();
+            subList.linkedNodesSubList().addNodeAfter(node, parentNode);
+            updateExpectedModCount();
+        }
+
+        /**
+         * Inserts the specified node before this sublist node. This sublist node must
+         * belong to a sublist and the specified node must not already belong to a list.
+         * 
+         * @param node the node to be inserted before this sublist node.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         * @throws IllegalArgumentException if the specified node is null or is already an element of a list.
+         */
+        public void addNodeBeforeMe(Node<E> node) {
+            subList.checkForConcurrentModificationException();
+            if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already an element of a list");
+            stillNodeOfSubList();
+            subList.linkedNodesSubList().addNodeBefore(node, parentNode);
+            updateExpectedModCount();
+        }
+
+        /**
+         * Returns {@code true} if there exists a node which comes after this sublist node
+         * in a sublist.  In other words, returns {@code true} if this sublist node is not
+         * the last node of a sublist. 
+         * 
+         * @return {@code true} if this sublist node is not the last node of a sublist. 
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         */
+        public boolean hasNext() {
+            subList.checkForConcurrentModificationException();
+            stillNodeOfSubList();
+            return subList.linkedNodesSubList().hasNodeAfter(parentNode);
+        }
+
+        /**
+         * Returns {@code true} if there exists a node which comes before this sublist node
+         * in a sublist.  In other words, returns {@code true} if this sublist node is not
+         * the first node of a sublist.
+         * 
+         * @return {@code true} if this sublist node is not the first node of a sublist.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         */
+        public boolean hasPrevious() {
+            subList.checkForConcurrentModificationException();
+            stillNodeOfSubList();
+            return subList.linkedNodesSubList().hasNodeBefore(parentNode);
+        }
+
+        /**
+         * Returns the index of this sublist node in its sublist,
+         * or -1 if this sublist node does not belong to a sublist or
+         * the {@code index > Integer.MAX_VALUE}.
+         *
+         * @return the index of this sublist node in its sublist,
+         *         or -1 if this sublist node does not belong to a sublist or
+         *         the {@code index > Integer.MAX_VALUE}.
+         */
+        public int index() {
+            subList.checkForConcurrentModificationException();
+            final long index = subList.linkedNodesSubList().getIndex(parentNode);
+            return (index > Integer.MAX_VALUE) ? -1 : (int)index;
+        }
+
+        /**
+         * Returns the node which comes after this sublist node in a sublist.
+         * if this sublist node is the last or only node, {@code null} is returned.
+         * 
+         * @return the node which comes after this sublist node in a sublist, or
+         *         {@code null} if this sublist node is the last or only node.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         */
+        public Node<E> next() {
+            subList.checkForConcurrentModificationException();
+            stillNodeOfSubList();
+            return subList.linkedNodesSubList().getNodeAfter(parentNode);
+        }
+
+        /**
+         * Returns the node which comes before this sublist node in a sublist.
+         * if this sublist node is the first or only node, {@code null} is returned.
+         * 
+         * @return the node which comes before this sublist node in a sublist, or
+         *         {@code null} if this sublist node is the first or only node.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         */
+        public Node<E> previous() {
+            subList.checkForConcurrentModificationException();
+            stillNodeOfSubList();
+            return subList.linkedNodesSubList().getNodeBefore(parentNode);
+        }
+
+        /**
+         * Removes this sublist node from the sublist it is linked to.
+         * 
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         */
+        public void remove() {
+            subList.checkForConcurrentModificationException();
+            stillNodeOfSubList();
+            subList.linkedNodesSubList().removeNode(parentNode);
+        }
+
+        /**
+         * Replaces this sublist node, in a sublist, with the specified node.
+         * This sublist node must belong to a sublist, and
+         * the replacement node must not already belong to a list.
+         * 
+         * @param node replacement node to replace this sublist node.
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         * @throws IllegalArgumentException if the replacement node is {@code null} or
+         *                                  already an element of a list.
+         */
+        public void replaceWith(Node<E> node) {
+            subList.checkForConcurrentModificationException();
+            if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement node is null or already an element of a list");
+            stillNodeOfSubList();
+            subList.linkedNodesSubList().replaceNode(parentNode, node);
+        }
+
+        /**
+         * Swaps this sublist node with the specified node. Both this sublist node and
+         * the specified must belong to a list, but they can be different lists.
+         * 
+         * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
+         * different lists. if synchronization is required, both lists should be synchronized by the same
+         * object.
+         * 
+         * @param node the node to swap with this sublist node
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         * @throws IllegalArgumentException if the swap node is {@code null} or not linked
+         */
+        public void swapWith(Node<E> node) {
+            subList.checkForConcurrentModificationException();
+            if (node == null || !node.isLinked()) throw new IllegalArgumentException("The specified node is null or not an element of a list");
+            stillNodeOfSubList();
+            parentNode.swapWith(node);
+            subList.linkedNodesSubList().swappedNodes(parentNode, node);
+            subList.linkedNodesSubList().updateSizeAndModCount(0L);
+        }
+
+        /**
+         * Swaps this sublist node with the specified sublist node. Both this sublist node
+         * and the specified sublist node must belong to a sublist, but they can be different sublists.
+         * 
+         * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
+         * different lists. if synchronization is required, both lists should be synchronized by the same
+         * object.
+         * 
+         * @param subListNode the sublist node to swap with this sublist node
+         * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
+         * @throws IllegalArgumentException if the swap node is {@code null} or not linked
+         */
+        public void swapWith(SubListNode<E> subListNode) {
+            subList.checkForConcurrentModificationException();
+            if (subListNode == null || !subListNode.isLinked()) throw new IllegalArgumentException("The specified subListNode is null or not an element of a sublist");
+            subListNode.subList().checkForConcurrentModificationException();
+            subListNode.stillNodeOfSubList();
+            stillNodeOfSubList();
+            parentNode.swapWith(subListNode.parentNode);
+            subList.linkedNodesSubList().swappedNodes(parentNode, subListNode.parentNode);
+            subListNode.subList().linkedNodesSubList().swappedNodes(subListNode.parentNode, parentNode);
+            subListNode.subList().linkedNodesSubList().updateSizeAndModCount(0L);
+            subList.linkedNodesSubList().updateSizeAndModCount(0L);
+        }
+
+        /**
+         * Compares this sublist node with the specified object for equality.
+         * Returns {@code true} if and only if the specified object is also a node,
+         * and both pairs of elements in the two nodes are <i>equal</i>.
+         * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
+         * {@code (e1==null ? e2==null : e1.equals(e2))}.)
+         *
+         * @param object object to be compared for equality with this sublist node
+         * @return {@code true} if the specified object is equal to this sublist node
+         */
+        @Override
+        public boolean equals(Object object) {
+            return parentNode.equals(object);
+        }
+
+        /**
+         * Compares this sublist node to the specified node for order. Returns a negative integer,
+         * zero, or a positive integer as this sublist node is less than, equal
+         * to, or greater than the specified node.
+         *
+         * @param node node to be compared to this sublist node.
+         * @return a negative integer, zero, or a positive integer as the
+         *         this sublist node is less than, equal to, or greater than the
+         *         specified node.
+         * @throws NullPointerException if the specified sublist node is null
+         * @throws ClassCastException if the nodes' element types prevent them from
+         *         being compared.
+         */
+        @Override
+        public int compareTo(Node<E> node) {
+            return parentNode.compareTo(node);
+        }
+
+        /**
+         * Returns the hash code value of this sublist node.
+         *
+         * @return the hash code value of this sublist node
+         */
+        @Override
+        public int hashCode() {
+            return parentNode.hashCode();
+        }
+        
+    } // SubListNode
+
+    /**
      * Node of a {@code NodableLinkedList}. Contains references to the
      * previous and next nodes in a doubly-linked list, and contains an
      * element which can be {@code null}. Does not belong to any
@@ -4245,7 +4549,7 @@ public class NodableLinkedList<E>
          * @throws IllegalStateException if this node is already an element of a list.
          * @throws IllegalArgumentException if the specified sublist node is null or not an element of a sublist.
          */        
-        public void addAfter(Node<E>.SubListNode subListNode) {
+        public void addAfter(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
             subListNode.addNodeAfterMe(this);
         }
@@ -4273,7 +4577,7 @@ public class NodableLinkedList<E>
          * @throws IllegalStateException if this node is already an element of a list.
          * @throws IllegalArgumentException if the specified sublist node is null or not an element of a sublist.
          */
-        public void addBefore(Node<E>.SubListNode subListNode) {
+        public void addBefore(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
             subListNode.addNodeBeforeMe(this);
         }
@@ -4395,13 +4699,9 @@ public class NodableLinkedList<E>
          * @return a {@code SubListNode}, backed by this node, for the specified sublist
          * @throws IllegalStateException if this node is not a node of the specified subList
          */
-        public SubListNode subListNode(NodableLinkedList<E>.SubList subList) {
+        public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
             if (!subList.linkedNodesSubList().contains(this)) throw new IllegalStateException("Node is not an  element of the specified subList");
-            return newSubListNode(subList);
-        }
-        
-        private SubListNode newSubListNode(NodableLinkedList<E>.SubList subList) {
-            return new SubListNode(subList);
+            return new SubListNode<E>(this, subList);
         }
         
         /**
@@ -4460,310 +4760,6 @@ public class NodableLinkedList<E>
         public int hashCode() {
             return 31 + ((element()==null) ? 0 : element().hashCode());
         }
-
-        /**
-         * Sublist node of a {@code NodableLinkedList.SubList}. A sublist node is
-         * associated with one and only one {@code NodableLinkedList.SubList} instance.
-         * Any operation performed on a {@code SubListNode} is reflected in its
-         * associated {@code NodableLinkedList.SubList}.
-         * 
-         * <p>Every sublist node has a parent {@code NodableLinkedList.Node}.
-         * Method {@link NodableLinkedList.Node.SubListNode#parentNode()} returns
-         * the parent node.
-         * 
-         * <p>Unlike its parent node, operations on a sublist node are not necessarily
-         * performed in constant time because it be necessary to confirm, in linear time,
-         * that the sublist node is still an element of its associated sublist.
-         * 
-         * @author James Pfeifer
-         */
-        public class SubListNode implements Comparable<Node<E>> {
-            
-            private final NodableLinkedList<E>.SubList subList;
-            private int expectedModCount;
-            
-            private SubListNode(NodableLinkedList<E>.SubList subList) {
-                this.subList = subList;
-                updateExpectedModCount();
-            }
-            
-            private void updateExpectedModCount() {
-                this.expectedModCount = subList.nodableLinkedList().modCount;
-            }
-                        
-            private void stillNodeOfSubList() {
-                if (expectedModCount == subList.nodableLinkedList().modCount) return;
-                if (!subList.linkedNodesSubList().contains(parentNode())) throw new IllegalStateException("This SubListNode is no longer an element of its sublist");
-                updateExpectedModCount();
-            }
-            
-            /**
-             * Returns the parent node of this sublist node. In other words,
-             * returns the node backing this sublist node.
-             * 
-             * @return the parent node of this sublist node.
-             */
-            public Node<E> parentNode() {
-                return Node.this;
-            }
-            
-            /**
-             * Returns the element contained within this sublist node.
-             * 
-             * @return the element contained within this sublist node.
-             */
-            public E element() {
-                return parentNode().element();
-            }
-
-            /**
-             * Returns {@code true} if this sublist node belongs to a list.
-             * 
-             * @return {@code true} if this sublist node belongs to a list.
-             */
-            public boolean isLinked() {
-                return parentNode().isLinked();
-            }
-
-            /**
-             * Returns the {@code SubList} this sublist node belongs to
-             * 
-             * @return the {@code SubList} this sublist node belongs to
-             */
-            public NodableLinkedList<E>.SubList subList() {
-                return subList;
-            }
-
-            /**
-             * Replaces the element of this sublist node with the specified element.
-             * 
-             * @param element element to be stored in this sublist node.
-             */
-            public void set(E element) {
-                parentNode().set(element);
-            }
-
-            /**
-             * Inserts the specified node after this sublist node. This sublist node must
-             * belong to a sublist and the specified node must not already belong to a list.
-             * 
-             * @param node the node to be inserted after this sublist node.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             * @throws IllegalArgumentException if the specified node is null or is already an element of a list.
-             */
-            public void addNodeAfterMe(Node<E> node) {
-                subList.checkForConcurrentModificationException();
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already an element of a list");
-                stillNodeOfSubList();
-                subList.linkedNodesSubList().addNodeAfter(node, parentNode());
-                updateExpectedModCount();
-            }
-
-            /**
-             * Inserts the specified node before this sublist node. This sublist node must
-             * belong to a sublist and the specified node must not already belong to a list.
-             * 
-             * @param node the node to be inserted before this sublist node.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             * @throws IllegalArgumentException if the specified node is null or is already an element of a list.
-             */
-            public void addNodeBeforeMe(Node<E> node) {
-                subList.checkForConcurrentModificationException();
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already an element of a list");
-                stillNodeOfSubList();
-                subList.linkedNodesSubList().addNodeBefore(node, parentNode());
-                updateExpectedModCount();
-            }
-
-            /**
-             * Returns {@code true} if there exists a node which comes after this sublist node
-             * in a sublist.  In other words, returns {@code true} if this sublist node is not
-             * the last node of a sublist. 
-             * 
-             * @return {@code true} if this sublist node is not the last node of a sublist. 
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             */
-            public boolean hasNext() {
-                subList.checkForConcurrentModificationException();
-                stillNodeOfSubList();
-                return subList.linkedNodesSubList().hasNodeAfter(parentNode());
-            }
-
-            /**
-             * Returns {@code true} if there exists a node which comes before this sublist node
-             * in a sublist.  In other words, returns {@code true} if this sublist node is not
-             * the first node of a sublist.
-             * 
-             * @return {@code true} if this sublist node is not the first node of a sublist.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             */
-            public boolean hasPrevious() {
-                subList.checkForConcurrentModificationException();
-                stillNodeOfSubList();
-                return subList.linkedNodesSubList().hasNodeBefore(parentNode());
-            }
-
-            /**
-             * Returns the index of this sublist node in its sublist,
-             * or -1 if this sublist node does not belong to a sublist or
-             * the {@code index > Integer.MAX_VALUE}.
-             *
-             * @return the index of this sublist node in its sublist,
-             *         or -1 if this sublist node does not belong to a sublist or
-             *         the {@code index > Integer.MAX_VALUE}.
-             */
-            public int index() {
-                subList.checkForConcurrentModificationException();
-                final long index = subList.linkedNodesSubList().getIndex(parentNode());
-                return (index > Integer.MAX_VALUE) ? -1 : (int)index;
-            }
-
-            /**
-             * Returns the node which comes after this sublist node in a sublist.
-             * if this sublist node is the last or only node, {@code null} is returned.
-             * 
-             * @return the node which comes after this sublist node in a sublist, or
-             *         {@code null} if this sublist node is the last or only node.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             */
-            public Node<E> next() {
-                subList.checkForConcurrentModificationException();
-                stillNodeOfSubList();
-                return subList.linkedNodesSubList().getNodeAfter(parentNode());
-            }
-
-            /**
-             * Returns the node which comes before this sublist node in a sublist.
-             * if this sublist node is the first or only node, {@code null} is returned.
-             * 
-             * @return the node which comes before this sublist node in a sublist, or
-             *         {@code null} if this sublist node is the first or only node.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             */
-            public Node<E> previous() {
-                subList.checkForConcurrentModificationException();
-                stillNodeOfSubList();
-                return subList.linkedNodesSubList().getNodeBefore(parentNode());
-            }
-
-            /**
-             * Removes this sublist node from the sublist it is linked to.
-             * 
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             */
-            public void remove() {
-                subList.checkForConcurrentModificationException();
-                stillNodeOfSubList();
-                subList.linkedNodesSubList().removeNode(parentNode());
-            }
-
-            /**
-             * Replaces this sublist node, in a sublist, with the specified node.
-             * This sublist node must belong to a sublist, and
-             * the replacement node must not already belong to a list.
-             * 
-             * @param node replacement node to replace this sublist node.
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             * @throws IllegalArgumentException if the replacement node is {@code null} or
-             *                                  already an element of a list.
-             */
-            public void replaceWith(Node<E> node) {
-                subList.checkForConcurrentModificationException();
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement node is null or already an element of a list");
-                stillNodeOfSubList();
-                subList.linkedNodesSubList().replaceNode(parentNode(), node);
-            }
-
-            /**
-             * Swaps this sublist node with the specified node. Both this sublist node and
-             * the specified must belong to a list, but they can be different lists.
-             * 
-             * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
-             * different lists. if synchronization is required, both lists should be synchronized by the same
-             * object.
-             * 
-             * @param node the node to swap with this sublist node
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             * @throws IllegalArgumentException if the swap node is {@code null} or not linked
-             */
-            public void swapWith(Node<E> node) {
-                subList.checkForConcurrentModificationException();
-                if (node == null || !node.isLinked()) throw new IllegalArgumentException("The specified node is null or not an element of a list");
-                stillNodeOfSubList();
-                parentNode().swapWith(node);
-                subList.linkedNodesSubList().swappedNodes(parentNode(), node);
-                subList.linkedNodesSubList().updateSizeAndModCount(0L);
-            }
-
-            /**
-             * Swaps this sublist node with the specified sublist node. Both this sublist node
-             * and the specified sublist node must belong to a sublist, but they can be different sublists.
-             * 
-             * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
-             * different lists. if synchronization is required, both lists should be synchronized by the same
-             * object.
-             * 
-             * @param subListNode the sublist node to swap with this sublist node
-             * @throws IllegalStateException if this SubListNode is no longer an element of its sublist.
-             * @throws IllegalArgumentException if the swap node is {@code null} or not linked
-             */
-            public void swapWith(Node<E>.SubListNode subListNode) {
-                subList.checkForConcurrentModificationException();
-                if (subListNode == null || !subListNode.isLinked()) throw new IllegalArgumentException("The specified subListNode is null or not an element of a sublist");
-                subListNode.subList().checkForConcurrentModificationException();
-                subListNode.stillNodeOfSubList();
-                stillNodeOfSubList();
-                parentNode().swapWith(subListNode.parentNode());
-                subList.linkedNodesSubList().swappedNodes(parentNode(), subListNode.parentNode());
-                subListNode.subList().linkedNodesSubList().swappedNodes(subListNode.parentNode(), parentNode());
-                subListNode.subList().linkedNodesSubList().updateSizeAndModCount(0L);
-                subList.linkedNodesSubList().updateSizeAndModCount(0L);
-            }
-
-            /**
-             * Compares this sublist node with the specified object for equality.
-             * Returns {@code true} if and only if the specified object is also a node,
-             * and both pairs of elements in the two nodes are <i>equal</i>.
-             * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
-             * {@code (e1==null ? e2==null : e1.equals(e2))}.)
-             *
-             * @param object object to be compared for equality with this sublist node
-             * @return {@code true} if the specified object is equal to this sublist node
-             */
-            @Override
-            public boolean equals(Object object) {
-                return parentNode().equals(object);
-            }
-
-            /**
-             * Compares this sublist node to the specified node for order. Returns a negative integer,
-             * zero, or a positive integer as this sublist node is less than, equal
-             * to, or greater than the specified node.
-             *
-             * @param node node to be compared to this sublist node.
-             * @return a negative integer, zero, or a positive integer as the
-             *         this sublist node is less than, equal to, or greater than the
-             *         specified node.
-             * @throws NullPointerException if the specified sublist node is null
-             * @throws ClassCastException if the nodes' element types prevent them from
-             *         being compared.
-             */
-            @Override
-            public int compareTo(Node<E> node) {
-                return parentNode().compareTo(node);
-            }
-
-            /**
-             * Returns the hash code value of this sublist node.
-             *
-             * @return the hash code value of this sublist node
-             */
-            @Override
-            public int hashCode() {
-                return parentNode().hashCode();
-            }
-            
-        } // SubListNode
 
     } // Node
 
