@@ -4592,12 +4592,11 @@ public class NodableLinkedList<E>
 
     /**
      * Sublist node of a {@code NodableLinkedList.SubList}.
-     * Every {@code SubListNode} is backed by a {@code NodableLinkedList.Node}, and
-     * associated with a {@code NodableLinkedList.SubList}. A {@code SubListNode}
-     * can be removed from its associated {@code SubList} and added to a different
-     * {@code SubList} as long as its backing {@code Node} is contained by that {@code SubList}.
-     * Any operation performed on a {@code SubListNode} is performed on its
-     * associated {@code NodableLinkedList.SubList}.
+     * A {@code SubListNode} represents a {@code NodableLinkedList.Node} (backing node)
+     * that is associated with a specific {@code SubList}. Any operation performed
+     * on a {@code SubListNode} is performed on its associated {@code SubList}.
+     * A {@code SubListNode} can be removed from its current {@code SubList} and
+     * added to a different {@code SubList}.
      * 
      * <p><b>Performance Consideration:</b> Unlike operations on a {@code Node},
      * operations on a {@code SubListNode} are not necessarily performed in constant time
@@ -4631,29 +4630,6 @@ public class NodableLinkedList<E>
             if (expectedModCount == subList.nodableLinkedList().modCount) return;
             if (!subList.linkedSubNodes().contains(backingNode)) throw new IllegalStateException("This SubListNode is no longer a node of its assigned sublist");
             updateExpectedModCount();
-        }
-        
-        /**
-         * Returns (and marks) this {@code SubListNode} as a {@code SubListNode}
-         * which has been just verified that it is still a node of its associated
-         * {@code SubList}.
-         * 
-         * <p><b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is
-         * not verified that it is still a node of its associated {@code SubList}.
-         * If it is not a node of its associated {@code SubList}, the results of
-         * using this {@code SubListNode} are unpredictable. This method is provided
-         * to avoid the performance cost of verifying a {@code SubListNode} is still
-         * a node of its associated {@code SubList} when it's certain that it still is.
-         * Note, just like any {@code SubListNode}, if the {@code NodableLinkedList}
-         * is subsequently modified, this {@code SubListNode}, will once again have
-         * to be verified.
-         * 
-         * @return this {@code SubListNode} marked as verified that it is still a node
-         *         of its associated {@code SubList}
-         */
-        public SubListNode<E> unverified() {
-            updateExpectedModCount();
-            return this;
         }
         
         /**
@@ -4987,10 +4963,33 @@ public class NodableLinkedList<E>
             this.updateExpectedModCount();
             subListNode.updateExpectedModCount();
         }
+        
+        /**
+         * Returns (and marks) this {@code SubListNode} as a {@code SubListNode}
+         * which has been just verified that it is still a node of its associated
+         * {@code SubList}.
+         * 
+         * <p><b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is
+         * not verified that it is still a node of its associated {@code SubList}.
+         * If it is not a node of its associated {@code SubList}, the results of
+         * using this {@code SubListNode} are unpredictable. This method is provided
+         * to avoid the performance cost of verifying a {@code SubListNode} is still
+         * a node of its associated {@code SubList} when it's certain that it still is.
+         * Note, just like any {@code SubListNode}, if the {@code NodableLinkedList}
+         * is subsequently modified, this {@code SubListNode}, will once again have
+         * to be verified.
+         * 
+         * @return this {@code SubListNode} marked as verified that it is still a node
+         *         of its associated {@code SubList}
+         */
+        public SubListNode<E> unverified() {
+            updateExpectedModCount();
+            return this;
+        }        
 
         /**
          * Compares this {@code SubListNode} with the specified object ({@code Node}) for equality.
-         * Returns {@code true} if and only if the specified object is also a {@code Node},
+         * Returns {@code true} if and only if the specified object is a {@code Node},
          * and both pairs of elements in the two nodes are <i>equal</i>.
          * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
          * {@code (e1==null ? e2==null : e1.equals(e2))}.)
@@ -5006,13 +5005,13 @@ public class NodableLinkedList<E>
         /**
          * Compares this {@code SubListNode} to the specified node for order.
          * Returns a negative integer, zero, or a positive integer as this
-         * {@code SubListNode} is less than, equal to, or greater than the specified
-         * node.
+         * sublist node's element is less than, equal to, or greater than
+         * the specified node's element.
          *
          * @param node {@code Node} to be compared to this {@code SubListNode}.
-         * @return a negative integer, zero, or a positive integer as the
-         *         this {@code SubListNode} is less than, equal to, or greater than the
-         *         specified node.
+         * @return a negative integer, zero, or a positive integer as
+         *         this sublist node's element is less than, equal to,
+         *         or greater than the specified node's element.
          * @throws NullPointerException if the specified node is {@code null}
          * @throws ClassCastException if the nodes' element types prevent them from
          *                            being compared.
@@ -5429,13 +5428,13 @@ public class NodableLinkedList<E>
 
         /**
          * Compares this {@code Node} to the specified node for order. Returns a negative integer,
-         * zero, or a positive integer as this {@code Node} is less than, equal
-         * to, or greater than the specified node.
+         * zero, or a positive integer as this node's element is less than, equal
+         * to, or greater than the specified node's element.
          *
          * @param node {@code Node} to be compared to this {@code Node}
          * @return a negative integer, zero, or a positive integer as
-         *         this {@code Node} is less than, equal to, or greater than the
-         *         specified node
+         *         this node's element is less than, equal to, or greater
+         *         than the specified node's element
          * @throws NullPointerException if the specified node is {@code null}
          * @throws ClassCastException if the nodes' element types prevent them from
          *                            being compared
