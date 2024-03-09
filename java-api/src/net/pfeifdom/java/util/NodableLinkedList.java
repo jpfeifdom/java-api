@@ -117,7 +117,7 @@ import java.util.function.Function;
  *                      // the merged nodes are placed at the front of the list, and
  *                      // tail is the last node of the merged (sorted) nodes
  *          
- *         nmerges = 0;
+ *         nmerges = 0; // number of merges performed
  *             
  *         // merge successive sublists (p and q lists) of the list, of size 'insize',
  *         // until the entire list has been processed
@@ -144,7 +144,7 @@ import java.util.function.Function;
  *             // merge the p and q lists
  *             while (psize > 0 || (qsize > 0 && q != null)) {
  *              
- *                 // decide where the next element (e) to merge comes from (the p list or q list)
+ *                 // decide where the next element (e) to merge comes from (the p list or the q list)
  *                 if (psize == 0) {
  *                     e = q; q = q.next(); qsize--; // p list is empty; e must come from the q list
  *                 } else if (qsize == 0 || q == null) {
@@ -162,7 +162,7 @@ import java.util.function.Function;
  *                 } else {
  *                     e.addAfter(tail); // add e after the last node in the merged list
  *                 }
- *                 tail = e; // tail is the last node of the merged list
+ *                 tail = e; // tail is the last node of the merged (sorted) list
  *             }
  *              
  *             p = q; // the next p list starts where the q list ended
@@ -1124,12 +1124,12 @@ public class NodableLinkedList<E>
      * The returned {@code SubList} supports all of the optional list operations
      * supported by this list.
      * 
-     * <p> If the specified firstNode is {@code null}, the first node of the
-     * this list will be used as the first node of the {@code SubList}. If the specified
-     * lastNode is {@code null}, the last node of this list will be used as the
-     * last node of the {@code SubList}. Note, the only way to produce an empty {@code SubList}
-     * using this method, is if this list is empty and {@code null} is specified for both
-     * the firstNode and the lastNode.
+     * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+     * positioned right before the specified lastNode, is returned. If the specified
+     * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
+     * specified firstNode, is returned. if both the specified firstNode and lastNode
+     * are {@code null}, an empty {@code SubList}, positioned at the end of this list,
+     * is returned.
      * 
      * <p><strong>Implementation Note:</strong>
      * For performance reasons, this implementation does not verify that the specified
@@ -2260,12 +2260,12 @@ public class NodableLinkedList<E>
          * The returned {@code SubList} supports all of the optional list operations
          * supported by this list.
          * 
-         * <p> If the specified firstNode is {@code null}, the first node of the
-         * this list will be used as the first node of the {@code SubList}. If the specified
-         * lastNode is {@code null}, the last node of this list will be used as the
-         * last node of the {@code SubList}. Note, the only way to produce an empty {@code SubList}
-         * using this method, is if this list is empty and {@code null} is specified for both
-         * the firstNode and the lastNode.
+         * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+         * positioned right before the specified lastNode, is returned. If the specified
+         * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
+         * specified firstNode, is returned. if both the specified firstNode and lastNode
+         * are {@code null}, an empty {@code SubList}, positioned at the end of this list,
+         * is returned.
          * 
          * <p><strong>Implementation Note:</strong>
          * For performance reasons, this implementation does not verify that the specified
@@ -2305,15 +2305,23 @@ public class NodableLinkedList<E>
         }
         
         private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
-            if (firstNode == null) firstNode = this.headSentinel.next;
-            if (lastNode == null) lastNode = this.tailSentinel.previous;
+            if (firstNode == null && lastNode == null) {
+                // both firstNode and lastNode are null
+                return new SubList(tailSentinel.previous, tailSentinel, null, 0L);
+            } else if (firstNode == null) {
+                // only the lastNode is specified
+                if (!contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
+                return new SubList(lastNode.previous, lastNode, null, 0L);
+            } else if (lastNode == null) {
+                // only the firstNode is specified
+                if (!contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
+                return new SubList(firstNode, firstNode.next, null, 0L);
+            }
+            // both firstNode and LastNode are specified 
             if (!this.contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
             if (!this.contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
-            if (lastNode.next == firstNode && firstNode != this.headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-            final Node<E> headSentinel = firstNode.previous;
-            final Node<E> tailSentinel = lastNode.next;
-            final long size = (headSentinel.next == tailSentinel) ? 0L : -1L; // size is unknown
-            return new SubList(headSentinel, tailSentinel, null, size);
+            if (lastNode.next == firstNode) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
+            return new SubList(firstNode.previous, lastNode.next, null, -1L);
         }
 
         /**
@@ -3222,9 +3230,9 @@ public class NodableLinkedList<E>
         public boolean addAll(Collection<? extends E> collection) {
             checkForModificationException();
             boolean changed = false;
-            final Node<E> targetNode = linkedSubNodes.getNode(longSize());
+            final Node<E> tailSentinel = linkedSubNodes.getTailSentinel();
             for (E element: collection) {
-                linkedSubNodes.addNodeBefore(node(element), targetNode);
+                linkedSubNodes.addNodeBefore(node(element), tailSentinel);
                 changed = true;
             }
             return changed;
@@ -3435,12 +3443,12 @@ public class NodableLinkedList<E>
          * The returned {@code SubList} supports all of the optional list operations
          * supported by this {@code SubList}.
          * 
-         * <p> If the specified firstNode is {@code null}, the first node of the
-         * this {@code SubList} will be used as the first node of the returned {@code SubList}. If the specified
-         * lastNode is {@code null}, the last node of this {@code SubList} will be used as the
-         * last node of the returned {@code SubList}. Note, the only way to produce an empty {@code SubList}
-         * using this method, is if this {@code SubList} is empty and {@code null} is specified
-         * for both the firstNode and the lastNode.
+         * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+         * positioned right before the specified lastNode, is returned. If the specified
+         * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
+         * specified firstNode, is returned. if both the specified firstNode and lastNode
+         * are {@code null}, an empty {@code SubList}, positioned at the end of this sublist,
+         * is returned.
          *
          * <p>This method eliminates the need for explicit range operations (of
          * the sort that commonly exist for arrays). Any operation that expects
@@ -3633,6 +3641,10 @@ public class NodableLinkedList<E>
                 }
                 return tailSentinel;
             }
+            
+            private Node<E> getTailSentinel() {
+                return getNode(longSize());
+            }
 
             private void addNodeAfter(Node<E> node, Node<E> afterThisNode) {
                 // assert node != null && !node.isLinked() : "Node is null or already an element of a list";
@@ -3664,7 +3676,7 @@ public class NodableLinkedList<E>
             private boolean hasNodeAfter(Node<E> node) {
                 // assert this.contains(node) : "Node is not an element of this sublist";
                 if (node.next == tailSentinel()) return false;
-                if (node.next == linkedNodes.tailSentinel)  throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
+                if (node.next == linkedNodes.tailSentinel)  throw new IllegalStateException("End of list reached unexpectedly; the sublists's last node most likely comes before the sublist's first node in the list");
                 return true;
             }
 
@@ -3706,7 +3718,7 @@ public class NodableLinkedList<E>
              * @param index index of the node to return
              * @return the node at the specified position in this sublist
              * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-             * @throws IllegalStateException if end of list is reached unexpectedly; the specified last node most likely comes before the specified first node in the list
+             * @throws IllegalStateException if end of list is reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list
              */
             private Node<E> getNode(long index) {
                 // Note, this routine returns the tailSentinel if index = longSize() (the size of the list) or if the list is empty
@@ -3743,11 +3755,11 @@ public class NodableLinkedList<E>
                         if (node == tailSentinel) {
                             throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
                         } else {
-                            throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
+                            throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
                         }
                     }
                     if (node == tailSentinel) this.size = cursorIndex;
-                    if (node.next == tailSentinel) this.size = cursorIndex + 1;
+                    if (node.next == tailSentinel) this.size = cursorIndex + 1L;
                 }
                 return node;
             }
@@ -3759,7 +3771,7 @@ public class NodableLinkedList<E>
              * @param node {@code Node} to search for
              * @return the index of the specified node in this sublist,
              *         or -1 if this sublist does not contain the specified node
-             * @throws IllegalStateException if end of list is reached unexpectedly; the specified last node most likely comes before the specified first node in the list             
+             * @throws IllegalStateException if end of list is reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list             
              */
             private long getIndex(Node<E> node) {
                 // assert node != null : "Node is null";
@@ -3784,8 +3796,8 @@ public class NodableLinkedList<E>
                         cursorIndex++;
                         cursorNode = cursorNode.next;
                     }
-                    if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
-                    if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1;
+                    if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
+                    if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1L;
                     if (cursorNode == this.tailSentinel) {
                         this.size = cursorIndex;
                         cursorIndex = -1L; // node not found
@@ -3822,7 +3834,7 @@ public class NodableLinkedList<E>
                     Node<E> node;
                     size = 0L;
                     for (node = headSentinel.next; node != tailSentinel && node != linkedNodes.tailSentinel; node = node.next) size++;
-                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
+                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
                 }
                 return size;
             }
@@ -3860,7 +3872,7 @@ public class NodableLinkedList<E>
                         node = node.next;
                         removeNode(nodeToRemove);
                     }
-                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
+                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sulist's first node in the list");
                 }
             }
 
@@ -4000,8 +4012,8 @@ public class NodableLinkedList<E>
             public boolean addAll(Collection<? extends Node<E>> collection) {
                 checkForModificationException();
                 final long initialSize = longSize();
-                final Node<E> targetNode = getNode(longSize()); // get sublist's tailSentinel
-                for (Node<E> node: collection) addNodeBefore(node, targetNode);
+                final Node<E> tailSentinel = getTailSentinel();
+                for (Node<E> node: collection) addNodeBefore(node, tailSentinel);
                 return longSize() != initialSize;
             }
             
@@ -4151,12 +4163,12 @@ public class NodableLinkedList<E>
              * The returned {@code SubList} supports all of the optional list operations
              * supported by this sublist.
              * 
-             * <p> If the specified firstNode is {@code null}, the first node of the
-             * this sublist will be used as the first node of the returned {@code SubList}. If the specified
-             * lastNode is {@code null}, the last node of this sublist will be used as the
-             * last node of the returned {@code SubList}. Note, the only way to produce an empty {@code SubList}
-             * using this method, is if this sublist is empty and {@code null} is specified
-             * for both the firstNode and the lastNode.
+             * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+             * positioned right before the specified lastNode, is returned. If the specified
+             * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
+             * specified firstNode, is returned. if both the specified firstNode and lastNode
+             * are {@code null}, an empty {@code SubList}, positioned at the end of this sublist,
+             * is returned.
              * 
              * <p>This method eliminates the need for explicit range operations (of
              * the sort that commonly exist for arrays). Any operation that expects
@@ -4191,26 +4203,52 @@ public class NodableLinkedList<E>
             
             private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
                 checkForModificationException();
-                if (firstNode == null) firstNode = getFirstNode();
-                if (lastNode == null) lastNode = getLastNode();
+                if (firstNode == null && lastNode == null) {
+                    // both firstNode and lastNode are null
+                    final Node<E> tailSentinel = getTailSentinel();
+                    return new SubList(tailSentinel.previous, tailSentinel, SubList.this, 0L);
+                } else if (firstNode == null) {
+                    // only the lastNode is specified
+                    if (!contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this sublist");
+                    return new SubList(lastNode.previous, lastNode, SubList.this, 0L);
+                } else if (lastNode == null) {
+                    // only the firstNode is specified
+                    if (!contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this sublist");
+                    return new SubList(firstNode, firstNode.next, SubList.this, 0L);
+                }
+                // both firstNode and LastNode are specified
                 if (!linkedNodes.contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
-                if (linkedNodes.contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
-                if (lastNode.next == firstNode && firstNode != headSentinel.next) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
-                long size = 0;
+                if (!linkedNodes.contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
+                Node<E> node;
+                long subListSize = 0;
                 boolean foundFirstNode = false;
                 boolean foundLastNode = false;
-                for (Node<E> node = headSentinel.next; node != tailSentinel(); node = node.next) {
-                    if (node == firstNode) foundFirstNode = true;
-                    if (foundFirstNode) size++;
-                    if (node == lastNode) { foundLastNode = true; break; }
+                if (sizeIsKnown()) {
+                    long remaining = longSize();
+                    for (node = headSentinel.next; remaining > 0; node = node.next, remaining--) {
+                        if (node == firstNode) foundFirstNode = true;
+                        if (foundFirstNode) subListSize++;
+                        if (node == lastNode) { foundLastNode = true; break; }
+                    }
+                    if (remaining == 0) this.tailSentinel = node;
+                    if (remaining == 1) this.tailSentinel = node.next;
+                } else {
+                    long listSize = 0;
+                    for (node = headSentinel.next; node != tailSentinel; node = node.next) {
+                        if (node == linkedNodes.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the specified first node in the list");
+                        listSize++;
+                        if (node == firstNode) foundFirstNode = true;
+                        if (foundFirstNode) subListSize++;
+                        if (node == lastNode) { foundLastNode = true; break; }
+                    }
+                    if (node == tailSentinel) this.size = listSize;
+                    if (node.next == tailSentinel) this.size = listSize + 1L;
                 }
-                if (size > 0) {
-                    if (foundLastNode && !foundFirstNode) throw new IllegalArgumentException(
-                            "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
-                    if (!foundFirstNode) throw new IllegalArgumentException("specified first node is not part of this sublist");
-                    if (!foundLastNode) throw new IllegalArgumentException("specified last node is not part of this sublist");
-                }
-                return new SubList(firstNode.previous, lastNode.next, SubList.this, size);
+                if (foundLastNode && !foundFirstNode) throw new IllegalArgumentException(
+                        "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
+                if (!foundFirstNode) throw new IllegalArgumentException("specified first node is not part of this sublist");
+                if (!foundLastNode) throw new IllegalArgumentException("specified last node is not part of this sublist");
+                return new SubList(firstNode.previous, lastNode.next, SubList.this, subListSize);
             }
 
             /**
@@ -4306,7 +4344,7 @@ public class NodableLinkedList<E>
              *                            <i>mutually comparable</i> using the specified comparator
              */
             public void mergeSort(Comparator<? super Node<E>> comparator) {
-                linkedNodes.mergeSort(comparator, headSentinel, getNode(longSize()));
+                linkedNodes.mergeSort(comparator, headSentinel, getTailSentinel());
                 updateSizeAndModCount(0L);
             }
             
@@ -4452,7 +4490,7 @@ public class NodableLinkedList<E>
                             if (listIterator.cursorNode().next == tailSentinel) return false;
                         } else {
                             if (listIterator.cursorNode().next != tailSentinel) {
-                                throw new IllegalStateException("End of list reached unexpectedly; the specified last node most likely comes before the specified first node in the list");
+                                throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list");
                             }
                         }
                     }
