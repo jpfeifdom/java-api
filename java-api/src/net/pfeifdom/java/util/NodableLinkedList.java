@@ -3796,12 +3796,13 @@ public class NodableLinkedList<E>
                         cursorIndex++;
                         cursorNode = cursorNode.next;
                     }
-                    if (cursorNode != this.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
-                    if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1L;
                     if (cursorNode == this.tailSentinel) {
                         this.size = cursorIndex;
                         cursorIndex = -1L; // node not found
+                    } else if (cursorNode == linkedNodes.tailSentinel) {
+                        throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
                     }
+                    if (cursorNode.next == this.tailSentinel) this.size = cursorIndex + 1L;
                 }
                 return cursorIndex;
             }
@@ -5004,7 +5005,7 @@ public class NodableLinkedList<E>
         
         /**
          * Returns (and marks) this {@code SubListNode} as a {@code SubListNode}
-         * which has been just verified that it is still a node of its associated
+         * which has just been verified that it is still a node of its associated
          * {@code SubList}.
          * 
          * <p><b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is
@@ -5026,18 +5027,22 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Compares this {@code SubListNode} with the specified object ({@code Node}) for equality.
-         * Returns {@code true} if and only if the specified object is a {@code Node},
-         * and both pairs of elements in the two nodes are <i>equal</i>.
+         * Compares this {@code SubListNode} with the specified object
+         * ({@code Node} or {@code SubListNode}) for equality.
+         * Returns {@code true} if and only if the specified object is
+         * a {@code Node} or a {@code SubListNode}, and both pairs of
+         * elements in the two nodes are <i>equal</i>.
          * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
          * {@code (e1==null ? e2==null : e1.equals(e2))}.)
          *
-         * @param object {@code Object} ({@code Node}) to be compared for equality with this {@code SubListNode}
-         * @return {@code true} if the specified object ({@code Node}) is equal to this {@code SubListNode}
+         * @param object {@code Object} ({@code Node} or {@code SubListNode}
+         *               to be compared for equality with this {@code SubListNode}
+         * @return {@code true} if the specified object ({@code Node} or {@code SubListNode})
+         *                      is equal to this {@code SubListNode}
          */
         @Override
         public boolean equals(Object object) {
-            return backingNode.equals(object);
+             return backingNode.equals(object);
         }
         
         /**
@@ -5058,6 +5063,24 @@ public class NodableLinkedList<E>
         public int compareTo(Node<E> node) {
             return backingNode.compareTo(node);
         }
+        
+        /**
+         * Compares this {@code SubListNode} to the specified subListNode for order.
+         * Returns a negative integer, zero, or a positive integer as this
+         * sublist node's element is less than, equal to, or greater than
+         * the specified subListNode's element.
+         *
+         * @param subListNode {@code SubListNode} to be compared to this {@code SubListNode}.
+         * @return a negative integer, zero, or a positive integer as
+         *         this sublist node's element is less than, equal to,
+         *         or greater than the specified subListNode's element.
+         * @throws NullPointerException if the specified subListNode is {@code null}
+         * @throws ClassCastException if the nodes' element types prevent them from
+         *                            being compared.
+         */
+        public int compareTo(SubListNode<E> subListNode) {
+            return backingNode.compareTo(subListNode.backingNode);
+        }        
 
         /**
          * Returns the hash code value of this {@code SubListNode}.
@@ -5290,6 +5313,9 @@ public class NodableLinkedList<E>
          * Returns the index of this {@code Node} in a list,
          * or -1 if this {@code Node} does not belong to a list or
          * the {@code index > Integer.MAX_VALUE}.
+         * 
+         * <p><b>Performance Consideration:</b> This operation is performed
+         * in linear time.
          *
          * @return the index of this {@code Node} in a list,
          *         or -1 if this {@code Node} does not belong to a list or
@@ -5446,28 +5472,39 @@ public class NodableLinkedList<E>
         }      
         
         /**
-         * Compares this {@code Node} with the specified object ({@code Node}) for equality.
-         * Returns {@code true} if and only if the specified object is also a {@code Node},
+         * Compares this {@code Node} with the specified object
+         * ({@code Node} or {@code SubListNode}) for equality.
+         * Returns {@code true} if and only if the specified object
+         * is also a {@code Node} or a {@code SubListNode},
          * and both pairs of elements in the two nodes are <i>equal</i>.
          * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
          * {@code (e1==null ? e2==null : e1.equals(e2))}.)
          *
-         * @param object {@code Object} ({@code Node}) to be compared for equality with this {@code Node}
-         * @return {@code true} if the specified object ({@code Node}) is equal to this {@code Node}
+         * @param object {@code Object} ({@code Node} or {@code SubListNode})
+         *               to be compared for equality with this {@code Node}
+         * @return {@code true} if the specified object ({@code Node} or {@code SubListNode})
+         *                      is equal to this {@code Node}
          */
         @Override
         public boolean equals(Object object) {
             if (this == object) return true;
-            if (!(object instanceof Node)) return false;
+            Object thatElement;
+            if (object instanceof Node) {
+                thatElement = ((Node<?>)object).element();
+            } else if (object instanceof SubListNode) {
+                thatElement = ((SubListNode<?>)object).element();
+            } else {
+                return false;
+            }
             final Object thisElement = this.element();
-            final Object thatElement = ((Node<?>)object).element();
             return (thisElement==null) ? thatElement==null : thisElement.equals(thatElement);
         }
 
         /**
-         * Compares this {@code Node} to the specified node for order. Returns a negative integer,
-         * zero, or a positive integer as this node's element is less than, equal
-         * to, or greater than the specified node's element.
+         * Compares this {@code Node} to the specified node for order.
+         * Returns a negative integer, zero, or a positive integer as
+         * this node's element is less than, equal to, or greater than
+         * the specified node's element.
          *
          * @param node {@code Node} to be compared to this {@code Node}
          * @return a negative integer, zero, or a positive integer as
@@ -5490,6 +5527,24 @@ public class NodableLinkedList<E>
                 throw new ClassCastException("The specified node's element type is not compatible for comparison: "+e.getMessage());
             }
         }
+
+        /**
+         * Compares this {@code Node} to the specified subListNode for order.
+         * Returns a negative integer, zero, or a positive integer as this
+         * node's element is less than, equal to, or greater than the specified
+         * subListNode's element.
+         *
+         * @param subListNode {@code SubListNode} to be compared to this {@code Node}
+         * @return a negative integer, zero, or a positive integer as
+         *         this node's element is less than, equal to, or greater
+         *         than the specified subListNode's element
+         * @throws NullPointerException if the specified subListNode is {@code null}
+         * @throws ClassCastException if the nodes' element types prevent them from
+         *                            being compared
+         */
+        public int compareTo(SubListNode<E> subListNode) {
+            return this.compareTo(subListNode.backingNode());
+        }        
 
         /**
          * Returns the hash code value of this {@code Node}.
