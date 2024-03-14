@@ -261,11 +261,11 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Constructs a list containing the elements of the specified
-     * collection, in the order they are returned by the collection's
-     * iterator.
+     * Constructs a list containing the elements of the specified collection, in the
+     * order they are returned by the collection's iterator.
      *
-     * @param  collection the collection whose elements are to be placed into this list
+     * @param collection the collection whose elements are to be placed into this
+     *                   list
      * @throws NullPointerException if the specified collection is {@code null}
      */
     public NodableLinkedList(Collection<? extends E> collection) {
@@ -275,14 +275,14 @@ public class NodableLinkedList<E>
 
     // serialize
     /**
-     * Save the state of this {@code NodableLinkedList} instance to a stream
-     * (that is, serialize it).
+     * Save the state of this {@code NodableLinkedList} instance to a stream (that
+     * is, serialize it).
      *
      * @param stream stream to save the state of this instance
      * @throws IOException I/O error occurred while writing to stream
-     * @serialData The size of the list (the number of elements it
-     *             contains) is emitted (long), followed by all of its
-     *             elements (each an Object) in the proper order.
+     * @serialData The size of the list (the number of elements it contains) is
+     *             emitted (long), followed by all of its elements (each an Object)
+     *             in the proper order.
      */
     private void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
@@ -299,9 +299,11 @@ public class NodableLinkedList<E>
      * 
      * @param stream stream to be deserialized
      * @throws ClassNotFoundException Class of a serialized object cannot be found.
-     * @throws IOException I/O error occurred while reading from stream
+     * @throws IOException            I/O error occurred while reading from stream
      */
-    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException
+    {
         stream.defaultReadObject();	
         try {
             linkedNodesField.setAccessible(true);
@@ -351,10 +353,11 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns a {@code Node} containing the specified element which can be {@code null}.
-     * The node will not be linked to any list.
+     * Returns a {@code Node} containing the specified element which can be
+     * {@code null}. The node will not be linked to any list.
      * 
-     * @param <T> type of element to be contained within the returned {@code Node}
+     * @param <T>     type of element to be contained within the returned
+     *                {@code Node}
      * @param element element to be contained within the returned {@code Node}
      * @return an unlinked {@code Node} containing the specified element
      */
@@ -363,7 +366,7 @@ public class NodableLinkedList<E>
     }    
 
     /**
-     * Returns the number of elements in this list.  If this list contains more than
+     * Returns the number of elements in this list. If this list contains more than
      * {@code Integer.MAX_VALUE} elements, {@code Integer.MAX_VALUE} is returned.
      *
      * @return the number of elements in this list
@@ -385,10 +388,12 @@ public class NodableLinkedList<E>
     /**
      * Appends the specified node to the end of this list.
      *
-     * <p>This method is equivalent to {@link #addNodeLast}.
+     * <p>
+     * This method is equivalent to {@link #addNodeLast}.
      *
      * @param node {@code Node} to be appended to the end of this list
-     * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+     * @throws IllegalArgumentException if node is {@code null} or already a node of
+     *                                  a list
      */
     public void addNode(Node<E> node) {
         addNodeLast(node);
@@ -398,7 +403,8 @@ public class NodableLinkedList<E>
      * Inserts the specified node at the beginning of this list.
      *
      * @param node the {@code Node} to be inserted at the beginning of this list
-     * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+     * @throws IllegalArgumentException if node is {@code null} or already a node of
+     *                                  a list
      */
     public void addNodeFirst(Node<E> node) {
         linkedNodes.addFirst(node);
@@ -407,32 +413,32 @@ public class NodableLinkedList<E>
     /**
      * Appends the specified node to the end of this list.
      *
-     * <p>This method is equivalent to {@link #addNode}.
+     * <p>
+     * This method is equivalent to {@link #addNode}.
      *
      * @param node {@code Node} to be appended to the end of this list
-     * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+     * @throws IllegalArgumentException if node is {@code null} or already a node of
+     *                                  a list
      */
     public void addNodeLast(Node<E> node) {
         linkedNodes.addLast(node);
     }
     
     /**
-     * Returns the first node of this list,
-     * or returns {@code null} if this list is empty.
+     * Returns the first node of this list, or returns {@code null} if this list is
+     * empty.
      *
-     * @return the first node of this list, or {@code null}
-     *         if this list is empty
+     * @return the first node of this list, or {@code null} if this list is empty
      */
     public Node<E> getFirstNode() {
         return linkedNodes.peekFirst();
     }
 
     /**
-     * Returns the last node of this list,
-     * or returns {@code null} if this list is empty.
+     * Returns the last node of this list, or returns {@code null} if this list is
+     * empty.
      *
-     * @return the last node of this list, or {@code null}
-     *         if this list is empty
+     * @return the last node of this list, or {@code null} if this list is empty
      */
     public Node<E> getLastNode() {
         return linkedNodes.peekLast();
@@ -443,8 +449,8 @@ public class NodableLinkedList<E>
      * 
      * Returns the removed node or {@code null} if this list is empty
      *
-     * @return the first node of this list that was removed,
-     *         or {@code null} if this list is empty
+     * @return the first node of this list that was removed, or {@code null} if this
+     *         list is empty
      */
     public Node<E> removeFirstNode() {
         return linkedNodes.pollFirst();
@@ -455,8 +461,8 @@ public class NodableLinkedList<E>
      * 
      * Returns the removed node or {@code null} if this list is empty
      *
-     * @return the last node of this list that was removed,
-     *         or {@code null} if this list is empty
+     * @return the last node of this list that was removed, or {@code null} if this
+     *         list is empty
      */
     public Node<E> removeLastNode() {
         return linkedNodes.pollLast();
@@ -472,11 +478,12 @@ public class NodableLinkedList<E>
 
     /**
      * Returns {@code true} if this list contains the specified object (element).
-     * More formally, returns {@code true} if and only if this list contains
-     * at least one element such that
+     * More formally, returns {@code true} if and only if this list contains at
+     * least one element such that
      * {@code (object==null ? element==null : object.equals(element))}.
      *
-     * @param object {@code Object} (element) whose presence in this list is to be tested
+     * @param object {@code Object} (element) whose presence in this list is to be
+     *               tested
      * @return {@code true} if this list contains the specified object (element)
      */
     @Override
@@ -496,15 +503,15 @@ public class NodableLinkedList<E>
 
     /**
      * Returns the index of the first occurrence of the specified object (element)
-     * in this list, or -1 if there is no such index (this list does not
-     * contain the object (element) or the {@code index > Integer.MAX_VALUE}).
-     * More formally, returns the lowest index {@code i} such that
-     * {@code (object==null ? get(i)==null : object.equals(get(i)))},
-     * or -1 if there is no such index.
+     * in this list, or -1 if there is no such index (this list does not contain the
+     * object (element) or the {@code index > Integer.MAX_VALUE}). More formally,
+     * returns the lowest index {@code i} such that
+     * {@code (object==null ? get(i)==null : object.equals(get(i)))}, or -1 if there
+     * is no such index.
      *
      * @param object {@code Object} (element) to search for
-     * @return the index of the first occurrence of the specified object (element) in
-     *         this list, or -1 if there is no such index.
+     * @return the index of the first occurrence of the specified object (element)
+     *         in this list, or -1 if there is no such index.
      */
     @Override
     public int indexOf(Object object) {
@@ -523,12 +530,12 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns the index of the last occurrence of the specified object (element)
-     * in this list, or -1 if there is no such index (this list does not
-     * contain the object (element) or the {@code index > Integer.MAX_VALUE}).
-     * More formally, returns the highest index {@code i} such that
-     * {@code (object==null ? get(i)==null : object.equals(get(i)))},
-     * or -1 if there is no such index.
+     * Returns the index of the last occurrence of the specified object (element) in
+     * this list, or -1 if there is no such index (this list does not contain the
+     * object (element) or the {@code index > Integer.MAX_VALUE}). More formally,
+     * returns the highest index {@code i} such that
+     * {@code (object==null ? get(i)==null : object.equals(get(i)))}, or -1 if there
+     * is no such index.
      *
      * @param object {@code Object} (element) to search for
      * @return the index of the last occurrence of the specified object (element) in
@@ -551,78 +558,78 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Appends all of the elements in the specified collection to the end of
-     * this list, in the order that they are returned by the specified
-     * collection's iterator. The behavior of this operation is undefined if
-     * the specified collection is modified while the operation is in
-     * progress.
+     * Appends all of the elements in the specified collection to the end of this
+     * list, in the order that they are returned by the specified collection's
+     * iterator. The behavior of this operation is undefined if the specified
+     * collection is modified while the operation is in progress.
      *
-     * @param elements collection containing elements to be added to this list
+     * @param collection collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
      * @throws NullPointerException if the specified collection is {@code null}
      */
     @Override
-    public boolean addAll(Collection<? extends E> elements) {
+    public boolean addAll(Collection<? extends E> collection) {
         final long initialSize = longSize();
-        for (E element: elements) addLast(element);
+        for (E element: collection) addLast(element);
         return longSize() != initialSize;
     }
 
     /**
-     * Inserts all of the elements in the specified collection into this
-     * list, starting at the specified position. Shifts the element
-     * currently at that position (if any) and any subsequent elements to
-     * the right (increases their indices). The new elements will appear
-     * in the list in the order that they are returned by the
-     * specified collection's iterator. if the specified {@code index == longSize()},
-     * the elements will be appended to the end of this list.
+     * Inserts all of the elements in the specified collection into this list,
+     * starting at the specified position. Shifts the element currently at that
+     * position (if any) and any subsequent elements to the right (increases their
+     * indices). The new elements will appear in the list in the order that they are
+     * returned by the specified collection's iterator. if the specified
+     * {@code index == longSize()}, the elements will be appended to the end of this
+     * list.
      * 
      * Note that {@code addAll(longSize(), Collection)} is identical in function to
      * {@code addAll(Collection)}.
      *
-     * @param index index at which to insert the first element
-     *              from the specified collection
-     * @param elements collection containing elements to be added to this list
+     * @param index      index at which to insert the first element from the
+     *                   specified collection
+     * @param collection collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-     * @throws NullPointerException if the specified collection is {@code null}
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index > longSize())}
+     * @throws NullPointerException      if the specified collection is {@code null}
      */
     @Override
-    public boolean addAll(int index, Collection<? extends E> elements) {
+    public boolean addAll(int index, Collection<? extends E> collection) {
         if (index < 0 || index > longSize()) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
         final long initialSize = longSize();
         if (index == longSize()) {
-            for (E element: elements) addLast(element);
+            for (E element: collection) addLast(element);
         } else {
             final Node<E> targetNode = linkedNodes.get(index);
-            for (E element: elements) linkedNodes.addNodeBefore(node(element), targetNode);;
+            for (E element: collection) linkedNodes.addNodeBefore(node(element), targetNode);;
         }
         return longSize() != initialSize;
     }
 
     /**
-     * Inserts all of the elements in the specified collection into this
-     * list, before the specified node. Shifts the element
-     * currently at that position and any subsequent elements to
-     * the right (increases their indices).  The new elements will appear
-     * in the list in the order that they are returned by the
-     * specified collection's iterator. if the specified node is {@code null},
-     * the elements will be appended to the end of this list.
+     * Inserts all of the elements in the specified collection into this list,
+     * before the specified node. Shifts the element currently at that position and
+     * any subsequent elements to the right (increases their indices). The new
+     * elements will appear in the list in the order that they are returned by the
+     * specified collection's iterator. if the specified node is {@code null}, the
+     * elements will be appended to the end of this list.
      * 
      * Note that {@code addAll(null, Collection)} is identical in function to
      * {@code addAll(Collection)}.
      *
-     * @param node {@code Node} the specified collection is to be inserted before
-     * @param elements collection containing elements to be added to this list
+     * @param node       {@code Node} the specified collection is to be inserted
+     *                   before
+     * @param collection collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
      * @throws IllegalArgumentException if node is not linked to this list
-     * @throws NullPointerException if the specified collection is {@code null}
+     * @throws NullPointerException     if the specified collection is {@code null}
      */
-    public boolean addAll(Node<E> node, Collection<? extends E> elements) {
-        if (node == null) return addAll(elements);
+    public boolean addAll(Node<E> node, Collection<? extends E> collection) {
+        if (node == null) return addAll(collection);
         if (!linkedNodes.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
         final long initialSize = longSize();
-        for (E element: elements) linkedNodes.addNodeBefore(node(element), node);
+        for (E element: collection) linkedNodes.addNodeBefore(node(element), node);
         return longSize() != initialSize;
     }
 
@@ -639,13 +646,14 @@ public class NodableLinkedList<E>
     }    
 
     /**
-     * Inserts the specified element at the specified position in this list.
-     * Shifts the element currently at that position (if any) and any
-     * subsequent elements to the right (adds one to their indices).
+     * Inserts the specified element at the specified position in this list. Shifts
+     * the element currently at that position (if any) and any subsequent elements
+     * to the right (adds one to their indices).
      *
-     * @param index index at which the specified element is to be inserted
+     * @param index   index at which the specified element is to be inserted
      * @param element element to be inserted
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index > longSize())}
      */
     @Override
     public void add(int index, E element) {
@@ -688,7 +696,8 @@ public class NodableLinkedList<E>
      *
      * @param index index of the element to return
      * @return the element at the specified position in this list
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index >= longSize())}
      */
     @Override
     public E get(int index) {
@@ -763,11 +772,10 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Retrieves, but does not remove, the first element of this list,
-     * or returns {@code null} if this list is empty.
+     * Retrieves, but does not remove, the first element of this list, or returns
+     * {@code null} if this list is empty.
      *
-     * @return the first element of this list, or {@code null}
-     *         if this list is empty
+     * @return the first element of this list, or {@code null} if this list is empty
      */
     @Override
     public E peekFirst() {
@@ -775,11 +783,10 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Retrieves, but does not remove, the last element of this list,
-     * or returns {@code null} if this list is empty.
+     * Retrieves, but does not remove, the last element of this list, or returns
+     * {@code null} if this list is empty.
      *
-     * @return the last element of this list, or {@code null}
-     *         if this list is empty
+     * @return the last element of this list, or {@code null} if this list is empty
      */
     @Override
     public E peekLast() {
@@ -797,11 +804,10 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Retrieves and removes the first element of this list,
-     * or returns {@code null} if this list is empty.
+     * Retrieves and removes the first element of this list, or returns {@code null}
+     * if this list is empty.
      *
-     * @return the first element of this list, or {@code null} if
-     *     this list is empty
+     * @return the first element of this list, or {@code null} if this list is empty
      */
     @Override
     public E pollFirst() {
@@ -809,11 +815,10 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Retrieves and removes the last element of this list,
-     * or returns {@code null} if this list is empty.
+     * Retrieves and removes the last element of this list, or returns {@code null}
+     * if this list is empty.
      *
-     * @return the last element of this list, or {@code null} if
-     *     this list is empty
+     * @return the last element of this list, or {@code null} if this list is empty
      */
     @Override
     public E pollLast() {
@@ -821,13 +826,14 @@ public class NodableLinkedList<E>
     }    
 
     /**
-     * Pops an element from the stack represented by this list.  In other
-     * words, removes and returns the first element of this list.
+     * Pops an element from the stack represented by this list. In other words,
+     * removes and returns the first element of this list.
      *
-     * <p>This method is equivalent to {@link #removeFirst()}.
+     * <p>
+     * This method is equivalent to {@link #removeFirst()}.
      *
-     * @return the element at the front of this list (which is the top
-     *         of the stack represented by this list)
+     * @return the element at the front of this list (which is the top of the stack
+     *         represented by this list)
      * @throws NoSuchElementException if this list is empty
      */
     @Override
@@ -836,10 +842,11 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Pushes an element onto the stack represented by this list.  In other
-     * words, inserts the element at the front of this list.
+     * Pushes an element onto the stack represented by this list. In other words,
+     * inserts the element at the front of this list.
      *
-     * <p>This method is equivalent to {@link #addFirst}.
+     * <p>
+     * This method is equivalent to {@link #addFirst}.
      *
      * @param element the element to push
      */
@@ -861,11 +868,13 @@ public class NodableLinkedList<E>
 
     /**
      * Removes and returns the element at the specified position in this list.
-     * Shifts any subsequent elements to the left (subtracts one from their indices).
+     * Shifts any subsequent elements to the left (subtracts one from their
+     * indices).
      *
      * @param index the index of the element to be removed
      * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index >= longSize())}
      */
     @Override
     public E remove(int index) {
@@ -896,15 +905,16 @@ public class NodableLinkedList<E>
 
     /**
      * Removes, if present, the first occurrence of the specified object (element)
-     * from this list.  If this list does not contain the specified object (element),
+     * from this list. If this list does not contain the specified object (element),
      * it is unchanged. More formally, removes the element with the lowest index
      * {@code i} such that
-     * {@code (object==null ? get(i)==null : object.equals(get(i)))}
-     * (if such an element exists). Returns {@code true} if this list
-     * contained the specified object (element) (or equivalently, if this list
-     * changed as a result of the call).
+     * {@code (object==null ? get(i)==null : object.equals(get(i)))} (if such an
+     * element exists). Returns {@code true} if this list contained the specified
+     * object (element) (or equivalently, if this list changed as a result of the
+     * call).
      *
-     * @param object {@code Object} (element) to be removed from this list, if present
+     * @param object {@code Object} (element) to be removed from this list, if
+     *               present
      * @return {@code true} if this list contained the specified object (element)
      */
     @Override
@@ -913,24 +923,31 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Removes the first occurrence of the specified object (element) in this
-     * list (when traversing the list from head to tail). If the list
-     * does not contain the specified object (element), it is unchanged.
+     * Removes the first occurrence of the specified object (element) in this list
+     * (when traversing the list from head to tail). If the list does not contain
+     * the specified object (element), it is unchanged.
      *
-     * @param object {@code Object} (element) to be removed from this list, if present
+     * @param object {@code Object} (element) to be removed from this list, if
+     *               present
      * @return {@code true} if the list contained the specified object (element)
      */
     @Override
     public boolean removeFirstOccurrence(Object object) {
         if (object == null) {
-            for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
+            for (Node<E> node = getFirstNode();
+                 node != null;
+                 node = linkedNodes.getNodeAfter(node))
+            {
                 if (node.element == null) {
                     linkedNodes.removeNode(node);
                     return true;
                 }			
             }			
         } else {
-            for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
+            for (Node<E> node = getFirstNode();
+                 node != null;
+                 node = linkedNodes.getNodeAfter(node))
+            {
                 if (object.equals(node.element)) {
                     linkedNodes.removeNode(node);
                     return true;
@@ -941,24 +958,31 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Removes the last occurrence of the specified object (element) in this
-     * list (when traversing the list from head to tail).  If the list
-     * does not contain the specified object (element), it is unchanged.
+     * Removes the last occurrence of the specified object (element) in this list
+     * (when traversing the list from head to tail). If the list does not contain
+     * the specified object (element), it is unchanged.
      *
-     * @param object {@code Object} (element) to be removed from this list, if present
+     * @param object {@code Object} (element) to be removed from this list, if
+     *               present
      * @return {@code true} if the list contained the specified object (element)
      */
     @Override
     public boolean removeLastOccurrence(Object object) {
         if (object == null) {
-            for (Node<E> node = getLastNode(); node != null; node = linkedNodes.getNodeBefore(node)) {
+            for (Node<E> node = getLastNode();
+                 node != null;
+                 node = linkedNodes.getNodeBefore(node))
+            {
                 if (node.element == null) {
                     linkedNodes.removeNode(node);
                     return true;
                 }
             }			
         } else {
-            for (Node<E> node = getLastNode(); node != null; node = linkedNodes.getNodeBefore(node)) {
+            for (Node<E> node = getLastNode();
+                 node != null;
+                 node = linkedNodes.getNodeBefore(node))
+            {
                 if (object.equals(node.element)) {
                     linkedNodes.removeNode(node);
                     return true;
@@ -972,10 +996,11 @@ public class NodableLinkedList<E>
      * Replaces the element at the specified position in this list with the
      * specified element.
      *
-     * @param index index of the element to replace
+     * @param index   index of the element to replace
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index >= longSize())}
      */
     @Override
     public E set(int index, E element) {
@@ -986,54 +1011,57 @@ public class NodableLinkedList<E>
     }    
 
     /**
-     * Sorts this list according to the order induced by the specified
-     * comparator.
+     * Sorts this list according to the order induced by the specified comparator.
      *
-     * <p>All elements in this list must be <i>mutually comparable</i> using the
-     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-     * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-     * in the list).
+     * <p>
+     * All elements in this list must be <i>mutually comparable</i> using the
+     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and {@code e2} in the
+     * list).
      *
-     * If the specified comparator is {@code null} then all elements in this
-     * list must implement the {@code Comparable} interface and the elements'
-     * natural ordering should be used.
+     * If the specified comparator is {@code null} then all elements in this list
+     * must implement the {@code Comparable} interface and the elements' natural
+     * ordering should be used.
      * 
-     * <p><strong>Implementation Specification:</strong>
-     * This implementation obtains an array containing all nodes in this list,
-     * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-     * and then effectively clears the list and puts the sorted nodes from the array
-     * back into this list in order. If this list's {@code size > Integer.MAX_VALUE-8},
-     * a {@link #mergeSort} is performed.
+     * <p>
+     * <strong>Implementation Specification:</strong> This implementation obtains an
+     * array containing all nodes in this list, sorts the array using
+     * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
+     * clears the list and puts the sorted nodes from the array back into this list
+     * in order. If this list's {@code size > Integer.MAX_VALUE-8}, a
+     * {@link #mergeSort} is performed.
      * 
-     * <p><strong>Implementation Note:</strong>
-     * This implementation is a stable, adaptive, iterative mergesort that
-     * requires far fewer than n lg(n) comparisons when the input array is
-     * partially sorted, while offering the performance of a traditional
-     * mergesort when the input array is randomly ordered.  If the input array
-     * is nearly sorted, the implementation requires approximately n
-     * comparisons.  Temporary storage requirements vary from a small constant
-     * for nearly sorted input arrays to n/2 object references for randomly
+     * <p>
+     * <strong>Implementation Note:</strong> This implementation is a stable,
+     * adaptive, iterative mergesort that requires far fewer than n lg(n)
+     * comparisons when the input array is partially sorted, while offering the
+     * performance of a traditional mergesort when the input array is randomly
+     * ordered. If the input array is nearly sorted, the implementation requires
+     * approximately n comparisons. Temporary storage requirements vary from a small
+     * constant for nearly sorted input arrays to n/2 object references for randomly
      * ordered input arrays.
      *
-     * <p>The implementation takes equal advantage of ascending and
-     * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the same
-     * input array.  It is well-suited to merging two or more sorted arrays:
-     * simply concatenate the arrays and sort the resulting array.
+     * <p>
+     * The implementation takes equal advantage of ascending and descending order in
+     * its input array, and can take advantage of ascending and descending order in
+     * different parts of the same input array. It is well-suited to merging two or
+     * more sorted arrays: simply concatenate the arrays and sort the resulting
+     * array.
      *
-     * <p>The implementation was adapted from Tim Peters's list sort for Python
+     * <p>
+     * The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-     * Sorting and Information Theoretic Complexity", in Proceedings of the
-     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-     * January 1993.
+     * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
+     * Information Theoretic Complexity", in Proceedings of the Fourth Annual
+     * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
      *
      * @see Arrays#sort
-     * @param comparator the {@code Comparator} used to compare list elements.
-     *                   A {@code null} value indicates that the elements'
-     *                   natural ordering should be used
+     * @param comparator the {@code Comparator} used to compare list elements. A
+     *                   {@code null} value indicates that the elements' natural
+     *                   ordering should be used
      * @throws ClassCastException if the list contains elements that are not
-     *                            {@code mutually comparable} using the specified comparator
+     *                            {@code mutually comparable} using the specified
+     *                            comparator
      */
     @Override
     public void sort(Comparator<? super E> comparator) {
@@ -1045,31 +1073,34 @@ public class NodableLinkedList<E>
     }
     
     /**
-     * Sorts this list according to the order induced by the specified
-     * comparator.
+     * Sorts this list according to the order induced by the specified comparator.
      *
-     * <p>All elements in this list must be <i>mutually comparable</i> using the
-     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-     * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-     * in the list).
+     * <p>
+     * All elements in this list must be <i>mutually comparable</i> using the
+     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw a
+     * {@code ClassCastException} for any elements {@code e1} and {@code e2} in the
+     * list).
      *
-     * If the specified comparator is {@code null} then all elements in this
-     * list must implement the {@code Comparable} interface and the elements'
-     * natural ordering should be used.
+     * If the specified comparator is {@code null} then all elements in this list
+     * must implement the {@code Comparable} interface and the elements' natural
+     * ordering should be used.
      * 
-     * <p><strong>Implementation Note:</strong>
-     * This implementation is a stable, iterative mergesort that requires n lg(n) comparisons.
-     * this implementation avoids the N auxiliary storage cost normally associated with a mergesort.
+     * <p>
+     * <strong>Implementation Note:</strong> This implementation is a stable,
+     * iterative mergesort that requires n lg(n) comparisons. this implementation
+     * avoids the N auxiliary storage cost normally associated with a mergesort.
      *
      * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
-     * (<a href="https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+     * (<a href=
+     * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
      * SimonTathamMergesort</a>).
      *
-     * @param comparator the {@code Comparator} used to compare list elements.
-     *                   A {@code null} value indicates that the elements'
-     *                   natural ordering should be used
+     * @param comparator the {@code Comparator} used to compare list elements. A
+     *                   {@code null} value indicates that the elements' natural
+     *                   ordering should be used
      * @throws ClassCastException if the list contains elements that are not
-     *                            <i>mutually comparable</i> using the specified comparator
+     *                            <i>mutually comparable</i> using the specified
+     *                            comparator
      */
     public void mergeSort(Comparator<? super E> comparator) {
         if (comparator == null) {
@@ -1080,36 +1111,42 @@ public class NodableLinkedList<E>
     }    
     
     /**
-     * Returns a view of the portion of this list between the specified
-     * fromIndex, inclusive, and toIndex, exclusive. (If the specified
-     * {@code fromIndex} and {@code toIndex} are equal, the returned {@code SubList} is
-     * empty.) The returned {@code SubList} is backed by this list, so structural changes
-     * in the returned {@code SubList} are reflected in this list.
-     * The returned {@code SubList} supports all of the optional list operations
-     * supported by this list.
+     * Returns a view of the portion of this list between the specified fromIndex,
+     * inclusive, and toIndex, exclusive. (If the specified {@code fromIndex} and
+     * {@code toIndex} are equal, the returned {@code SubList} is empty.) The
+     * returned {@code SubList} is backed by this list, so structural changes in the
+     * returned {@code SubList} are reflected in this list. The returned
+     * {@code SubList} supports all of the optional list operations supported by
+     * this list.
      *
-     * <p>This method eliminates the need for explicit range operations (of
-     * the sort that commonly exist for arrays). Any operation that expects
-     * a list can be used as a range operation by passing a {@code SubList} view
-     * instead of a whole list. For example, the following idiom
-     * removes a range of elements from a list:
-     * <pre>{@code
+     * <p>
+     * This method eliminates the need for explicit range operations (of the sort
+     * that commonly exist for arrays). Any operation that expects a list can be
+     * used as a range operation by passing a {@code SubList} view instead of a
+     * whole list. For example, the following idiom removes a range of elements from
+     * a list:
+     * 
+     * <pre>
+     * {@code
      *      list.subList(from, to).clear();
-     * }</pre>
+     * }
+     * </pre>
+     * 
      * Similar idioms may be constructed for {@code indexOf} and
-     * {@code lastIndexOf}, and all of the algorithms in the
-     * {@code Collections} class can be applied to a sublist.
+     * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+     * class can be applied to a sublist.
      *
-     * <p>The semantics of the {@code SubList} returned by this method become undefined if
-     * the {@code NodableLinkedList} is <i>structurally modified</i> in
-     * any way other than via the returned {@code SubList} or any of its sublists.
-     * (Structural modifications are those that change the size of this list,
-     * or otherwise perturb it in such a fashion that iterations in progress may yield
-     * incorrect results.) A {@code ConcurrentModificationException} is thrown for any
-     * operation on a {@code SubList} that is structurally unsound.
+     * <p>
+     * The semantics of the {@code SubList} returned by this method become undefined
+     * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+     * other than via the returned {@code SubList} or any of its sublists.
+     * (Structural modifications are those that change the size of this list, or
+     * otherwise perturb it in such a fashion that iterations in progress may yield
+     * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+     * any operation on a {@code SubList} that is structurally unsound.
      *
      * @param fromIndex low endpoint (inclusive) of the {@code SubList}
-     * @param toIndex high endpoint (exclusive) of the {@code SubList}
+     * @param toIndex   high endpoint (exclusive) of the {@code SubList}
      * @return a view of the specified range within this list
      * @throws IndexOutOfBoundsException for an illegal endpoint index value
      *                                   ({@code fromIndex < 0 || toIndex > size ||
@@ -1121,70 +1158,79 @@ public class NodableLinkedList<E>
     }
     
     /**
-     * Returns a view of the portion of this list between the specified
-     * firstNode, and lastNode (both inclusive).
-     * The returned {@code SubList} is backed by this list, so structural changes
-     * in the returned {@code SubList} are reflected in this list.
-     * The returned {@code SubList} supports all of the optional list operations
-     * supported by this list.
+     * Returns a view of the portion of this list between the specified firstNode,
+     * and lastNode (both inclusive). The returned {@code SubList} is backed by this
+     * list, so structural changes in the returned {@code SubList} are reflected in
+     * this list. The returned {@code SubList} supports all of the optional list
+     * operations supported by this list.
      * 
-     * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+     * <p>
+     * If the specified firstNode is {@code null}, an empty {@code SubList},
      * positioned right before the specified lastNode, is returned. If the specified
-     * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
-     * specified firstNode, is returned. if both the specified firstNode and lastNode
-     * are {@code null}, an empty {@code SubList}, positioned at the end of this list,
-     * is returned.
+     * lastNode is {@code null}, an empty {@code SubList}, positioned right after
+     * the specified firstNode, is returned. if both the specified firstNode and
+     * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
+     * this list, is returned.
      * 
-     * <p><strong>Implementation Note:</strong>
-     * For performance reasons, this implementation does not verify that the specified
-     * lastNode comes after (or on) the specified firstNode in this list.
-     * Therefore, if the specified lastNode comes before the specified firstNode
-     * in the list, an {@code IllegalStateException} can be thrown for any operation on the
-     * returned {@code SubList} indicating that the end of the list was reached unexpectedly.
+     * <p>
+     * <strong>Implementation Note:</strong> For performance reasons, this
+     * implementation does not verify that the specified lastNode comes after (or
+     * on) the specified firstNode in this list. Therefore, if the specified
+     * lastNode comes before the specified firstNode in the list, an
+     * {@code IllegalStateException} can be thrown for any operation on the returned
+     * {@code SubList} indicating that the end of the list was reached unexpectedly.
      *
-     * <p>This method eliminates the need for explicit range operations (of
-     * the sort that commonly exist for arrays). Any operation that expects
-     * a list can be used as a range operation by passing a {@code SubList} view
-     * instead of a whole list.  For example, the following idiom
-     * removes a range of elements from a list:
-     * <pre>{@code
+     * <p>
+     * This method eliminates the need for explicit range operations (of the sort
+     * that commonly exist for arrays). Any operation that expects a list can be
+     * used as a range operation by passing a {@code SubList} view instead of a
+     * whole list. For example, the following idiom removes a range of elements from
+     * a list:
+     * 
+     * <pre>
+     * {@code
      *      list.subList(first, last).clear();
-     * }</pre>
+     * }
+     * </pre>
+     * 
      * Similar idioms may be constructed for {@code indexOf} and
-     * {@code lastIndexOf}, and all of the algorithms in the
-     * {@code Collections} class can be applied to a {@code SubList}.
+     * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+     * class can be applied to a {@code SubList}.
      *
-     * <p>The semantics of the {@code SubList} returned by this method become undefined if
-     * the {@code NodableLinkedList} is <i>structurally modified</i> in
-     * any way other than via the returned {@code SubList} or any of its sublists.
-     * (Structural modifications are those that change the size of this list,
-     * or otherwise perturb it in such a fashion that iterations in progress may yield
-     * incorrect results.) A {@code ConcurrentModificationException} is thrown for any
-     * operation on a {@code SubList} that is structurally unsound.
+     * <p>
+     * The semantics of the {@code SubList} returned by this method become undefined
+     * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+     * other than via the returned {@code SubList} or any of its sublists.
+     * (Structural modifications are those that change the size of this list, or
+     * otherwise perturb it in such a fashion that iterations in progress may yield
+     * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+     * any operation on a {@code SubList} that is structurally unsound.
      *
      * @param firstNode low endpoint (inclusive) of the {@code SubList}
-     * @param lastNode high endpoint (inclusive) of the {@code SubList}
+     * @param lastNode  high endpoint (inclusive) of the {@code SubList}
      * @return a view of the specified range within this list
-     * @throws IllegalArgumentException if any specified node is not linked to this list or
-     *                                  if the lastNode comes before the firstNode in this list.
+     * @throws IllegalArgumentException if any specified node is not linked to this
+     *                                  list or if the lastNode comes before the
+     *                                  firstNode in this list.
      */
     public SubList subList(Node<E> firstNode, Node<E> lastNode) {
         return linkedNodes.newSubList(firstNode, lastNode);
     }    
 
     /**
-     * Returns an array containing all of the elements in this list
-     * in proper sequence (from first to last element).
+     * Returns an array containing all of the elements in this list in proper
+     * sequence (from first to last element).
      *
-     * <p>The returned array will be "safe" in that no references to it are
-     * maintained by this list.  (In other words, this method must allocate
-     * a new array).  The caller is thus free to modify the returned array.
+     * <p>
+     * The returned array will be "safe" in that no references to it are maintained
+     * by this list. (In other words, this method must allocate a new array). The
+     * caller is thus free to modify the returned array.
      *
-     * <p>This method acts as bridge between array-based and collection-based
-     * APIs.
+     * <p>
+     * This method acts as bridge between array-based and collection-based APIs.
      *
-     * @return an array containing all of the elements in this list
-     *         in proper sequence
+     * @return an array containing all of the elements in this list in proper
+     *         sequence
      * @throws IllegalStateException if the list is too large to fit in an array
      */
     @Override
@@ -1192,136 +1238,157 @@ public class NodableLinkedList<E>
         if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
         final Object[] elements = new Object[size()];
         int index = 0;
-        for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) elements[index++] = node.element;
+        for (Node<E> node = getFirstNode();
+             node != null;
+             node = linkedNodes.getNodeAfter(node))
+        {
+            elements[index++] = node.element;
+        }
         return elements;
     }
 
     /**
-     * Returns an array containing all of the elements in this list in
-     * proper sequence (from first to last element); the runtime type of
-     * the returned array is that of the specified array.  If the list fits
-     * in the specified array, it is returned therein.  Otherwise, a new
-     * array is allocated with the runtime type of the specified array and
-     * the size of this list.
+     * Returns an array containing all of the elements in this list in proper
+     * sequence (from first to last element); the runtime type of the returned array
+     * is that of the specified array. If the list fits in the specified array, it
+     * is returned therein. Otherwise, a new array is allocated with the runtime
+     * type of the specified array and the size of this list.
      *
-     * <p>If the list fits in the specified array with room to spare (i.e.,
-     * the array has more elements than the list), the element in the array
-     * immediately following the end of the list is set to {@code null}.
-     * (This is useful in determining the length of the list <i>only</i> if
-     * the caller knows that the list does not contain any null elements.)
+     * <p>
+     * If the list fits in the specified array with room to spare (i.e., the array
+     * has more elements than the list), the element in the array immediately
+     * following the end of the list is set to {@code null}. (This is useful in
+     * determining the length of the list <i>only</i> if the caller knows that the
+     * list does not contain any null elements.)
      *
-     * <p>Like the {@link #toArray()} method, this method acts as bridge between
-     * array-based and collection-based APIs.  Further, this method allows
-     * precise control over the runtime type of the output array, and may,
-     * under certain circumstances, be used to save allocation costs.
+     * <p>
+     * Like the {@link #toArray()} method, this method acts as bridge between
+     * array-based and collection-based APIs. Further, this method allows precise
+     * control over the runtime type of the output array, and may, under certain
+     * circumstances, be used to save allocation costs.
      *
-     * <p>Suppose <i>x</i> is a list known to contain only strings.
-     * The following code can be used to dump the list into a newly
-     * allocated array of {@code String}:
+     * <p>
+     * Suppose <i>x</i> is a list known to contain only strings. The following code
+     * can be used to dump the list into a newly allocated array of {@code String}:
      *
      * <pre>
-     *     String[] y = x.toArray(new String[0]);</pre>
+     * String[] y = x.toArray(new String[0]);
+     * </pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
      *
-     * @param array the array into which the elements of the list are to
-     *          be stored, if it is big enough; otherwise, a new array of the
-     *          same runtime type is allocated for this purpose.
+     * @param array the array into which the elements of the list are to be stored,
+     *              if it is big enough; otherwise, a new array of the same runtime
+     *              type is allocated for this purpose.
      * @return an array containing the elements of the list
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *                             is not a supertype of the runtime type of every element in
-     *                             this list
+     * @throws ArrayStoreException   if the runtime type of the specified array is
+     *                               not a supertype of the runtime type of every
+     *                               element in this list
      * @throws IllegalStateException if the list is too large to fit in an array
-     * @throws NullPointerException if the specified array is {@code null}
+     * @throws NullPointerException  if the specified array is {@code null}
      */
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] array) {
         if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-        if (array.length < size()) array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(),size());
+        if (array.length < size()) {
+            array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(),size());
+        }
         int index = 0;
         Object[] elements = array;
-        for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) elements[index++] = node.element;			
+        for (Node<E> node = getFirstNode();
+             node != null;
+             node = linkedNodes.getNodeAfter(node))
+        {
+            elements[index++] = node.element;			
+        }
         if (array.length > size()) array[size()] = null;
         return array;
     }	
 
     /**
      * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified position in this list.
-     * Obeys the general contract of {@code List.listIterator(int)}.
+     * sequence), starting at the specified position in this list. Obeys the general
+     * contract of {@code List.listIterator(int)}.
      * 
-     * <p><strong>Implementation Note:</strong>
-     * The {@code ListIterator} returned by this method behaves differently when the
-     * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+     * this method behaves differently when the list's
+     * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
      * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
      *
-     * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-     * is structurally modified at any time after the Iterator is created,
-     * in any way except through the {@code ListIterator}'s own {@code remove} or
-     * {@code add} methods, the {@code ListIterator} will throw a
-     * {@code ConcurrentModificationException}.  Thus, in the face of
-     * concurrent modification, the iterator fails quickly and cleanly, rather
-     * than risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator}'s own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
      *
      * @param index index of the first element to be returned from the
      *              {@code ListIterator} (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper
-     *         sequence), starting at the specified position in this list
-     * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified position in this list
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index > longSize())}
      * @see List#listIterator(int)
      */
     @Override
     public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > longSize()) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        if (index < 0 || index > longSize()) {
+            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        }
         return new NodableLinkedListListIterator(index);
     }
 
     /**
      * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified node in this list.
-     * if the specified node is {@code null}, the {@code ListIterator} will
-     * start with the first node in this list.    
+     * sequence), starting at the specified node in this list. if the specified node
+     * is {@code null}, the {@code ListIterator} will start with the first node in
+     * this list.
      * 
-     * <p><strong>Implementation Note:</strong>
-     * The index returned by the returned {@code ListIterator}'s methods
-     * {@code nextIndex} and {@code previousIndex} is relative to the
-     * specified node which has an index of zero. Nodes which come before
-     * the specified node in this list, will have a negative index; nodes that
-     * come after will have a positive index. Method {@code nextIndex} returns
-     * {@code longSize()} if at the end of the list, and method {@code previousIndex}
-     * returns {@code -longSize()} if at the beginning of the list.
-     * if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+     * <p>
+     * <strong>Implementation Note:</strong> The index returned by the returned
+     * {@code ListIterator}'s methods {@code nextIndex} and {@code previousIndex} is
+     * relative to the specified node which has an index of zero. Nodes which come
+     * before the specified node in this list, will have a negative index; nodes
+     * that come after will have a positive index. Method {@code nextIndex} returns
+     * {@code longSize()} if at the end of the list, and method
+     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
+     * list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+     * respectively.
      *
-     * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-     * is structurally modified at any time after the Iterator is created,
-     * in any way except through the {@code ListIterator}'s own {@code remove} or {@code add}
-     * methods, the {@code ListIterator} will throw a {@code ConcurrentModificationException}.
-     * Thus, in the face of concurrent modification, the iterator fails quickly and cleanly,
-     * rather than risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator}'s own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
      *
-     * @param node node of the first element to be returned from the {@code ListIterator}
-     *             (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper
-     *         sequence), starting at the specified node in this list
+     * @param node node of the first element to be returned from the
+     *             {@code ListIterator} (by a call to {@code next})
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified node in this list
      * @throws IllegalArgumentException if node is not linked to this list
      */
     public ListIterator<E> listIterator(Node<E> node) {
-        if (node != null && !linkedNodes.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
+        if (node != null && !linkedNodes.contains(node)) {
+            throw new IllegalArgumentException("Specified node is not linked to this list");
+        }
         return new NodableLinkedListListIterator(node);
     }
 
     /**
-     * Returns an iterator over the elements in this list in reverse
-     * sequential order.  The elements will be returned in order from
-     * last (tail) to first (head).
+     * Returns an iterator over the elements in this list in reverse sequential
+     * order. The elements will be returned in order from last (tail) to first
+     * (head).
      *
-     * @return an iterator over the elements in this list in reverse
-     * sequence
+     * @return an iterator over the elements in this list in reverse sequence
      */
     @Override
     public Iterator<E> descendingIterator() {
@@ -1329,16 +1396,18 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator}
-     * over the elements in this list.
+     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator} over
+     * the elements in this list.
      *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#ORDERED}.  Overriding implementations should document
-     * the reporting of additional characteristic values.
+     * <p>
+     * The {@code Spliterator} reports {@link Spliterator#SIZED} and
+     * {@link Spliterator#ORDERED}. Overriding implementations should document the
+     * reporting of additional characteristic values.
      *
-     * <p><strong>Implementation Note:</strong>
-     * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED}
-     * and implements {@code trySplit} to permit limited parallelism..
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
+     * reports {@link Spliterator#SUBSIZED} and implements {@code trySplit} to
+     * permit limited parallelism..
      *
      * @return a {@code Spliterator} over the elements in this list
      */
@@ -1349,35 +1418,37 @@ public class NodableLinkedList<E>
 
     /**
      * Doubly-linked list of nodes which back a {@code NodableLinkedList}.
-     * Implements the {@code List} and {@code Deque} interfaces.
-     * The elements are of type {@code NodableLinkedList.Node},
-     * and are never {@code null}. Implements all optional {@code List} operations
+     * Implements the {@code List} and {@code Deque} interfaces. The elements are of
+     * type {@code NodableLinkedList.Node}, and are never {@code null}. Implements
+     * all optional {@code List} operations
      *
-     * <p>All of the operations perform as could be expected for a doubly-linked
-     * list.  Operations that index into the list will traverse the list from
-     * the beginning or the end, whichever is closer to the specified index.
+     * <p>
+     * All of the operations perform as could be expected for a doubly-linked list.
+     * Operations that index into the list will traverse the list from the beginning
+     * or the end, whichever is closer to the specified index.
      *
-     * <p>The iterators returned by this class's {@code iterator} and
-     * {@code listIterator} methods are <i>fail-fast</i>: if the {@code NodableLinkedList}
-     * is structurally modified at any time after the iterator is created, in
-     * any way except through the Iterator's own {@code remove} or
-     * {@code add} methods, the iterator will throw a {@code
-     * ConcurrentModificationException}.  Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than
-     * risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
+     * <p>
+     * The iterators returned by this class's {@code iterator} and
+     * {@code listIterator} methods are <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * iterator is created, in any way except through the Iterator's own
+     * {@code remove} or {@code add} methods, the iterator will throw a {@code
+     * ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
      *
-     * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
-     * as it is, generally speaking, impossible to make any hard guarantees in the
-     * presence of unsynchronized concurrent modification.  Fail-fast iterators
-     * throw {@code ConcurrentModificationException} on a best-effort basis.
-     * Therefore, it would be wrong to write a program that depended on this
-     * exception for its correctness:   <i>the fail-fast behavior of iterators
-     * should be used only to detect bugs.</i>
+     * <p>
+     * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
+     * is, generally speaking, impossible to make any hard guarantees in the
+     * presence of unsynchronized concurrent modification. Fail-fast iterators throw
+     * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
+     * would be wrong to write a program that depended on this exception for its
+     * correctness: <i>the fail-fast behavior of iterators should be used only to
+     * detect bugs.</i>
      *
-     * @author  James Pfeifer
-     * @see     List
-     * @see		Node
+     * @author James Pfeifer
+     * @see List
+     * @see Node
      *
      */
     public class LinkedNodes
@@ -1404,16 +1475,18 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code NodableLinkedList} this {@code LinkedNodes} instance backs.
-         *         
-         * @return the {@code NodableLinkedList} this {@code LinkedNodes} instance backs.
+         * Returns the {@code NodableLinkedList} this {@code LinkedNodes} instance
+         * backs.
+         * 
+         * @return the {@code NodableLinkedList} this {@code LinkedNodes} instance
+         *         backs.
          */
         public NodableLinkedList<E> nodableLinkedList() {
             return NodableLinkedList.this;
         }		
 
         /**
-         * Returns the number of nodes in this list.  If this list contains more than
+         * Returns the number of nodes in this list. If this list contains more than
          * Integer.MAX_VALUE nodes, Integer.MAX_VALUE is returned.
          *
          * @return the number of nodes in this list.
@@ -1524,14 +1597,17 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns {@code true} if this list contains the specified object ({@code Node}).
-         * The specified object must be a {@code Node}, otherwise, {@code false}
-         * is returned.
+         * Returns {@code true} if this list contains the specified object
+         * ({@code Node}). The specified object must be a {@code Node}, otherwise,
+         * {@code false} is returned.
          * 
-         * <p>This operation is performed in constant time.
+         * <p>
+         * This operation is performed in constant time.
          *
-         * @param object {@code Object} ({@code Node}) whose presence in this list is to be tested
-         * @return {@code true} if this list contains the specified object ({@code Node})
+         * @param object {@code Object} ({@code Node}) whose presence in this list is to
+         *               be tested
+         * @return {@code true} if this list contains the specified object
+         *         ({@code Node})
          */
         @Override
         public boolean contains(Object object) {
@@ -1544,19 +1620,18 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the index of the specified object ({@code Node}) in this list,
-         * or -1 if there is no such index (this list does not
-         * contain the specified object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
-         * The specified object must be a {@code Node}, otherwise, -1
-         * is returned.
+         * Returns the index of the specified object ({@code Node}) in this list, or -1
+         * if there is no such index (this list does not contain the specified object
+         * ({@code Node}) or the {@code index > Integer.MAX_VALUE}). The specified
+         * object must be a {@code Node}, otherwise, -1 is returned.
          *
-         * <p>Note that {@code indexOf} is identical in function to
-         * {@code lastIndexOf}, except {@code indexOf} traverses
-         * the list forwards from the beginning.
+         * <p>
+         * Note that {@code indexOf} is identical in function to {@code lastIndexOf},
+         * except {@code indexOf} traverses the list forwards from the beginning.
          * 
          * @param object {@code Object} ({@code Node}) to search for
-         * @return the index of the specified object ({@code Node}) in this list, or
-         *         -1 if there is no such index.
+         * @return the index of the specified object ({@code Node}) in this list, or -1
+         *         if there is no such index.
          */
         @Override
         public int indexOf(Object object) {
@@ -1569,82 +1644,86 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the index of the specified object ({@code Node}) in this list,
-         * or -1 if there is no such index (this list does not
-         * contain the object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
-         * The specified object must be a {@code Node}, otherwise, -1
-         * is returned.
+         * Returns the index of the specified object ({@code Node}) in this list, or -1
+         * if there is no such index (this list does not contain the object
+         * ({@code Node}) or the {@code index > Integer.MAX_VALUE}). The specified
+         * object must be a {@code Node}, otherwise, -1 is returned.
          * 
-         * <p>Note that {@code lastIndexOf} is identical in function to
-         * {@code indexOf}, except {@code lastIndexOf} traverses
-         * the list backwards from the end.
+         * <p>
+         * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
+         * except {@code lastIndexOf} traverses the list backwards from the end.
          *
          * @param object {@code Object} ({@code Node}) to search for
-         * @return the index of the specified object ({@code Node}) in this list, or
-         *         -1 if there is no such index.
+         * @return the index of the specified object ({@code Node}) in this list, or -1
+         *         if there is no such index.
          */
         @Override
         public int lastIndexOf(Object object) {
             if (!(object instanceof Node)) return -1;
             if (!this.contains((Node<?>) object)) return -1;
             long index = size - 1L;
-            for (Node<E> node = tailSentinel.previous; node != headSentinel; node = node.previous, index--) {
+            for (Node<E> node = tailSentinel.previous;
+                 node != headSentinel;
+                 node = node.previous, index--)
+            {
                 if (node == object) return (index > Integer.MAX_VALUE) ? -1 : (int)index;
             }
             return -1;
         }
 
         /**
-         * Appends all of the nodes in the specified collection to the end of
-         * this list, in the order that they are returned by the specified
-         * collection's iterator. The behavior of this operation is undefined if
-         * the specified collection is modified while the operation is in
-         * progress.
+         * Appends all of the nodes in the specified collection to the end of this list,
+         * in the order that they are returned by the specified collection's iterator.
+         * The behavior of this operation is undefined if the specified collection is
+         * modified while the operation is in progress.
          *
-         * @param nodes collection containing nodes to be added to this list
+         * @param collection collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
-         * @throws NullPointerException if the specified collection is {@code null}
-         * @throws IllegalArgumentException if any node in the collection is {@code null}
-         *                                  or already a node of a list
+         * @throws NullPointerException     if the specified collection is {@code null}
+         * @throws IllegalArgumentException if any node in the collection is
+         *                                  {@code null} or already a node of a list
          */
         @Override
-        public boolean addAll(Collection<? extends Node<E>> nodes) {
+        public boolean addAll(Collection<? extends Node<E>> collection) {
             final long initialSize = size;
-            for (Node<E> node: nodes) addLast(node);
+            for (Node<E> node: collection) addLast(node);
             return size != initialSize;
         }
 
         /**
-         * Inserts all of the nodes in the specified collection into this
-         * list, starting at the specified position. Shifts the node
-         * currently at that position (if any) and any subsequent nodes to
-         * the right (increases their indices). The new nodes will appear
-         * in the list in the order that they are returned by the
-         * specified collection's iterator. if the specified {@code index == longSize()},
-         * the nodes will be appended to the end of this list.
+         * Inserts all of the nodes in the specified collection into this list, starting
+         * at the specified position. Shifts the node currently at that position (if
+         * any) and any subsequent nodes to the right (increases their indices). The new
+         * nodes will appear in the list in the order that they are returned by the
+         * specified collection's iterator. if the specified
+         * {@code index == longSize()}, the nodes will be appended to the end of this
+         * list.
          * 
          * Note that {@code addAll(longSize(), Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param index index at which to insert the first node
-         *              from the specified collection
-         * @param nodes collection containing nodes to be added to this list
+         * @param index      index at which to insert the first node from the specified
+         *                   collection
+         * @param collection collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
-         * @throws IllegalArgumentException if any node in the collection is {@code null}
-         *                                  or already a node of a list
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-         * @throws NullPointerException if the specified collection is {@code null}
+         * @throws IllegalArgumentException  if any node in the collection is
+         *                                   {@code null} or already a node of a list
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @throws NullPointerException      if the specified collection is {@code null}
          */
         @Override
-        public boolean addAll(int index, Collection<? extends Node<E>> nodes) {
+        public boolean addAll(int index, Collection<? extends Node<E>> collection) {
             if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
             final long initialSize = size;
             if (index == size) {
-                for (Node<E> node: nodes) addLast(node);
+                for (Node<E> node: collection) addLast(node);
             } else {
                 final Node<E> targetNode = get(index);
-                for (Node<E> node: nodes) {
-                    if (node == null || node.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                for (Node<E> node: collection) {
+                    if (node == null || node.isLinked()) {
+                        throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    }
                     addNodeBefore(node, targetNode);
                 }
             }
@@ -1652,31 +1731,33 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Inserts all of the nodes in the specified collection into this
-         * list, before the specified node. Shifts the {@code Node}
-         * currently at that position and any subsequent nodes to
-         * the right (increases their indices). The new nodes will appear
-         * in the list in the order that they are returned by the
-         * specified collection's iterator. if the specified node is {@code null},
-         * the nodes will be appended to the end of this list.
+         * Inserts all of the nodes in the specified collection into this list, before
+         * the specified node. Shifts the {@code Node} currently at that position and
+         * any subsequent nodes to the right (increases their indices). The new nodes
+         * will appear in the list in the order that they are returned by the specified
+         * collection's iterator. if the specified node is {@code null}, the nodes will
+         * be appended to the end of this list.
          * 
          * Note that {@code addAll(null, Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param node {@code Node} the specified collection is to be inserted before
-         * @param nodes collection containing nodes to be added to this list
+         * @param node       {@code Node} the specified collection is to be inserted
+         *                   before
+         * @param collection collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
-         * @throws IllegalArgumentException if node is not linked to this list, or
-         *                                  any node in the collection is {@code null} or
+         * @throws IllegalArgumentException if node is not linked to this list, or any
+         *                                  node in the collection is {@code null} or
          *                                  already a node of a list
-         * @throws NullPointerException if the specified collection is {@code null}
+         * @throws NullPointerException     if the specified collection is {@code null}
          */
-        public boolean addAll(Node<E> node, Collection<? extends Node<E>> nodes) {
-            if (node == null) return addAll(nodes);
+        public boolean addAll(Node<E> node, Collection<? extends Node<E>> collection) {
+            if (node == null) return addAll(collection);
             if (!this.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
             final long initialSize = longSize();
-            for (Node<E> collectionNode: nodes) {
-                if (collectionNode == null || collectionNode.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+            for (Node<E> collectionNode: collection) {
+                if (collectionNode == null || collectionNode.isLinked()) {
+                    throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                }
                 linkedNodes.addNodeBefore(collectionNode, node);
             }
             return longSize() != initialSize;
@@ -1687,7 +1768,8 @@ public class NodableLinkedList<E>
          *
          * @param node node to be appended to this list
          * @return {@code true} (as specified by {@link Collection#add})
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public boolean add(Node<E> node) {
@@ -1696,21 +1778,25 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Inserts the specified node at the specified position in this list.
-         * Shifts the {@code Node} currently at that position (if any) and any
-         * subsequent nodes to the right (adds one to their indices).
+         * Inserts the specified node at the specified position in this list. Shifts the
+         * {@code Node} currently at that position (if any) and any subsequent nodes to
+         * the right (adds one to their indices).
          *
          * @param index index at which the specified node is to be inserted
-         * @param node {@code Node} to be inserted
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @param node  {@code Node} to be inserted
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @throws IllegalArgumentException  if node is {@code null} or already a node
+         *                                   of a list
          */
         @Override
         public void add(int index, Node<E> node) {
             if (index == size) {
                 addLast(node);
             } else {
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node is null or already an element of a list");
+                }
                 addNodeBefore(node, get(index));
             }       
         }        
@@ -1719,11 +1805,14 @@ public class NodableLinkedList<E>
          * Inserts the specified node at the beginning of this list.
          *
          * @param node the {@code Node} to add
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public void addFirst(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
             addNodeAfter(node, headSentinel);
         }		
 
@@ -1731,11 +1820,14 @@ public class NodableLinkedList<E>
          * Appends the specified node to the end of this list.
          *
          * @param node the {@code Node} to add
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public void addLast(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
             addNodeBefore(node, tailSentinel);
         }
 
@@ -1755,19 +1847,26 @@ public class NodableLinkedList<E>
          *
          * @param index index of the element to return
          * @return the node at the specified position in this list
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
          */
         @Override
         public Node<E> get(int index) {
             final long getIndex = index;
-            if (getIndex < 0L || getIndex >= size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);        
+            if (getIndex < 0L || getIndex >= size) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);        
+            }
             Node<E> node;
             long nodeIndex;
             final long lastIndex = size - 1L;
             if (getIndex < (lastIndex >> 1)) {
-                for (node = getFirst(), nodeIndex = 0L;         nodeIndex < getIndex && node != tailSentinel;   nodeIndex++, node = node.next);
+                for (node = getFirst(), nodeIndex = 0L;
+                     nodeIndex < getIndex && node != tailSentinel;
+                     nodeIndex++, node = node.next);
             } else {
-                for (node = getLast(),  nodeIndex = lastIndex;  nodeIndex > getIndex && node != headSentinel;   nodeIndex--, node = node.previous);
+                for (node = getLast(),  nodeIndex = lastIndex;
+                     nodeIndex > getIndex && node != headSentinel;
+                     nodeIndex--, node = node.previous);
             }       
             return node;        
         }        
@@ -1801,7 +1900,8 @@ public class NodableLinkedList<E>
          *
          * @param node the {@code Node} to add
          * @return {@code true} (as specified by {@link java.util.Queue#offer})
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public boolean offer(Node<E> node) {
@@ -1813,7 +1913,8 @@ public class NodableLinkedList<E>
          *
          * @param node the {@code Node} to insert
          * @return {@code true} (as specified by {@link Deque#offerFirst})
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public boolean offerFirst(Node<E> node) {
@@ -1826,7 +1927,8 @@ public class NodableLinkedList<E>
          *
          * @param node the {@code Node} to insert
          * @return {@code true} (as specified by {@link Deque#offerLast})
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public boolean offerLast(Node<E> node) {
@@ -1845,11 +1947,10 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Retrieves, but does not remove, the first node of this list,
-         * or returns {@code null} if this list is empty.
+         * Retrieves, but does not remove, the first node of this list, or returns
+         * {@code null} if this list is empty.
          *
-         * @return the first node of this list, or {@code null}
-         *         if this list is empty
+         * @return the first node of this list, or {@code null} if this list is empty
          */
         @Override
         public Node<E> peekFirst() {
@@ -1857,11 +1958,10 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Retrieves, but does not remove, the last node of this list,
-         * or returns {@code null} if this list is empty.
+         * Retrieves, but does not remove, the last node of this list, or returns
+         * {@code null} if this list is empty.
          *
-         * @return the last node of this list, or {@code null}
-         *         if this list is empty
+         * @return the last node of this list, or {@code null} if this list is empty
          */
         @Override
         public Node<E> peekLast() {
@@ -1879,11 +1979,10 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Retrieves and removes the first node of this list,
-         * or returns {@code null} if this list is empty.
+         * Retrieves and removes the first node of this list, or returns {@code null} if
+         * this list is empty.
          *
-         * @return the first node of this list, or {@code null} if
-         *     this list is empty
+         * @return the first node of this list, or {@code null} if this list is empty
          */
         @Override
         public Node<E> pollFirst() {
@@ -1894,11 +1993,10 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Retrieves and removes the last node of this list,
-         * or returns {@code null} if this list is empty.
+         * Retrieves and removes the last node of this list, or returns {@code null} if
+         * this list is empty.
          *
-         * @return the last node of this list, or {@code null} if
-         *     this list is empty
+         * @return the last node of this list, or {@code null} if this list is empty
          */
         @Override
         public Node<E> pollLast() {
@@ -1909,13 +2007,14 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Pops a node from the stack represented by this list.  In other
-         * words, removes and returns the first node of this list.
+         * Pops a node from the stack represented by this list. In other words, removes
+         * and returns the first node of this list.
          *
-         * <p>This method is equivalent to {@link #removeFirst()}.
+         * <p>
+         * This method is equivalent to {@link #removeFirst()}.
          *
-         * @return the node at the front of this list (which is the top
-         *         of the stack represented by this list)
+         * @return the node at the front of this list (which is the top of the stack
+         *         represented by this list)
          * @throws NoSuchElementException if this list is empty
          */
         @Override
@@ -1924,13 +2023,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Pushes a {@code Node} onto the stack represented by this list.  In other
+         * Pushes a {@code Node} onto the stack represented by this list. In other
          * words, inserts the node at the front of this list.
          *
-         * <p>This method is equivalent to {@link #addFirst}.
+         * <p>
+         * This method is equivalent to {@link #addFirst}.
          *
          * @param node the {@code Node} to push
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         @Override
         public void push(Node<E> node) {
@@ -1949,12 +2050,13 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Removes and returns the node at the specified position in this list.
-         * Shifts any subsequent nodes to the left (subtracts one from their indices).
+         * Removes and returns the node at the specified position in this list. Shifts
+         * any subsequent nodes to the left (subtracts one from their indices).
          *
          * @param index the index of the node to be removed
          * @return the node previously at the specified position
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
          */
         @Override
         public Node<E> remove(int index) {
@@ -1992,13 +2094,16 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Removes, if present, the specified object ({@code Node}) from this list.
-         * If this list does not contain the specified object ({@code Node}), it is unchanged.
+         * Removes, if present, the specified object ({@code Node}) from this list. If
+         * this list does not contain the specified object ({@code Node}), it is
+         * unchanged.
          * 
-         * <p>This operation performs in constant time.
+         * <p>
+         * This operation performs in constant time.
          *
          * @param object {@code Object} ({@code Node}) to be removed from this list
-         * @return {@code true} if this list contained the specified object ({@code Node})
+         * @return {@code true} if this list contained the specified object
+         *         ({@code Node})
          */
         @Override
         public boolean remove(Object object) {
@@ -2011,15 +2116,20 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Removes, if present, the specified object ({@code Node}) from this list.
-         * If this list does not contain the specified object ({@code Node}), it is unchanged.
+         * Removes, if present, the specified object ({@code Node}) from this list. If
+         * this list does not contain the specified object ({@code Node}), it is
+         * unchanged.
          * 
-         * <p>This operation performs in constant time.
+         * <p>
+         * This operation performs in constant time.
          * 
-         * <p>This method is equivalent to {@link #remove(Object object)}.
+         * <p>
+         * This method is equivalent to {@link #remove(Object object)}.
          *
-         * @param object {@code Object} ({@code Node}) to be removed from this list, if present
-         * @return {@code true} if this list contained the specified object ({@code Node})
+         * @param object {@code Object} ({@code Node}) to be removed from this list, if
+         *               present
+         * @return {@code true} if this list contained the specified object
+         *         ({@code Node})
          */
         @Override
         public boolean removeFirstOccurrence(Object object) {
@@ -2027,15 +2137,20 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Removes, if present, the specified object ({@code Node}) from this list.
-         * If this list does not contain the specified object ({@code Node}), it is unchanged.
+         * Removes, if present, the specified object ({@code Node}) from this list. If
+         * this list does not contain the specified object ({@code Node}), it is
+         * unchanged.
          * 
-         * <p>This operation performs in constant time.
+         * <p>
+         * This operation performs in constant time.
          * 
-         * <p>This method is equivalent to {@link #remove(Object object)}.
+         * <p>
+         * This method is equivalent to {@link #remove(Object object)}.
          *
-         * @param object {@code Object} ({@code Node}) to be removed from this list, if present
-         * @return {@code true} if this list contained the specified object ({@code Node})
+         * @param object {@code Object} ({@code Node}) to be removed from this list, if
+         *               present
+         * @return {@code true} if this list contained the specified object
+         *         ({@code Node})
          */
         @Override
         public boolean removeLastOccurrence(Object object) {
@@ -2047,68 +2162,75 @@ public class NodableLinkedList<E>
          * specified node}.
          *
          * @param index index of the {@code Node} to replace
-         * @param node {@code Node} to be stored at the specified position
+         * @param node  {@code Node} to be stored at the specified position
          * @return the {@code Node} previously at the specified position
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
+         * @throws IllegalArgumentException  if node is {@code null} or already a node
+         *                                   of a list
          */
         @Override
         public Node<E> set(int index, Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");            
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Replacement Node is null or already an element of a list");            
+            }
             final Node<E> originalNode = get(index);
             replaceNode(originalNode, node);
             return originalNode;
         }        
 
         /**
-         * Sorts this list according to the order induced by the specified
-         * comparator.
+         * Sorts this list according to the order induced by the specified comparator.
          *
-         * <p>The specified comparator compares the nodes not the
-         * elements of the nodes. for example:
-         * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-         * {@code sort((node1, node2) -> { return node1.element().compareTo(node2.element()); });}.
+         * <p>
+         * The specified comparator compares the nodes not the elements of the nodes.
+         * for example: {@code sort((node1, node2) -> { return node1.compareTo(node2);
+         * });}, or {@code sort((node1, node2) -> { return
+         * node1.element().compareTo(node2.element()); });}.
          *
-         * If the specified comparator is {@code null} then all elements in this
-         * list must implement the {@code Comparable} interface and the elements'
-         * natural ordering should be used.
+         * If the specified comparator is {@code null} then all elements in this list
+         * must implement the {@code Comparable} interface and the elements' natural
+         * ordering should be used.
          *
-         * <p><strong>Implementation Specification:</strong>
-         * This implementation obtains an array containing all nodes in this list,
-         * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-         * and then effectively clears the list and puts the sorted nodes from the array
-         * back into this list in order. If this list's {@code size > Integer.MAX_VALUE-8},
-         * a {@link #mergeSort} is performed.
+         * <p>
+         * <strong>Implementation Specification:</strong> This implementation obtains an
+         * array containing all nodes in this list, sorts the array using
+         * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
+         * clears the list and puts the sorted nodes from the array back into this list
+         * in order. If this list's {@code size > Integer.MAX_VALUE-8}, a
+         * {@link #mergeSort} is performed.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * This implementation is a stable, adaptive, iterative mergesort that
-         * requires far fewer than n lg(n) comparisons when the input array is
-         * partially sorted, while offering the performance of a traditional
-         * mergesort when the input array is randomly ordered.  If the input array
-         * is nearly sorted, the implementation requires approximately n
-         * comparisons.  Temporary storage requirements vary from a small constant
-         * for nearly sorted input arrays to n/2 object references for randomly
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * adaptive, iterative mergesort that requires far fewer than n lg(n)
+         * comparisons when the input array is partially sorted, while offering the
+         * performance of a traditional mergesort when the input array is randomly
+         * ordered. If the input array is nearly sorted, the implementation requires
+         * approximately n comparisons. Temporary storage requirements vary from a small
+         * constant for nearly sorted input arrays to n/2 object references for randomly
          * ordered input arrays.
          *
-         * <p>The implementation takes equal advantage of ascending and
-         * descending order in its input array, and can take advantage of
-         * ascending and descending order in different parts of the same
-         * input array.  It is well-suited to merging two or more sorted arrays:
-         * simply concatenate the arrays and sort the resulting array.
+         * <p>
+         * The implementation takes equal advantage of ascending and descending order in
+         * its input array, and can take advantage of ascending and descending order in
+         * different parts of the same input array. It is well-suited to merging two or
+         * more sorted arrays: simply concatenate the arrays and sort the resulting
+         * array.
          *
-         * <p>The implementation was adapted from Tim Peters's list sort for Python
+         * <p>
+         * The implementation was adapted from Tim Peters's list sort for Python
          * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-         * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-         * Sorting and Information Theoretic Complexity", in Proceedings of the
-         * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-         * January 1993.
+         * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
+         * Information Theoretic Complexity", in Proceedings of the Fourth Annual
+         * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
          *
          * @see Arrays#sort
-         * @param comparator the {@code Comparator} used to compare list nodes.
-         *                   A {@code null} value indicates that the elements'
-         *                   natural ordering should be used
+         * @param comparator the {@code Comparator} used to compare list nodes. A
+         *                   {@code null} value indicates that the elements' natural
+         *                   ordering should be used
          * @throws ClassCastException if the list contains elements that are not
-         *                            <i>mutually comparable</i> using the specified comparator
+         *                            <i>mutually comparable</i> using the specified
+         *                            comparator
          */
         @Override
         public void sort(Comparator<? super Node<E>> comparator) {
@@ -2117,7 +2239,12 @@ public class NodableLinkedList<E>
             @SuppressWarnings("unchecked")
             final Node<E>[] sortedNodes = new Node[(int)size];
             int index = 0;
-            for (Node<E> node = headSentinel.next; node != tailSentinel; node = node.next) sortedNodes[index++] = node;
+            for (Node<E> node = headSentinel.next;
+                 node != tailSentinel;
+                 node = node.next)
+            {
+                sortedNodes[index++] = node;
+            }
             Arrays.sort(sortedNodes, comparator);
             Node<E> node;
             Node<E> sortedNode;
@@ -2129,31 +2256,34 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Sorts this list according to the order induced by the specified
-         * comparator.
+         * Sorts this list according to the order induced by the specified comparator.
          *
-         * <p>The specified comparator compares the nodes not the
-         * elements of the nodes. for example:
-         * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-         * {@code sort((node1, node2) -> { return node1.element().compareTo(node2.element()); });}.
+         * <p>
+         * The specified comparator compares the nodes not the elements of the nodes.
+         * for example: {@code sort((node1, node2) -> { return node1.compareTo(node2);
+         * });}, or {@code sort((node1, node2) -> { return
+         * node1.element().compareTo(node2.element()); });}.
          *
-         * If the specified comparator is {@code null} then all elements in this
-         * list must implement the {@code Comparable} interface and the elements'
-         * natural ordering should be used.
+         * If the specified comparator is {@code null} then all elements in this list
+         * must implement the {@code Comparable} interface and the elements' natural
+         * ordering should be used.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * This implementation is a stable, iterative mergesort that requires n lg(n) comparisons.
-         * this implementation avoids the N auxiliary storage cost normally associated with a mergesort.
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * iterative mergesort that requires n lg(n) comparisons. this implementation
+         * avoids the N auxiliary storage cost normally associated with a mergesort.
          *
          * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
-         * (<a href="https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+         * (<a href=
+         * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
          * SimonTathamMergesort</a>).
          *
-         * @param comparator the {@code Comparator} used to compare list nodes.
-         *                   A {@code null} value indicates that the elements'
-         *                   natural ordering should be used
+         * @param comparator the {@code Comparator} used to compare list nodes. A
+         *                   {@code null} value indicates that the elements' natural
+         *                   ordering should be used
          * @throws ClassCastException if the list contains elements that are not
-         *                            <i>mutually comparable</i> using the specified comparator
+         *                            <i>mutually comparable</i> using the specified
+         *                            comparator
          */
         public void mergeSort(Comparator<? super Node<E>> comparator) {
             mergeSort(comparator, headSentinel, tailSentinel);
@@ -2202,36 +2332,41 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a view of the portion of this list between the specified
-         * fromIndex, inclusive, and toIndex, exclusive. (If the specified
-         * fromIndex and toIndex are equal, the returned {@code SubList} is
-         * empty.) The returned {@code SubList} is backed by this list, so structural
-         * changes in the returned {@code SubList} are reflected in this lsit.
-         * The returned {@code SubList} supports all of the optional list operations
-         * supported by this list.
+         * Returns a view of the portion of this list between the specified fromIndex,
+         * inclusive, and toIndex, exclusive. (If the specified fromIndex and toIndex
+         * are equal, the returned {@code SubList} is empty.) The returned
+         * {@code SubList} is backed by this list, so structural changes in the returned
+         * {@code SubList} are reflected in this lsit. The returned {@code SubList}
+         * supports all of the optional list operations supported by this list.
          *
-         * <p>This method eliminates the need for explicit range operations (of
-         * the sort that commonly exist for arrays). Any operation that expects
-         * a list can be used as a range operation by passing a {@code SubList} view
-         * instead of a whole list.  For example, the following idiom
-         * removes a range of elements from a list:
-         * <pre>{@code
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * 
+         * <pre>
+         * {@code
          *      list.subList(from, to).clear();
-         * }</pre>
+         * }
+         * </pre>
+         * 
          * Similar idioms may be constructed for {@code indexOf} and
-         * {@code lastIndexOf}, and all of the algorithms in the
-         * {@code Collections} class can be applied to a {@code SubList}.
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
          *
-         * <p>The semantics of the {@code SubList} returned by this method become undefined if
-         * the {@code NodableLinkedList} is <i>structurally modified</i> in
-         * any way other than via the returned {@code SubList} or any of its sublists.
-         * (Structural modifications are those that change the size of this list,
-         * or otherwise perturb it in such a fashion that iterations in progress may
-         * yield incorrect results.) A {@code ConcurrentModificationException} is thrown
-         * for any operation on a {@code SubList} that is structurally unsound.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are those that change the size of this list, or
+         * otherwise perturb it in such a fashion that iterations in progress may yield
+         * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+         * any operation on a {@code SubList} that is structurally unsound.
          *
          * @param fromIndex low endpoint (inclusive) of the {@code SubList}
-         * @param toIndex high endpoint (exclusive) of the {@code SubList}
+         * @param toIndex   high endpoint (exclusive) of the {@code SubList}
          * @return a view of the specified range within this list
          * @throws IndexOutOfBoundsException for an illegal endpoint index value
          *                                   ({@code fromIndex < 0 || toIndex > size ||
@@ -2254,52 +2389,60 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a view of the portion of this list between the specified
-         * firstNode, and lastNode (both inclusive).
-         * The returned {@code SubList} is backed by this list, so structural changes
-         * in the returned {@code SubList} are reflected in this list.
-         * The returned {@code SubList} supports all of the optional list operations
-         * supported by this list.
+         * Returns a view of the portion of this list between the specified firstNode,
+         * and lastNode (both inclusive). The returned {@code SubList} is backed by this
+         * list, so structural changes in the returned {@code SubList} are reflected in
+         * this list. The returned {@code SubList} supports all of the optional list
+         * operations supported by this list.
          * 
-         * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+         * <p>
+         * If the specified firstNode is {@code null}, an empty {@code SubList},
          * positioned right before the specified lastNode, is returned. If the specified
-         * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
-         * specified firstNode, is returned. if both the specified firstNode and lastNode
-         * are {@code null}, an empty {@code SubList}, positioned at the end of this list,
-         * is returned.
+         * lastNode is {@code null}, an empty {@code SubList}, positioned right after
+         * the specified firstNode, is returned. if both the specified firstNode and
+         * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
+         * this list, is returned.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * For performance reasons, this implementation does not verify that the specified
-         * lastNode comes after (or on) the specified firstNode in this list.
-         * Therefore, if the specified lastNode comes before the specified firstNode
-         * in the list, an {@code IllegalStateException} can be thrown for any operation on the
-         * returned {@code SubList} indicating that the end of the list was reached unexpectedly.
+         * <p>
+         * <strong>Implementation Note:</strong> For performance reasons, this
+         * implementation does not verify that the specified lastNode comes after (or
+         * on) the specified firstNode in this list. Therefore, if the specified
+         * lastNode comes before the specified firstNode in the list, an
+         * {@code IllegalStateException} can be thrown for any operation on the returned
+         * {@code SubList} indicating that the end of the list was reached unexpectedly.
          *
-         * <p>This method eliminates the need for explicit range operations (of
-         * the sort that commonly exist for arrays). Any operation that expects
-         * a list can be used as a range operation by passing a {@code SubList} view
-         * instead of a whole list.  For example, the following idiom
-         * removes a range of elements from a list:
-         * <pre>{@code
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * 
+         * <pre>
+         * {@code
          *      list.subList(first, last).clear();
-         * }</pre>
+         * }
+         * </pre>
+         * 
          * Similar idioms may be constructed for {@code indexOf} and
-         * {@code lastIndexOf}, and all of the algorithms in the
-         * {@code Collections} class can be applied to a {@code SubList}.
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
          *
-         * <p>The semantics of the {@code SubList} returned by this method become undefined if
-         * the {@code NodableLinkedList} is <i>structurally modified</i> in
-         * any way other than via the returned {@code SubList} or any of its sublists.
-         * (Structural modifications are* those that change the size of this list,
-         * or otherwise perturb it in such a fashion that iterations in progress may
-         * yield incorrect results.) A {@code ConcurrentModificationException} is thrown
-         * for any operation on a {@code SubList} that is structurally unsound.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are* those that change the size of this list, or
+         * otherwise perturb it in such a fashion that iterations in progress may yield
+         * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+         * any operation on a {@code SubList} that is structurally unsound.
          *
          * @param firstNode low endpoint (inclusive) of the {@code SubList}
-         * @param lastNode high endpoint (inclusive) of the {@code SubList}
+         * @param lastNode  high endpoint (inclusive) of the {@code SubList}
          * @return a view of the specified range within this list
-         * @throws IllegalArgumentException if any specified node is not linked to this list or
-         *                                  if the lastNode comes before the firstNode in this list.
+         * @throws IllegalArgumentException if any specified node is not linked to this
+         *                                  list or if the lastNode comes before the
+         *                                  firstNode in this list.
          */
         public SubList.LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
             return newSubList(firstNode, lastNode).linkedSubNodes;
@@ -2326,19 +2469,19 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns an array containing all of the nodes in this list
-         * in proper sequence (from first to last node). The nodes in the
-         * array are still linked to this list.
+         * Returns an array containing all of the nodes in this list in proper sequence
+         * (from first to last node). The nodes in the array are still linked to this
+         * list.
          *
-         * <p>The returned array will be "safe" in that no references to it are
-         * maintained by this list.  (In other words, this method allocates
-         * a new array).  The caller is thus free to modify the returned array.
+         * <p>
+         * The returned array will be "safe" in that no references to it are maintained
+         * by this list. (In other words, this method allocates a new array). The caller
+         * is thus free to modify the returned array.
          *
-         * <p>This method acts as bridge between array-based and collection-based
-         * APIs.
+         * <p>
+         * This method acts as bridge between array-based and collection-based APIs.
          *
-         * @return an array containing all of the nodes in this list
-         *         in proper sequence
+         * @return an array containing all of the nodes in this list in proper sequence
          * @throws IllegalStateException if the list is too large to fit in an array
          */
         @Override
@@ -2346,78 +2489,93 @@ public class NodableLinkedList<E>
             if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
             final Object[] nodes = new Object[(int)size];
             int index = 0;
-            for (Node<E> node = headSentinel.next; node != tailSentinel; node = node.next) nodes[index++] = node;				
+            for (Node<E> node = headSentinel.next;
+                 node != tailSentinel;
+                 node = node.next)
+            {
+                nodes[index++] = node;				
+            }
             return nodes;
         }
 
         /**
-         * Returns an array containing all of the nodes in this list in
-         * proper sequence (from first to last node); the runtime type of
-         * the returned array is that of the specified array.  If the list fits
-         * in the specified array, it is returned therein.  Otherwise, a new
-         * array is allocated with the runtime type of the specified array and
-         * the size of this list.
+         * Returns an array containing all of the nodes in this list in proper sequence
+         * (from first to last node); the runtime type of the returned array is that of
+         * the specified array. If the list fits in the specified array, it is returned
+         * therein. Otherwise, a new array is allocated with the runtime type of the
+         * specified array and the size of this list.
          *
-         * <p>If the list fits in the specified array with room to spare (i.e.,
-         * the array has more elements than the list), the element in the array
-         * immediately following the end of the list is set to {@code null}.
-         * (This is useful in determining the length of the list <i>only</i> if
-         * the caller knows that the list does not contain any null elements.)
+         * <p>
+         * If the list fits in the specified array with room to spare (i.e., the array
+         * has more elements than the list), the element in the array immediately
+         * following the end of the list is set to {@code null}. (This is useful in
+         * determining the length of the list <i>only</i> if the caller knows that the
+         * list does not contain any null elements.)
          *
-         * <p>Like the {@link #toArray()} method, this method acts as bridge between
-         * array-based and collection-based APIs.  Further, this method allows
-         * precise control over the runtime type of the output array, and may,
-         * under certain circumstances, be used to save allocation costs.
+         * <p>
+         * Like the {@link #toArray()} method, this method acts as bridge between
+         * array-based and collection-based APIs. Further, this method allows precise
+         * control over the runtime type of the output array, and may, under certain
+         * circumstances, be used to save allocation costs.
          *
          * Note that {@code toArray(new Object[0])} is identical in function to
          * {@code toArray()}.
          *
-         * @param array the array into which the nodes of the list are to
-         *              be stored, if it is big enough; otherwise, a new array of the
-         *              same runtime type is allocated for this purpose.
+         * @param array the array into which the nodes of the list are to be stored, if
+         *              it is big enough; otherwise, a new array of the same runtime
+         *              type is allocated for this purpose.
          * @return an array containing the nodes of the list
-         * @throws ArrayStoreException if the runtime type of the specified array
-         *                             is not a supertype of the runtime type of every node in
-         *                             this list
+         * @throws ArrayStoreException   if the runtime type of the specified array is
+         *                               not a supertype of the runtime type of every
+         *                               node in this list
          * @throws IllegalStateException if the list is too large to fit in an array
-         * @throws NullPointerException if the specified array is {@code null}
+         * @throws NullPointerException  if the specified array is {@code null}
          */
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
             if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
-            if (array.length < size) array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int)size);
+            if (array.length < size) {
+                array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int)size);
+            }
             int index = 0;
             Object[] nodes = array;
-            for (Node<E> node = headSentinel.next; node != tailSentinel; node = node.next) nodes[index++] = node;			
+            for (Node<E> node = headSentinel.next;
+                 node != tailSentinel;
+                 node = node.next)
+            {
+                nodes[index++] = node;			
+            }
             if (array.length > size) array[(int)size] = null;				
             return array;
         }
 
         /**
          * Returns a {@code ListIterator} of the nodes in this list (in proper
-         * sequence), starting at the specified position in this list.
-         * Obeys the general contract of {@code List.listIterator(int)}.
+         * sequence), starting at the specified position in this list. Obeys the general
+         * contract of {@code List.listIterator(int)}.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * The {@code ListIterator} returned by this method behaves differently when the
-         * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the list's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
          * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
          *
-         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-         * is structurally modified at any time after the Iterator is created,
-         * in any way except through the {@code ListIterator}'s own {@code remove} or
-         * {@code add} methods, the {@code ListIterator} will throw a
-         * {@code ConcurrentModificationException}.  Thus, in the face of
-         * concurrent modification, the iterator fails quickly and cleanly, rather
-         * than risking arbitrary, non-deterministic behavior at an undetermined
-         * time in the future.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator}'s own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
          *
          * @param index index of the first node to be returned from the
          *              {@code ListIterator} (by a call to {@code next})
-         * @return a ListIterator of the nodes in this list (in proper
-         *         sequence), starting at the specified position in this list
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+         * @return a ListIterator of the nodes in this list (in proper sequence),
+         *         starting at the specified position in this list
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
          * @see List#listIterator(int)
          */
         @Override
@@ -2428,48 +2586,49 @@ public class NodableLinkedList<E>
 
         /**
          * Returns a {@code ListIterator} of the nodes in this list (in proper
-         * sequence), starting at the specified node in this list.
-         * if the specified node is {@code null}, the {@code ListIterator} will
-         * start with the first {@code Node} in this list.
+         * sequence), starting at the specified node in this list. if the specified node
+         * is {@code null}, the {@code ListIterator} will start with the first
+         * {@code Node} in this list.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * The index returned by the returned {@code ListIterator}'s methods
-         * {@code nextIndex} and {@code previousIndex} is relative to the
-         * specified node which has an index of zero. Nodes which come before
-         * the specified node in this list, will have a negative index; nodes
-         * that come after will have a positive index. Method {@code nextIndex}
-         * returns {@code longSize()} if at the end of the list, and method
-         * {@code previousIndex} returns {@code -longSize()} if at the beginning
-         * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-         * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+         * <p>
+         * <strong>Implementation Note:</strong> The index returned by the returned
+         * {@code ListIterator}'s methods {@code nextIndex} and {@code previousIndex} is
+         * relative to the specified node which has an index of zero. Nodes which come
+         * before the specified node in this list, will have a negative index; nodes
+         * that come after will have a positive index. Method {@code nextIndex} returns
+         * {@code longSize()} if at the end of the list, and method
+         * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
+         * list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+         * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+         * respectively.
          *
-         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-         * is structurally modified at any time after the Iterator is created,
-         * in any way except through the {@code ListIterator}'s own {@code remove} or
-         * {@code add} methods, the {@code ListIterator} will throw a
-         * {@code ConcurrentModificationException}.  Thus, in the face of
-         * concurrent modification, the iterator fails quickly and cleanly, rather
-         * than risking arbitrary, non-deterministic behavior at an undetermined
-         * time in the future.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator}'s own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
          *
-         * @param node first node to be returned from the {@code ListIterator}
-         *             (by a call to {@code next})
-         * @return a ListIterator of the nodes in this list (in proper
-         *         sequence), starting at the specified node in this list
+         * @param node first node to be returned from the {@code ListIterator} (by a
+         *             call to {@code next})
+         * @return a ListIterator of the nodes in this list (in proper sequence),
+         *         starting at the specified node in this list
          * @throws IllegalArgumentException if node is not linked to this list
          */
         public ListIterator<Node<E>> listIterator(Node<E> node) {
-            if (node != null && !this.contains(node)) throw new IllegalArgumentException("Specified is node not linked to this list");
+            if (node != null && !this.contains(node)) {
+                throw new IllegalArgumentException("Specified is node not linked to this list");
+            }
             return linkedNodesListIterator(node);
         }
 
         /**
-         * Returns an iterator over the nodes in this list in reverse
-         * sequential order.  The nodes will be returned in order from
-         * last (tail) to first (head).
+         * Returns an iterator over the nodes in this list in reverse sequential order.
+         * The nodes will be returned in order from last (tail) to first (head).
          *
-         * @return an iterator over the nodes in this list in reverse
-         *         sequence
+         * @return an iterator over the nodes in this list in reverse sequence
          */
         @Override
         public Iterator<Node<E>> descendingIterator() {
@@ -2477,17 +2636,18 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator}
-         * over the nodes in this list.
+         * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator} over
+         * the nodes in this list.
          *
-         * <p>The {@code Spliterator} reports {@link Spliterator#SIZED} and
-         * {@link Spliterator#ORDERED}.  Overriding implementations should document
-         * the reporting of additional characteristic values.
+         * <p>
+         * The {@code Spliterator} reports {@link Spliterator#SIZED} and
+         * {@link Spliterator#ORDERED}. Overriding implementations should document the
+         * reporting of additional characteristic values.
          *
-         * <p><strong>Implementation Note:</strong>
-         * The {@code Spliterator} additionally reports {@link Spliterator#SUBSIZED} and
-         * {@link Spliterator#NONNULL}, and implements {@code trySplit} to permit
-         * limited parallelism..
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
+         * reports {@link Spliterator#SUBSIZED} and {@link Spliterator#NONNULL}, and
+         * implements {@code trySplit} to permit limited parallelism..
          *
          * @return a {@code Spliterator} over the nodes in this list
          */
@@ -2517,7 +2677,12 @@ public class NodableLinkedList<E>
             return linkedNodesListIterator(index, node, this.headSentinel, this.tailSentinel);
         }
         
-        private LinkedNodesListIterator linkedNodesListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel) {
+        private LinkedNodesListIterator linkedNodesListIterator(
+                long index,
+                Node<E> node,
+                Node<E> headSentinel,
+                Node<E> tailSentinel)
+        {
             return new LinkedNodesListIterator(
                     index, node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
@@ -2529,7 +2694,11 @@ public class NodableLinkedList<E>
             return linkedNodesListIterator(node, this.headSentinel, this.tailSentinel);
         }
         
-        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node, Node<E> headSentinel, Node<E> tailSentinel) {
+        private LinkedNodesListIterator linkedNodesListIterator(
+                Node<E> node,
+                Node<E> headSentinel,
+                Node<E> tailSentinel)
+        {
             return new LinkedNodesListIterator(
                     (node == null) ? headSentinel.next : node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
@@ -2548,7 +2717,11 @@ public class NodableLinkedList<E>
             private int expectedModCount = modCount;
             private boolean relativeIndex = false;
             
-            private LinkedNodesListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel) {
+            private LinkedNodesListIterator(
+                    long index,
+                    Node<E> node,
+                    Node<E> headSentinel,Node<E> tailSentinel)
+            {
                 // assert index >= 0 && index <= size : "index out of range; index=" + index + ", size=" + size;
                 // assert node != null && node.linkedNodes == LinkedNodes.this : "Specified node is null or is not linked to this list";
                 // assert headSentinel != null && headSentinel.linkedNodes == LinkedNodes.this : "head sentinel is null or is not linked to this list";
@@ -2661,7 +2834,9 @@ public class NodableLinkedList<E>
             @Override
             public void add(Node<E> node) {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node is null or already an element of a list");
+                }
                 addNodeAfter(node, cursorNode);
                 cursorIndex++;
                 cursorNode = node;
@@ -2697,7 +2872,10 @@ public class NodableLinkedList<E>
             public void forEachRemaining(Consumer<? super Node<E>> action) {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (action == null) throw new NullPointerException();
-                while (modCount == expectedModCount && (cursorNode.next != tailSentinel && cursorNode.next != LinkedNodes.this.tailSentinel)) {
+                while (modCount == expectedModCount &&
+                       (cursorNode.next != tailSentinel &&
+                        cursorNode.next != LinkedNodes.this.tailSentinel))
+                {
                     action.accept(cursorNode.next);
                     cursorNode = cursorNode.next;
                     cursorIndex++;
@@ -2813,7 +2991,7 @@ public class NodableLinkedList<E>
                 }               
                 cursor = node;
                 batchSize = index;
-                remainingSize =- batchSize;
+                remainingSize -= batchSize;
                 return array;
             }            
 
@@ -2939,39 +3117,42 @@ public class NodableLinkedList<E>
     } // NodableLinkedListSpliterator
     
     /**
-     * Sublist of a {@code NodableLinkedList}.
-     * Implements all optional {@code List} operations, and permits all elements
-     * (including {@code null}).
+     * Sublist of a {@code NodableLinkedList}. Implements all optional {@code List}
+     * operations, and permits all elements (including {@code null}).
      * 
-     * <p>Just like a {@code NodableLinkedList}, there are two ways to visualize a
-     * {@code NodableLinkedList.SubList}: one as a list of elements (the standard view),
-     * and the other as a list of nodes. The latter view is implemented by the inner
-     * class {@code LinkedSubNodes}. A {@code SubList} is backed by one and only one
-     * {@code LinkedSubNodes} instance. Method {@link #linkedSubNodes()} returns
-     * the {@code LinkedSubNodes} object backing a {@code NodableLinkedList.SubList}.
+     * <p>
+     * Just like a {@code NodableLinkedList}, there are two ways to visualize a
+     * {@code NodableLinkedList.SubList}: one as a list of elements (the standard
+     * view), and the other as a list of nodes. The latter view is implemented by
+     * the inner class {@code LinkedSubNodes}. A {@code SubList} is backed by one
+     * and only one {@code LinkedSubNodes} instance. Method
+     * {@link #linkedSubNodes()} returns the {@code LinkedSubNodes} object backing a
+     * {@code NodableLinkedList.SubList}.
      * 
-     * <p>If the {@code NodableLinkedList} that a {@code SubList} is part of 
-     * is structurally modified in anyway except via operations on the {@code SubList}
+     * <p>
+     * If the {@code NodableLinkedList} that a {@code SubList} is part of is
+     * structurally modified in anyway except via operations on the {@code SubList}
      * itself, the {@code SubList} is invalidated and any future operations on the
-     * {@code SubList} will throw a {@code ConcurrentModificationException}. 
+     * {@code SubList} will throw a {@code ConcurrentModificationException}.
      *
-     * <p>The iterators returned by this class's {@code iterator} and
-     * {@code listIterator} methods are <i>fail-fast</i>: if the {@code NodableLinkedList}
-     * is structurally modified at any time after the iterator is created, in
-     * any way except through the Iterator's own {@code remove} or
-     * {@code add} methods, the iterator will throw a {@code
-     * ConcurrentModificationException}.  Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than
-     * risking arbitrary, non-deterministic behavior at an undetermined
-     * time in the future.
+     * <p>
+     * The iterators returned by this class's {@code iterator} and
+     * {@code listIterator} methods are <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * iterator is created, in any way except through the Iterator's own
+     * {@code remove} or {@code add} methods, the iterator will throw a {@code
+     * ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
      *
-     * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
-     * as it is, generally speaking, impossible to make any hard guarantees in the
-     * presence of unsynchronized concurrent modification.  Fail-fast iterators
-     * throw {@code ConcurrentModificationException} on a best-effort basis.
-     * Therefore, it would be wrong to write a program that depended on this
-     * exception for its correctness:   <i>the fail-fast behavior of iterators
-     * should be used only to detect bugs.</i> 
+     * <p>
+     * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
+     * is, generally speaking, impossible to make any hard guarantees in the
+     * presence of unsynchronized concurrent modification. Fail-fast iterators throw
+     * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
+     * would be wrong to write a program that depended on this exception for its
+     * correctness: <i>the fail-fast behavior of iterators should be used only to
+     * detect bugs.</i>
      * 
      * @author James Pfeifer
      *
@@ -2987,12 +3168,14 @@ public class NodableLinkedList<E>
         }
         
         private void checkForModificationException() {
-            if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
+            if (this.modCount != NodableLinkedList.this.modCount) {
+                throw new ConcurrentModificationException();
+            }
         }
         
         /**
          * Returns the {@code NodableLinkedList} which contains this {@code SubList}.
-         *         
+         * 
          * @return the {@code NodableLinkedList} which contains this {@code SubList}
          */
         public NodableLinkedList<E> nodableLinkedList() {
@@ -3011,8 +3194,10 @@ public class NodableLinkedList<E>
         /**
          * Inserts the specified node at the beginning of this {@code SubList}.
          *
-         * @param node the {@code Node} to be inserted at the beginning of this {@code SubList}
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @param node the {@code Node} to be inserted at the beginning of this
+         *             {@code SubList}
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         public void addNodeFirst(Node<E> node) {
             linkedSubNodes.add(0, node);
@@ -3022,51 +3207,52 @@ public class NodableLinkedList<E>
          * Appends the specified node to the end of this {@code SubList}.
          *
          * @param node {@code Node} to be appended to the end of this {@code SubList}
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         public void addNodeLast(Node<E> node) {
             linkedSubNodes.addNodeAfter(node, getLastNode());
         }        
         
         /**
-         * Returns the first {@code Node} of this {@code SubList},
-         * or returns {@code null} if this {@code SubList} is empty.
+         * Returns the first {@code Node} of this {@code SubList}, or returns
+         * {@code null} if this {@code SubList} is empty.
          *
-         * @return the first {@code Node} of this {@code SubList},
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the first {@code Node} of this {@code SubList}, or {@code null} if
+         *         this {@code SubList} is empty
          */
         public Node<E> getFirstNode() {
             return (this.isEmpty()) ? null : linkedSubNodes.getNode(0L);
         }        
         
         /**
-         * Returns the first {@code SubListNode} of this {@code SubList},
-         * or returns {@code null} if this {@code SubList} is empty.
+         * Returns the first {@code SubListNode} of this {@code SubList}, or returns
+         * {@code null} if this {@code SubList} is empty.
          *
-         * @return the first {@code SubListNode} of this {@code SubList},
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the first {@code SubListNode} of this {@code SubList}, or
+         *         {@code null} if this {@code SubList} is empty
          */
         public SubListNode<E> getFirstSubListNode() {
             return (this.isEmpty()) ? null : new SubListNode<E>(getFirstNode(), this);
         }
         
         /**
-         * Returns the last {@code Node} of this {@code SubList},
-         * or returns {@code null} if this {@code SubList} is empty.
+         * Returns the last {@code Node} of this {@code SubList}, or returns
+         * {@code null} if this {@code SubList} is empty.
          *
-         * @return the last {@code Node} of this {@code SubList},
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the last {@code Node} of this {@code SubList}, or {@code null} if
+         *         this {@code SubList} is empty
          */
         public Node<E> getLastNode() {
             return (this.isEmpty()) ? null : linkedSubNodes.getNode(longSize()-1);
         }        
         
         /**
-         * Returns the last {@code SubListNode} of this {@code SubList},
-         * or returns {@code null} if this {@code SubList} is empty.
+         * Returns the last {@code SubListNode} of this {@code SubList}, or returns
+         * {@code null} if this {@code SubList} is empty.
          *
-         * @return the last {@code SubListNode} of this {@code SubList},
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the last {@code SubListNode} of this {@code SubList}, or {@code null}
+         *         if this {@code SubList} is empty
          */
         public SubListNode<E> getLastSubListNode() {
             return (this.isEmpty()) ? null : new SubListNode<E>(getLastNode(), this);
@@ -3077,8 +3263,8 @@ public class NodableLinkedList<E>
          * 
          * Returns the removed node or {@code null} if this {@code SubList} is empty
          *
-         * @return the first node of this {@code SubList} that was removed,
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the first node of this {@code SubList} that was removed, or
+         *         {@code null} if this {@code SubList} is empty
          */
         public Node<E> removeFirstNode() {
             final Node<E> firstNode = getFirstNode();
@@ -3089,11 +3275,12 @@ public class NodableLinkedList<E>
         /**
          * Removes and returns the first {@code SubListNode} of this {@code SubList}.
          * 
-         * Returns the removed {@code SubListNode} or {@code null} if this {@code SubList} is empty
+         * Returns the removed {@code SubListNode} or {@code null} if this
+         * {@code SubList} is empty
          *
-         * @return the first {@code SubListNode} of this {@code SubList} that was removed,
-         *         or {@code null} if this {@code SubList} is empty
-         */        
+         * @return the first {@code SubListNode} of this {@code SubList} that was
+         *         removed, or {@code null} if this {@code SubList} is empty
+         */       
         public SubListNode<E> removeFirstSubListNode() {
             return (this.isEmpty()) ? null : new SubListNode<E>(removeFirstNode(), this);
         }
@@ -3103,8 +3290,8 @@ public class NodableLinkedList<E>
          * 
          * Returns the removed node or {@code null} if this {@code SubList} is empty
          *
-         * @return the last node of this {@code SubList} that was removed,
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the last node of this {@code SubList} that was removed, or
+         *         {@code null} if this {@code SubList} is empty
          */
         public Node<E> removeLastNode() {
             final Node<E> lastNode = getLastNode();
@@ -3115,18 +3302,20 @@ public class NodableLinkedList<E>
         /**
          * Removes and returns the last {@code SubListNode} of this {@code SubList}.
          * 
-         * Returns the removed {@code SubListNode} or {@code null} if this {@code SubList} is empty
+         * Returns the removed {@code SubListNode} or {@code null} if this
+         * {@code SubList} is empty
          *
-         * @return the last {@code SubListNode} of this {@code SubList} that was removed,
-         *         or {@code null} if this {@code SubList} is empty
+         * @return the last {@code SubListNode} of this {@code SubList} that was
+         *         removed, or {@code null} if this {@code SubList} is empty
          */        
         public SubListNode<E> removeLastSubListNode() {
             return (this.isEmpty()) ? null : new SubListNode<E>(removeLastNode(), this);
         }        
 
         /**
-         * Returns the number of elements in this {@code SubList}. If this {@code SubList} contains
-         * more than Integer.MAX_VALUE elements, Integer.MAX_VALUE is returned.
+         * Returns the number of elements in this {@code SubList}. If this
+         * {@code SubList} contains more than Integer.MAX_VALUE elements,
+         * Integer.MAX_VALUE is returned.
          *
          * @return the number of elements in this {@code SubList}.
          */
@@ -3167,7 +3356,8 @@ public class NodableLinkedList<E>
          *
          * @param index index of the element to return
          * @return the element at the specified position in this {@code SubList}
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
          */
         @Override
         public E get(int index) {
@@ -3175,13 +3365,14 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Inserts the specified element at the specified position in this {@code SubList}.
-         * Shifts the element currently at that position (if any) and any
-         * subsequent elements to the right (adds one to their indices).
+         * Inserts the specified element at the specified position in this
+         * {@code SubList}. Shifts the element currently at that position (if any) and
+         * any subsequent elements to the right (adds one to their indices).
          *
-         * @param index index at which the specified element is to be inserted
+         * @param index   index at which the specified element is to be inserted
          * @param element element to be inserted
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
          */
         @Override
         public void add(int index, E element) {
@@ -3189,12 +3380,14 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Removes and returns the element at the specified position in this {@code SubList}.
-         * Shifts any subsequent elements to the left (subtracts one from their indices).
+         * Removes and returns the element at the specified position in this
+         * {@code SubList}. Shifts any subsequent elements to the left (subtracts one
+         * from their indices).
          *
          * @param index the index of the element to be removed
          * @return the element previously at the specified position
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
          */
         @Override
         public E remove(int index) {
@@ -3202,13 +3395,14 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Replaces the element at the specified position in this {@code SubList} with the
-         * specified element.
+         * Replaces the element at the specified position in this {@code SubList} with
+         * the specified element.
          *
-         * @param index index of the element to replace
+         * @param index   index of the element to replace
          * @param element element to be stored at the specified position
          * @return the element previously at the specified position
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
          */
         @Override
         public E set(int index, E element) {
@@ -3219,13 +3413,13 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Appends all of the elements in the specified collection to the end of
-         * this {@code SubList}, in the order that they are returned by the specified
-         * collection's iterator.  The behavior of this operation is undefined if
-         * the specified collection is modified while the operation is in
-         * progress.
+         * Appends all of the elements in the specified collection to the end of this
+         * {@code SubList}, in the order that they are returned by the specified
+         * collection's iterator. The behavior of this operation is undefined if the
+         * specified collection is modified while the operation is in progress.
          *
-         * @param collection collection containing elements to be added to this {@code SubList}
+         * @param collection collection containing elements to be added to this
+         *                   {@code SubList}
          * @return {@code true} if this list changed as a result of the call
          * @throws NullPointerException if the specified collection is {@code null}
          */
@@ -3244,26 +3438,30 @@ public class NodableLinkedList<E>
         /**
          * Inserts all of the elements in the specified collection into this
          * {@code SubList}, starting at the specified position. Shifts the element
-         * currently at that position (if any) and any subsequent elements to
-         * the right (increases their indices). The new elements will appear
-         * in this {@code SubList} in the order that they are returned by the
-         * specified collection's iterator. if the specified {@code index == longSize()},
-         * the elements will be appended to the end of this {@code SubList}.
+         * currently at that position (if any) and any subsequent elements to the right
+         * (increases their indices). The new elements will appear in this
+         * {@code SubList} in the order that they are returned by the specified
+         * collection's iterator. if the specified {@code index == longSize()}, the
+         * elements will be appended to the end of this {@code SubList}.
          * 
          * Note that {@code addAll(longSize(), Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param index index at which to insert the first element
-         *              from the specified collection
-         * @param collection collection containing elements to be added to this {@code SubList}
+         * @param index      index at which to insert the first element from the
+         *                   specified collection
+         * @param collection collection containing elements to be added to this
+         *                   {@code SubList}
          * @return {@code true} if this list changed as a result of the call
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-         * @throws NullPointerException if the specified collection is {@code null}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @throws NullPointerException      if the specified collection is {@code null}
          */
         @Override
         public boolean addAll(int index, Collection<? extends E> collection) {
             checkForModificationException();
-            if (linkedSubNodes.sizeIsKnown() && (index < 0 || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            if (linkedSubNodes.sizeIsKnown() && (index < 0 || index > longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            }
             boolean changed = false;            
             final Node<E> targetNode = linkedSubNodes.getNode(index);
             for (E element: collection) {
@@ -3275,21 +3473,22 @@ public class NodableLinkedList<E>
         
         /**
          * Inserts all of the elements in the specified collection into this
-         * {@code SubList}, before the specified node. Shifts the element
-         * currently at that position and any subsequent elements to
-         * the right (increases their indices). The new elements will appear
-         * in this {@code SubList} in the order that they are returned by the
-         * specified collection's iterator. if the specified node is {@code null},
-         * the elements will be appended to the end of this {@code SubList}.
+         * {@code SubList}, before the specified node. Shifts the element currently at
+         * that position and any subsequent elements to the right (increases their
+         * indices). The new elements will appear in this {@code SubList} in the order
+         * that they are returned by the specified collection's iterator. if the
+         * specified node is {@code null}, the elements will be appended to the end of
+         * this {@code SubList}.
          * 
          * Note that {@code addAll(null, Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param node {@code Node} the specified collection is to be inserted before
+         * @param node       {@code Node} the specified collection is to be inserted
+         *                   before
          * @param collection collection containing elements to be added to this list
          * @return {@code true} if this list changed as a result of the call
          * @throws IllegalArgumentException if node is not linked to this list
-         * @throws NullPointerException if the specified collection is {@code null}
+         * @throws NullPointerException     if the specified collection is {@code null}
          */
         public boolean addAll(Node<E> node, Collection<? extends E> collection) {
             checkForModificationException();
@@ -3307,51 +3506,55 @@ public class NodableLinkedList<E>
          * Sorts this {@code SubList} according to the order induced by the specified
          * comparator.
          *
-         * <p>All elements in this {@code SubList} must be <i>mutually comparable</i> using the
-         * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-         * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-         * in the {@code SubList}).
+         * <p>
+         * All elements in this {@code SubList} must be <i>mutually comparable</i> using
+         * the specified comparator (that is, {@code c.compare(e1, e2)} must not throw a
+         * {@code ClassCastException} for any elements {@code e1} and {@code e2} in the
+         * {@code SubList}).
          *
          * If the specified comparator is {@code null} then all elements in this
-         * {@code SubList} must implement the {@code Comparable} interface and the elements'
-         * natural ordering should be used.
+         * {@code SubList} must implement the {@code Comparable} interface and the
+         * elements' natural ordering should be used.
          * 
-         * <p><strong>Implementation Specification:</strong>
-         * This implementation obtains an array containing all nodes in this {@code SubList},
-         * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-         * and then effectively clears the {@code SubList} and puts the sorted nodes from the array
-         * back into this {@code SubList} in order. If this sublist's {@code size > Integer.MAX_VALUE-8},
-         * a {@link #mergeSort} is performed.
+         * <p>
+         * <strong>Implementation Specification:</strong> This implementation obtains an
+         * array containing all nodes in this {@code SubList}, sorts the array using
+         * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
+         * clears the {@code SubList} and puts the sorted nodes from the array back into
+         * this {@code SubList} in order. If this sublist's
+         * {@code size > Integer.MAX_VALUE-8}, a {@link #mergeSort} is performed.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * This implementation is a stable, adaptive, iterative mergesort that
-         * requires far fewer than n lg(n) comparisons when the input array is
-         * partially sorted, while offering the performance of a traditional
-         * mergesort when the input array is randomly ordered.  If the input array
-         * is nearly sorted, the implementation requires approximately n
-         * comparisons.  Temporary storage requirements vary from a small constant
-         * for nearly sorted input arrays to n/2 object references for randomly
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * adaptive, iterative mergesort that requires far fewer than n lg(n)
+         * comparisons when the input array is partially sorted, while offering the
+         * performance of a traditional mergesort when the input array is randomly
+         * ordered. If the input array is nearly sorted, the implementation requires
+         * approximately n comparisons. Temporary storage requirements vary from a small
+         * constant for nearly sorted input arrays to n/2 object references for randomly
          * ordered input arrays.
          *
-         * <p>The implementation takes equal advantage of ascending and
-         * descending order in its input array, and can take advantage of
-         * ascending and descending order in different parts of the same
-         * input array.  It is well-suited to merging two or more sorted arrays:
-         * simply concatenate the arrays and sort the resulting array.
+         * <p>
+         * The implementation takes equal advantage of ascending and descending order in
+         * its input array, and can take advantage of ascending and descending order in
+         * different parts of the same input array. It is well-suited to merging two or
+         * more sorted arrays: simply concatenate the arrays and sort the resulting
+         * array.
          *
-         * <p>The implementation was adapted from Tim Peters's list sort for Python
+         * <p>
+         * The implementation was adapted from Tim Peters's list sort for Python
          * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-         * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-         * Sorting and Information Theoretic Complexity", in Proceedings of the
-         * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-         * January 1993.
+         * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
+         * Information Theoretic Complexity", in Proceedings of the Fourth Annual
+         * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
          *
          * @see Arrays#sort
-         * @param comparator the {@code Comparator} used to compare {@code SubList} elements.
-         *                   A {@code null} value indicates that the elements'
+         * @param comparator the {@code Comparator} used to compare {@code SubList}
+         *                   elements. A {@code null} value indicates that the elements'
          *                   natural ordering should be used
          * @throws ClassCastException if the sublist contains elements that are not
-         *                            {@code mutually comparable} using the specified comparator
+         *                            {@code mutually comparable} using the specified
+         *                            comparator
          */        
         @Override
         public void sort(Comparator<? super E> comparator) {
@@ -3366,28 +3569,32 @@ public class NodableLinkedList<E>
          * Sorts this {@code SubList} according to the order induced by the specified
          * comparator.
          *
-         * <p>All elements in this {@code SubList} must be <i>mutually comparable</i> using the
-         * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
-         * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
-         * in the {@code SubList}).
+         * <p>
+         * All elements in this {@code SubList} must be <i>mutually comparable</i> using
+         * the specified comparator (that is, {@code c.compare(e1, e2)} must not throw a
+         * {@code ClassCastException} for any elements {@code e1} and {@code e2} in the
+         * {@code SubList}).
          *
          * If the specified comparator is {@code null} then all elements in this
-         * {@code SubList} must implement the {@code Comparable} interface and the elements'
-         * natural ordering should be used.
+         * {@code SubList} must implement the {@code Comparable} interface and the
+         * elements' natural ordering should be used.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * This implementation is a stable, iterative mergesort that requires n lg(n) comparisons.
-         * this implementation avoids the N auxiliary storage cost normally associated with a mergesort.
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * iterative mergesort that requires n lg(n) comparisons. this implementation
+         * avoids the N auxiliary storage cost normally associated with a mergesort.
          *
          * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
-         * (<a href="https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+         * (<a href=
+         * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
          * SimonTathamMergesort</a>).
          *
-         * @param comparator the {@code Comparator} used to compare list elements.
-         *                   A {@code null} value indicates that the elements'
-         *                   natural ordering should be used
+         * @param comparator the {@code Comparator} used to compare list elements. A
+         *                   {@code null} value indicates that the elements' natural
+         *                   ordering should be used
          * @throws ClassCastException if the list contains elements that are not
-         *                            <i>mutually comparable</i> using the specified comparator
+         *                            <i>mutually comparable</i> using the specified
+         *                            comparator
          */
         public void mergeSort(Comparator<? super E> comparator) {
             if (comparator == null) {
@@ -3399,35 +3606,42 @@ public class NodableLinkedList<E>
         
         /**
          * Returns a view of the portion of this {@code SubList} between the specified
-         * fromIndex, inclusive, and toIndex, exclusive. (If the specified
-         * fromIndex and toIndex are equal, the returned {@code SubList} is
-         * empty.) The returned {@code SubList} is backed by this {@code SubList}, so structural
-         * changes in the returned {@code SubList} are reflected in this {@code SubList}.
-         * The returned {@code SubList} supports all of the optional list operations
+         * fromIndex, inclusive, and toIndex, exclusive. (If the specified fromIndex and
+         * toIndex are equal, the returned {@code SubList} is empty.) The returned
+         * {@code SubList} is backed by this {@code SubList}, so structural changes in
+         * the returned {@code SubList} are reflected in this {@code SubList}. The
+         * returned {@code SubList} supports all of the optional list operations
          * supported by this {@code SubList}.
          *
-         * <p>This method eliminates the need for explicit range operations (of
-         * the sort that commonly exist for arrays). Any operation that expects
-         * a list can be used as a range operation by passing a {@code SubList} view
-         * instead of a whole list. For example, the following idiom
-         * removes a range of elements from a list:
-         * <pre>{@code
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * 
+         * <pre>
+         * {@code
          *      list.subList(from, to).clear();
-         * }</pre>
+         * }
+         * </pre>
+         * 
          * Similar idioms may be constructed for {@code indexOf} and
-         * {@code lastIndexOf}, and all of the algorithms in the
-         * {@code Collections} class can be applied to a {@code SubList}.
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
          *
-         * <p>The semantics of the {@code SubList} returned by this method become undefined if
-         * the {@code NodableLinkedList} is <i>structurally modified</i> in
-         * any way other than via the returned {@code SubList} or any of its sublists.
-         * (Structural modifications are those that change the size of this {@code SubList},
-         * or otherwise perturb it in such a fashion that iterations in progress may yield
-         * incorrect results.) A {@code ConcurrentModificationException} is thrown for any
-         * operation on a {@code SubList} that is structurally unsound.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are those that change the size of this
+         * {@code SubList}, or otherwise perturb it in such a fashion that iterations in
+         * progress may yield incorrect results.) A
+         * {@code ConcurrentModificationException} is thrown for any operation on a
+         * {@code SubList} that is structurally unsound.
          *
          * @param fromIndex low endpoint (inclusive) of the {@code SubList}
-         * @param toIndex high endpoint (exclusive) of the {@code SubList}
+         * @param toIndex   high endpoint (exclusive) of the {@code SubList}
          * @return a view of the specified range within this {@code SubList}
          * @throws IndexOutOfBoundsException for an illegal endpoint index value
          *                                   ({@code fromIndex < 0 || toIndex > size ||
@@ -3440,44 +3654,53 @@ public class NodableLinkedList<E>
         
         /**
          * Returns a view of the portion of this {@code SubList} between the specified
-         * fisrtNode, and lastNode (both inclusive).
-         * The returned {@code SubList} is backed by this {@code SubList}, so structural changes
-         * in the returned {@code SubList} are reflected in this {@code SubList}.
-         * The returned {@code SubList} supports all of the optional list operations
-         * supported by this {@code SubList}.
+         * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
+         * backed by this {@code SubList}, so structural changes in the returned
+         * {@code SubList} are reflected in this {@code SubList}. The returned
+         * {@code SubList} supports all of the optional list operations supported by
+         * this {@code SubList}.
          * 
-         * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+         * <p>
+         * If the specified firstNode is {@code null}, an empty {@code SubList},
          * positioned right before the specified lastNode, is returned. If the specified
-         * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
-         * specified firstNode, is returned. if both the specified firstNode and lastNode
-         * are {@code null}, an empty {@code SubList}, positioned at the end of this
-         * {@code SubList}, is returned.
+         * lastNode is {@code null}, an empty {@code SubList}, positioned right after
+         * the specified firstNode, is returned. if both the specified firstNode and
+         * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
+         * this {@code SubList}, is returned.
          *
-         * <p>This method eliminates the need for explicit range operations (of
-         * the sort that commonly exist for arrays). Any operation that expects
-         * a list can be used as a range operation by passing a {@code SubList} view
-         * instead of a whole list.  For example, the following idiom
-         * removes a range of elements from a list:
-         * <pre>{@code
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * 
+         * <pre>
+         * {@code
          *      list.subList(first, last).clear();
-         * }</pre>
+         * }
+         * </pre>
+         * 
          * Similar idioms may be constructed for {@code indexOf} and
-         * {@code lastIndexOf}, and all of the algorithms in the
-         * {@code Collections} class can be applied to a {@code SubList}.
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
          *
-         * <p>The semantics of the {@code SubList} returned by this method become undefined if
-         * the {@code NodableLinkedList} is <i>structurally modified</i> in
-         * any way other than via the returned {@code SubList} or any of its sublists.
-         * (Structural modifications are those that change the size of this {@code SubList},
-         * or otherwise perturb it in such a fashion that iterations in progress may yield
-         * incorrect results.) A {@code ConcurrentModificationException} is thrown for any
-         * operation on a {@code SubList} that is structurally unsound.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are those that change the size of this
+         * {@code SubList}, or otherwise perturb it in such a fashion that iterations in
+         * progress may yield incorrect results.) A
+         * {@code ConcurrentModificationException} is thrown for any operation on a
+         * {@code SubList} that is structurally unsound.
          *
          * @param firstNode low endpoint (inclusive) of the {@code SubList}
-         * @param lastNode high endpoint (inclusive) of the {@code SubList}
+         * @param lastNode  high endpoint (inclusive) of the {@code SubList}
          * @return a view of the specified range within this {@code SubList}
-         * @throws IllegalArgumentException if any specified node is not linked to this {@code SubList} or
-         *                                  if the lastNode comes before the firstNode in this {@code SubList}
+         * @throws IllegalArgumentException if any specified node is not linked to this
+         *                                  {@code SubList} or if the lastNode comes
+         *                                  before the firstNode in this {@code SubList}
          */
         public SubList subList(Node<E> firstNode, Node<E> lastNode) {
             checkForModificationException();
@@ -3485,29 +3708,31 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in proper
-         * sequence), starting at the specified position in this {@code SubList}.
+         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in
+         * proper sequence), starting at the specified position in this {@code SubList}.
          * Obeys the general contract of {@code List.listIterator(int)}.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * The {@code ListIterator} returned by this method behaves differently when the
-         * sublist's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
          * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
          *
-         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-         * is structurally modified at any time after the Iterator is created,
-         * in any way except through the {@code ListIterator}'s own {@code remove} or
-         * {@code add} methods, the {@code ListIterator} will throw a
-         * {@code ConcurrentModificationException}.  Thus, in the face of
-         * concurrent modification, the iterator fails quickly and cleanly, rather
-         * than risking arbitrary, non-deterministic behavior at an undetermined
-         * time in the future.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator}'s own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
          *
          * @param index index of the first element to be returned from the
          *              {@code ListIterator} (by a call to {@code next})
          * @return a ListIterator of the elements in this {@code SubList} (in proper
          *         sequence), starting at the specified position in this {@code SubList}
-         * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
          * @see List#listIterator(int)
          */
         @Override
@@ -3517,70 +3742,78 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in proper
-         * sequence), starting at the specified node in this {@code SubList}.
-         * if the specified node is {@code null}, the {@code ListIterator} will
-         * start with the first {@code Node} in this {@code SubList}.    
+         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in
+         * proper sequence), starting at the specified node in this {@code SubList}. if
+         * the specified node is {@code null}, the {@code ListIterator} will start with
+         * the first {@code Node} in this {@code SubList}.
          * 
-         * <p><strong>Implementation Note:</strong>
-         * The index returned by the returned {@code ListIterator}'s methods
-         * {@code nextIndex} and {@code previousIndex} is relative to the
-         * specified node which has an index of zero. Nodes which come before
-         * the specified node in this {@code SubList}, will have a negative index;
-         * nodes that come after will have a positive index. Method {@code nextIndex}
-         * returns {@code longSize()} if at the end of the {@code SubList}, and
-         * method {@code previousIndex} returns {@code -longSize()} if at the beginning
-         * of the {@code SubList}. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-         * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+         * <p>
+         * <strong>Implementation Note:</strong> The index returned by the returned
+         * {@code ListIterator}'s methods {@code nextIndex} and {@code previousIndex} is
+         * relative to the specified node which has an index of zero. Nodes which come
+         * before the specified node in this {@code SubList}, will have a negative
+         * index; nodes that come after will have a positive index. Method
+         * {@code nextIndex} returns {@code longSize()} if at the end of the
+         * {@code SubList}, and method {@code previousIndex} returns {@code -longSize()}
+         * if at the beginning of the {@code SubList}. if
+         * {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+         * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+         * respectively.
          *
-         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-         * is structurally modified at any time after the Iterator is created,
-         * in any way except through the {@code ListIterator}'s own {@code remove} or
-         * {@code add} methods, the {@code ListIterator} will throw a
-         * {@code ConcurrentModificationException}.  Thus, in the face of
-         * concurrent modification, the iterator fails quickly and cleanly, rather
-         * than risking arbitrary, non-deterministic behavior at an undetermined
-         * time in the future.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator}'s own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
          *
-         * @param node {@code Node} of the first element to be returned from the {@code ListIterator}
-         *             (by a call to {@code next})
+         * @param node {@code Node} of the first element to be returned from the
+         *             {@code ListIterator} (by a call to {@code next})
          * @return a ListIterator of the elements in this {@code SubList} (in proper
          *         sequence), starting at the specified node in this {@code SubList}
-         * @throws IllegalArgumentException if node is not linked to this {@code SubList}
+         * @throws IllegalArgumentException if node is not linked to this
+         *                                  {@code SubList}
          */
         public ListIterator<E> listIterator(Node<E> node) {
-            if (node != null && !linkedNodes.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
+            if (node != null && !linkedNodes.contains(node)) {
+                throw new IllegalArgumentException("Specified node is not linked to this list");
+            }
             return new SubListIterator(node);
         }
         
         /**
-         * Doubly-linked sublist of nodes which back a {@code NodableLinkedList.SubList}.
-         * Implements the {@code List} interface. The elements are of type
-         * {@code NodableLinkedList.Node}, and are never {@code null}.
-         * Implements all optional {@code List} operations.
+         * Doubly-linked sublist of nodes which back a
+         * {@code NodableLinkedList.SubList}. Implements the {@code List} interface. The
+         * elements are of type {@code NodableLinkedList.Node}, and are never
+         * {@code null}. Implements all optional {@code List} operations.
          * 
-         * <p>The iterators returned by this class's {@code iterator} and
-         * {@code listIterator} methods are <i>fail-fast</i>: if the {@code NodableLinkedList}
-         * is structurally modified at any time after the iterator is created,
-         * in any way except through the Iterator's own {@code remove} or
-         * {@code add} methods, the iterator will throw a {@code
-         * ConcurrentModificationException}.  Thus, in the face of concurrent
-         * modification, the iterator fails quickly and cleanly, rather than
-         * risking arbitrary, non-deterministic behavior at an undetermined
-         * time in the future.
+         * <p>
+         * The iterators returned by this class's {@code iterator} and
+         * {@code listIterator} methods are <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * iterator is created, in any way except through the Iterator's own
+         * {@code remove} or {@code add} methods, the iterator will throw a {@code
+         * ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
          *
-         * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
-         * as it is, generally speaking, impossible to make any hard guarantees in the
-         * presence of unsynchronized concurrent modification.  Fail-fast iterators
-         * throw {@code ConcurrentModificationException} on a best-effort basis.
-         * Therefore, it would be wrong to write a program that depended on this
-         * exception for its correctness:   <i>the fail-fast behavior of iterators
-         * should be used only to detect bugs.</i>
+         * <p>
+         * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
+         * is, generally speaking, impossible to make any hard guarantees in the
+         * presence of unsynchronized concurrent modification. Fail-fast iterators throw
+         * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
+         * would be wrong to write a program that depended on this exception for its
+         * correctness: <i>the fail-fast behavior of iterators should be used only to
+         * detect bugs.</i>
          * 
          * @author James Pfeifer
          *
          */
-        public class LinkedSubNodes extends AbstractSequentialList<Node<E>> implements List<Node<E>> {
+        public class LinkedSubNodes
+            extends AbstractSequentialList<Node<E>>
+            implements List<Node<E>> {
             
             private Node<E> headSentinel;
             private Node<E> tailSentinel;
@@ -3603,7 +3836,7 @@ public class NodableLinkedList<E>
             
             /**
              * Returns the {@code SubList} this {@code LinkedSubNodes} is backing.
-             *         
+             * 
              * @return the {@code SubList} this {@code LinkedSubNodes} is backing.
              */
             public SubList subList() {
@@ -3625,7 +3858,9 @@ public class NodableLinkedList<E>
             }
             
             private void checkForModificationException() {
-                if (this.modCount != NodableLinkedList.this.modCount) throw new ConcurrentModificationException();
+                if (this.modCount != NodableLinkedList.this.modCount) {
+                    throw new ConcurrentModificationException();
+                }
             }
             
             private boolean tailSentinelIsKnown() {
@@ -3680,7 +3915,9 @@ public class NodableLinkedList<E>
             private boolean hasNodeAfter(Node<E> node) {
                 // assert this.contains(node) : "Node is not an element of this sublist";
                 if (node.next == tailSentinel()) return false;
-                if (node.next == linkedNodes.tailSentinel)  throw new IllegalStateException("End of list reached unexpectedly; the sublists's last node most likely comes before the sublist's first node in the list");
+                if (node.next == linkedNodes.tailSentinel) {
+                    throw new IllegalStateException("End of list reached unexpectedly; the sublists's last node most likely comes before the sublist's first node in the list");
+                }
                 return true;
             }
 
@@ -3716,13 +3953,17 @@ public class NodableLinkedList<E>
             /**
              * Returns the node at the specified position in this sublist.
              * 
-             * Note, this routine returns the tailSentinel
-             * if {@code index == longSize()} (the size of the list) or if the list is empty 
+             * Note, this routine returns the tailSentinel if {@code index == longSize()}
+             * (the size of the list) or if the list is empty
              *
              * @param index index of the node to return
              * @return the node at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-             * @throws IllegalStateException if end of list is reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
+             * @throws IllegalStateException     if end of list is reached unexpectedly; the
+             *                                   sublist's last node most likely comes
+             *                                   before the sublists's first node in the
+             *                                   list
              */
             private Node<E> getNode(long index) {
                 // Note, this routine returns the tailSentinel if index = longSize() (the size of the list) or if the list is empty
@@ -3775,13 +4016,15 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Returns the index of the specified node in this sublist,
-             * or -1 if this sublist does not contain the specified node.
+             * Returns the index of the specified node in this sublist, or -1 if this
+             * sublist does not contain the specified node.
              * 
              * @param node {@code Node} to search for
-             * @return the index of the specified node in this sublist,
-             *         or -1 if this sublist does not contain the specified node
-             * @throws IllegalStateException if end of list is reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list             
+             * @return the index of the specified node in this sublist, or -1 if this
+             *         sublist does not contain the specified node
+             * @throws IllegalStateException if end of list is reached unexpectedly; the
+             *                               sublist's last node most likely comes before
+             *                               the sublists's first node in the list
              */
             private long getIndex(Node<?> node) {
                 // assert node != null : "Node is null";
@@ -3790,11 +4033,15 @@ public class NodableLinkedList<E>
                 Node<E> cursorNode = this.headSentinel.next;
                 if (sizeIsKnown() && tailSentinelIsKnown()) {
                     // both size and tailSentinel is known, therefore, we also know that the tailSentinel comes after the headSentinel in the list
-                    while (cursorNode != node && cursorNode != this.tailSentinel) { cursorIndex++; cursorNode = cursorNode.next; }
+                    while (cursorNode != node && cursorNode != this.tailSentinel) {
+                        cursorIndex++; cursorNode = cursorNode.next;
+                    }
                     if (cursorNode == this.tailSentinel) cursorIndex = -1L; // node not found
                 } else if (sizeIsKnown()) {
                     // size is known, tailSentinel is unknown
-                    while (cursorNode != node && cursorIndex < longSize()) { cursorIndex++; cursorNode = cursorNode.next; }
+                    while (cursorNode != node && cursorIndex < longSize()) {
+                        cursorIndex++; cursorNode = cursorNode.next;
+                    }
                     if (cursorIndex == longSize()-1) this.tailSentinel = cursorNode.next;
                     if (cursorIndex == longSize()) {
                         this.tailSentinel = cursorNode;
@@ -3802,7 +4049,9 @@ public class NodableLinkedList<E>
                     }
                 } else {
                     // size is unknown, tailSentinel is known
-                    while (cursorNode != node && cursorNode != this.tailSentinel && cursorNode != linkedNodes.tailSentinel) {
+                    while (cursorNode != node &&
+                           cursorNode != this.tailSentinel &&
+                           cursorNode != linkedNodes.tailSentinel) {
                         cursorIndex++;
                         cursorNode = cursorNode.next;
                     }
@@ -3822,8 +4071,8 @@ public class NodableLinkedList<E>
             }
 
             /**
-             * Returns the number of nodes in this sublist. If this sublist
-             * contains more than Integer.MAX_VALUE nodes, Integer.MAX_VALUE is returned.
+             * Returns the number of nodes in this sublist. If this sublist contains more
+             * than Integer.MAX_VALUE nodes, Integer.MAX_VALUE is returned.
              *
              * @return the number of nodes in this sublist
              */
@@ -3844,7 +4093,11 @@ public class NodableLinkedList<E>
                     // assert tailSentinel != null : "tail sentinel shouldn't be null";
                     Node<E> node;
                     size = 0L;
-                    for (node = headSentinel.next; node != tailSentinel && node != linkedNodes.tailSentinel; node = node.next) size++;
+                    for (node = headSentinel.next;
+                         node != tailSentinel && node != linkedNodes.tailSentinel;
+                         node = node.next) {
+                        size++;
+                    }
                     if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
                 }
                 return size;
@@ -3888,13 +4141,13 @@ public class NodableLinkedList<E>
             }
 
             /**
-             * Returns the index of the specified object ({@code Node}) in this sublist,
-             * or -1 if there is no such index (this sublist does not contain
-             * the specified object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
+             * Returns the index of the specified object ({@code Node}) in this sublist, or
+             * -1 if there is no such index (this sublist does not contain the specified
+             * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
              * 
              * @param object {@code Object} ({@code Node}) to search for
-             * @return the index of the specified object ({@code Node}) in this sublist,
-             *         or -1 if there is no such index
+             * @return the index of the specified object ({@code Node}) in this sublist, or
+             *         -1 if there is no such index
              */
             @Override
             public int indexOf(Object object) {
@@ -3907,16 +4160,16 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Returns the index of the specified object ({@code Node}) in this sublist,
-             * or -1 if there is no such index (this sublist does not contain
-             * the specified object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
+             * Returns the index of the specified object ({@code Node}) in this sublist, or
+             * -1 if there is no such index (this sublist does not contain the specified
+             * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
              * 
-             * <p>Note that {@code lastIndexOf} is identical in function to
-             * {@code indexOf}.
+             * <p>
+             * Note that {@code lastIndexOf} is identical in function to {@code indexOf}.
              *
              * @param object {@code Object} ({@code Node}) to search for
-             * @return the index of the specified object ({@code Node}) in this sublist,
-             *         or -1 if there is no such index
+             * @return the index of the specified object ({@code Node}) in this sublist, or
+             *         -1 if there is no such index
              */
             @Override
             public int lastIndexOf(Object object) {
@@ -3928,13 +4181,16 @@ public class NodableLinkedList<E>
              *
              * @param index index of the node to return
              * @return the {@code Node} at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
              */
             @Override
             public Node<E> get(int index) {
                 checkForModificationException();
                 final long getIndex = index;
-                if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
+                if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
+                }
                 Node<E> node = getNode(index);
                 if (node == tailSentinel) throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
                 return node;        
@@ -3945,42 +4201,51 @@ public class NodableLinkedList<E>
              *
              * @param index index of the {@code SubListNode} to return
              * @return the {@code SubListNode} at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
              */
             public SubListNode<E> getSubListNode(int index) {
                 return new SubListNode<E>(get(index), this.subList());
             }            
             
             /**
-             * Inserts the specified node at the specified position in this sublist.
-             * Shifts the {@code Node} currently at that position (if any) and any
-             * subsequent nodes to the right (adds one to their indices).
+             * Inserts the specified node at the specified position in this sublist. Shifts
+             * the {@code Node} currently at that position (if any) and any subsequent nodes
+             * to the right (adds one to their indices).
              *
              * @param index index at which the specified node is to be inserted
-             * @param node {@code Node} to be inserted
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-             * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+             * @param node  {@code Node} to be inserted
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
+             * @throws IllegalArgumentException  if node is {@code null} or already a node
+             *                                   of a list
              */
             @Override
             public void add(int index, Node<E> node) {
                 checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index > longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                if (sizeIsKnown() && (index < 0L || index > longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
                 if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
                 addNodeBefore(node, getNode(index));
             }
             
             /**
-             * Removes and returns the {@code Node} at the specified position in this sublist.
-             * Shifts any subsequent nodes to the left (subtracts one from their indices).
+             * Removes and returns the {@code Node} at the specified position in this
+             * sublist. Shifts any subsequent nodes to the left (subtracts one from their
+             * indices).
              *
              * @param index the index of the node to be removed
              * @return the {@code Node} previously at the specified position
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
              */
             @Override
             public Node<E> remove(int index) {
                 checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
                 final Node<E> node = get(index);
                 removeNode(node);
                 return node;
@@ -3991,15 +4256,19 @@ public class NodableLinkedList<E>
              * specified node.
              *
              * @param index index of the node to replace
-             * @param node {@code Node} to be stored at the specified position
+             * @param node  {@code Node} to be stored at the specified position
              * @return the {@code Node} previously at the specified position
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index >= longSize())}
-             * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
+             * @throws IllegalArgumentException  if node is {@code null} or already a node
+             *                                   of a list
              */
             @Override
             public Node<E> set(int index, Node<E> node) {
                 checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index >= longSize())) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
                 if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
                 final Node<E> originalNode = get(index);
                 replaceNode(originalNode, node);
@@ -4007,17 +4276,16 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Appends all of the nodes in the specified collection to the end of
-             * this sublist, in the order that they are returned by the specified
-             * collection's iterator.  The behavior of this operation is undefined if
-             * the specified collection is modified while the operation is in
-             * progress.
+             * Appends all of the nodes in the specified collection to the end of this
+             * sublist, in the order that they are returned by the specified collection's
+             * iterator. The behavior of this operation is undefined if the specified
+             * collection is modified while the operation is in progress.
              *
              * @param collection collection containing nodes to be added to this sublist
              * @return {@code true} if this sublist changed as a result of the call
-             * @throws NullPointerException if the specified collection is {@code null}
-             * @throws IllegalArgumentException if any node in the collection is {@code null}
-             *                                  or already a node of a list
+             * @throws NullPointerException     if the specified collection is {@code null}
+             * @throws IllegalArgumentException if any node in the collection is
+             *                                  {@code null} or already a node of a list
              */
             @Override
             public boolean addAll(Collection<? extends Node<E>> collection) {
@@ -4029,30 +4297,33 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Inserts all of the nodes in the specified collection into this
-             * sublist, starting at the specified position. Shifts the {@code Node}
-             * currently at that position (if any) and any subsequent nodes to
-             * the right (increases their indices). The new nodes will appear
-             * in this sublist in the order that they are returned by the
-             * specified collection's iterator. if the specified {@code index == longSize()},
-             * the nodes will be appended to the end of this sublist.
+             * Inserts all of the nodes in the specified collection into this sublist,
+             * starting at the specified position. Shifts the {@code Node} currently at that
+             * position (if any) and any subsequent nodes to the right (increases their
+             * indices). The new nodes will appear in this sublist in the order that they
+             * are returned by the specified collection's iterator. if the specified
+             * {@code index == longSize()}, the nodes will be appended to the end of this
+             * sublist.
              * 
              * Note that {@code addAll(longSize(), Collection)} is identical in function to
              * {@code addAll(Collection)}.
              *
-             * @param index index at which to insert the first {@code Node}
-             *              from the specified collection
+             * @param index      index at which to insert the first {@code Node} from the
+             *                   specified collection
              * @param collection collection containing nodes to be added to this sublist
              * @return {@code true} if this sublist changed as a result of the call
-             * @throws IllegalArgumentException if any node in the collection is {@code null}
-             *                                  or already a node of a list
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
-             * @throws NullPointerException if the specified collection is {@code null}
+             * @throws IllegalArgumentException  if any node in the collection is
+             *                                   {@code null} or already a node of a list
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
+             * @throws NullPointerException      if the specified collection is {@code null}
              */
             @Override
             public boolean addAll(int index, Collection<? extends Node<E>> collection) {
                 checkForModificationException();
-                if (sizeIsKnown() && (index < 0 || index > size)) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+                if (sizeIsKnown() && (index < 0 || index > size)) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+                }
                 boolean changed = false;            
                 final Node<E> targetNode = getNode(index);
                 for (Node<E> node: collection) {
@@ -4064,24 +4335,24 @@ public class NodableLinkedList<E>
             }            
             
             /**
-             * Inserts all of the nodes in the specified collection into this
-             * sublist, before the specified targetNode. Shifts the {@code Node}
-             * currently at that position and any subsequent nodes to
-             * the right (increases their indices). The new nodes will appear
-             * in this sublist in the order that they are returned by the
-             * specified collection's iterator. if the specified targetNode is {@code null},
-             * the nodes will be appended to the end of this sublist.
+             * Inserts all of the nodes in the specified collection into this sublist,
+             * before the specified targetNode. Shifts the {@code Node} currently at that
+             * position and any subsequent nodes to the right (increases their indices). The
+             * new nodes will appear in this sublist in the order that they are returned by
+             * the specified collection's iterator. if the specified targetNode is
+             * {@code null}, the nodes will be appended to the end of this sublist.
              * 
              * Note that {@code addAll(null, Collection)} is identical in function to
              * {@code addAll(Collection)}.
              *
-             * @param targetNode {@code Node} the specified collection is to be inserted before
+             * @param targetNode {@code Node} the specified collection is to be inserted
+             *                   before
              * @param collection collection containing nodes to be added to this sublist
              * @return {@code true} if this sublist changed as a result of the call
-             * @throws IllegalArgumentException if targetNode is not linked to this sublist, or
-             *                                  any node in the collection is {@code null} or
-             *                                  already a node of a list
-             * @throws NullPointerException if the specified collection is {@code null}
+             * @throws IllegalArgumentException if targetNode is not linked to this sublist,
+             *                                  or any node in the collection is
+             *                                  {@code null} or already a node of a list
+             * @throws NullPointerException     if the specified collection is {@code null}
              */
             public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> collection) {
                 checkForModificationException();
@@ -4099,14 +4370,14 @@ public class NodableLinkedList<E>
             /**
              * Returns {@code true} if this sublist contains the specified object
              * ({@code Node} or {@code SubListNode}). Note, if the specified object is a
-             * {@code SubListNode} and it is not associated with this sublist,
-             * {@code false} will be returned even if the {@code SubListNode}'s backingNode
-             * is contained by this sublist.
+             * {@code SubListNode} and it is not associated with this sublist, {@code false}
+             * will be returned even if the {@code SubListNode}'s backingNode is contained
+             * by this sublist.
              *
              * @param object {@code Object} ({@code Node} or {@code SubListNode}) whose
              *               presence in this sublist is to be tested
              * @return {@code true} if this sublist contains the specified object
-             *                      ({@code Node} or {@code SubListNode})
+             *         ({@code Node} or {@code SubListNode})
              */
             @Override
             public boolean contains(Object object) {
@@ -4129,40 +4400,46 @@ public class NodableLinkedList<E>
             
             /**
              * Returns a view of the portion of this sublist between the specified
-             * fromIndex, inclusive, and toIndex, exclusive. (If the specified
-             * fromIndex and toIndex are equal, the returned {@code SubList} is
-             * empty.) The returned {@code SubList} is backed by this sublist, so structural
-             * changes in the returned {@code SubList} are reflected in this sublist.
-             * The returned {@code SubList} supports all of the optional list operations
-             * supported by this sublist.
+             * fromIndex, inclusive, and toIndex, exclusive. (If the specified fromIndex and
+             * toIndex are equal, the returned {@code SubList} is empty.) The returned
+             * {@code SubList} is backed by this sublist, so structural changes in the
+             * returned {@code SubList} are reflected in this sublist. The returned
+             * {@code SubList} supports all of the optional list operations supported by
+             * this sublist.
              *
-             * <p>This method eliminates the need for explicit range operations (of
-             * the sort that commonly exist for arrays). Any operation that expects
-             * a list can be used as a range operation by passing a {@code SubList} view
-             * instead of a whole list. For example, the following idiom
-             * removes a range of elements from a list:
-             * <pre>{@code
+             * <p>
+             * This method eliminates the need for explicit range operations (of the sort
+             * that commonly exist for arrays). Any operation that expects a list can be
+             * used as a range operation by passing a {@code SubList} view instead of a
+             * whole list. For example, the following idiom removes a range of elements from
+             * a list:
+             * 
+             * <pre>
+             * {@code
              *      list.subList(from, to).clear();
-             * }</pre>
+             * }
+             * </pre>
+             * 
              * Similar idioms may be constructed for {@code indexOf} and
-             * {@code lastIndexOf}, and all of the algorithms in the
-             * {@code Collections} class can be applied to a {@code SubList}.
+             * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+             * class can be applied to a {@code SubList}.
              *
-             * <p>The semantics of the {@code SubList} returned by this method become undefined if
-             * the {@code NodableLinkedList} is <i>structurally modified</i> in
-             * any way other than via the returned {@code SubList} or any of its sublists.
-             * (Structural modifications are those that change the size of this sublist,
-             * or otherwise perturb it in such a fashion that iterations in progress may
-             * yield incorrect results.) A {@code ConcurrentModificationException} is thrown
-             * for any operation on a {@code SubList} that is structurally unsound.
+             * <p>
+             * The semantics of the {@code SubList} returned by this method become undefined
+             * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+             * other than via the returned {@code SubList} or any of its sublists.
+             * (Structural modifications are those that change the size of this sublist, or
+             * otherwise perturb it in such a fashion that iterations in progress may yield
+             * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+             * any operation on a {@code SubList} that is structurally unsound.
              *
              * @param fromIndex low endpoint (inclusive) of the {@code SubList}
-             * @param toIndex high endpoint (exclusive) of the {@code SubList}
+             * @param toIndex   high endpoint (exclusive) of the {@code SubList}
              * @return a view of the specified range within this sublist
              * @throws IndexOutOfBoundsException for an illegal endpoint index value
              *                                   ({@code fromIndex < 0 || toIndex > size ||
              *                                   fromIndex > toIndex})
-             */ 
+             */
             @Override
             public SubList.LinkedSubNodes subList(int fromIndex, int toIndex) {
                 return newSubList(fromIndex, toIndex).linkedSubNodes;
@@ -4181,44 +4458,51 @@ public class NodableLinkedList<E>
             
             /**
              * Returns a view of the portion of this sublist between the specified
-             * fisrtNode, and lastNode (both inclusive).
-             * The returned {@code SubList} is backed by this sublist, so structural changes
-             * in the returned {@code SubList} are reflected in this sublist.
-             * The returned {@code SubList} supports all of the optional list operations
-             * supported by this sublist.
+             * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
+             * backed by this sublist, so structural changes in the returned {@code SubList}
+             * are reflected in this sublist. The returned {@code SubList} supports all of
+             * the optional list operations supported by this sublist.
              * 
-             * <p>If the specified firstNode is {@code null}, an empty {@code SubList},
+             * <p>
+             * If the specified firstNode is {@code null}, an empty {@code SubList},
              * positioned right before the specified lastNode, is returned. If the specified
-             * lastNode is {@code null}, an empty {@code SubList}, positioned right after the
-             * specified firstNode, is returned. if both the specified firstNode and lastNode
-             * are {@code null}, an empty {@code SubList}, positioned at the end of this sublist,
-             * is returned.
+             * lastNode is {@code null}, an empty {@code SubList}, positioned right after
+             * the specified firstNode, is returned. if both the specified firstNode and
+             * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
+             * this sublist, is returned.
              * 
-             * <p>This method eliminates the need for explicit range operations (of
-             * the sort that commonly exist for arrays). Any operation that expects
-             * a list can be used as a range operation by passing a {@code SubList} view
-             * instead of a whole list.  For example, the following idiom
-             * removes a range of elements from a list:
-             * <pre>{@code
+             * <p>
+             * This method eliminates the need for explicit range operations (of the sort
+             * that commonly exist for arrays). Any operation that expects a list can be
+             * used as a range operation by passing a {@code SubList} view instead of a
+             * whole list. For example, the following idiom removes a range of elements from
+             * a list:
+             * 
+             * <pre>
+             * {@code
              *      list.subList(firstNode, lastNode).clear();
-             * }</pre>
+             * }
+             * </pre>
+             * 
              * Similar idioms may be constructed for {@code indexOf} and
-             * {@code lastIndexOf}, and all of the algorithms in the
-             * {@code Collections} class can be applied to a {@code SubList}.
+             * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+             * class can be applied to a {@code SubList}.
              *
-             * <p>The semantics of the {@code SubList} returned by this method become undefined if
-             * the {@code NodableLinkedList} is <i>structurally modified</i> in
-             * any way other than via the returned {@code SubList} or any of its sublists.
-             * (Structural modifications are those that change the size of this sublist,
-             * or otherwise perturb it in such a fashion that iterations in progress may
-             * yield incorrect results.) A {@code ConcurrentModificationException} is thrown
-             * for any operation on a {@code SubList} that is structurally unsound.
+             * <p>
+             * The semantics of the {@code SubList} returned by this method become undefined
+             * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+             * other than via the returned {@code SubList} or any of its sublists.
+             * (Structural modifications are those that change the size of this sublist, or
+             * otherwise perturb it in such a fashion that iterations in progress may yield
+             * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+             * any operation on a {@code SubList} that is structurally unsound.
              *
              * @param firstNode low endpoint (inclusive) of the {@code SubList}
-             * @param lastNode high endpoint (inclusive) of the {@code SubList}
+             * @param lastNode  high endpoint (inclusive) of the {@code SubList}
              * @return a view of the specified range within this sublist
-             * @throws IllegalArgumentException if any specified node is not linked to this sublist or
-             *                                  if the lastNode comes before the firstNode in this sublist.
+             * @throws IllegalArgumentException if any specified node is not linked to this
+             *                                  sublist or if the lastNode comes before the
+             *                                  firstNode in this sublist.
              */
             public SubList.LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
                 checkForModificationException();
@@ -4279,51 +4563,55 @@ public class NodableLinkedList<E>
              * Sorts this sublist according to the order induced by the specified
              * comparator.
              *
-             * <p>The specified comparator compares the nodes not the
-             * elements of the nodes. for example:
-             * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-             * {@code sort((node1, node2) -> { return node1.element().compareTo(node2.element()); });}.
+             * <p>
+             * The specified comparator compares the nodes not the elements of the nodes.
+             * for example: {@code sort((node1, node2) -> { return node1.compareTo(node2);
+             * });}, or {@code sort((node1, node2) -> { return
+             * node1.element().compareTo(node2.element()); });}.
              *
-             * If the specified comparator is {@code null} then all elements in this
-             * sublist must implement the {@code Comparable} interface and the elements'
-             * natural ordering should be used.
+             * If the specified comparator is {@code null} then all elements in this sublist
+             * must implement the {@code Comparable} interface and the elements' natural
+             * ordering should be used.
              *
-             * <p><strong>Implementation Specification:</strong>
-             * This implementation obtains an array containing all nodes in this sublist,
-             * sorts the array using {@code Arrays.sort(T[] a, Comparator<? super T> c)},
-             * and then effectively clears the sublist and puts the sorted nodes from the array
-             * back into this sublist in order. If this sublist's {@code size > Integer.MAX_VALUE-8},
-             * a {@link #mergeSort} is performed.
+             * <p>
+             * <strong>Implementation Specification:</strong> This implementation obtains an
+             * array containing all nodes in this sublist, sorts the array using
+             * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
+             * clears the sublist and puts the sorted nodes from the array back into this
+             * sublist in order. If this sublist's {@code size > Integer.MAX_VALUE-8}, a
+             * {@link #mergeSort} is performed.
              * 
-             * <p><strong>Implementation Note:</strong>
-             * This implementation is a stable, adaptive, iterative mergesort that
-             * requires far fewer than n lg(n) comparisons when the input array is
-             * partially sorted, while offering the performance of a traditional
-             * mergesort when the input array is randomly ordered.  If the input array
-             * is nearly sorted, the implementation requires approximately n
-             * comparisons.  Temporary storage requirements vary from a small constant
-             * for nearly sorted input arrays to n/2 object references for randomly
+             * <p>
+             * <strong>Implementation Note:</strong> This implementation is a stable,
+             * adaptive, iterative mergesort that requires far fewer than n lg(n)
+             * comparisons when the input array is partially sorted, while offering the
+             * performance of a traditional mergesort when the input array is randomly
+             * ordered. If the input array is nearly sorted, the implementation requires
+             * approximately n comparisons. Temporary storage requirements vary from a small
+             * constant for nearly sorted input arrays to n/2 object references for randomly
              * ordered input arrays.
              *
-             * <p>The implementation takes equal advantage of ascending and
-             * descending order in its input array, and can take advantage of
-             * ascending and descending order in different parts of the same
-             * input array.  It is well-suited to merging two or more sorted arrays:
-             * simply concatenate the arrays and sort the resulting array.
+             * <p>
+             * The implementation takes equal advantage of ascending and descending order in
+             * its input array, and can take advantage of ascending and descending order in
+             * different parts of the same input array. It is well-suited to merging two or
+             * more sorted arrays: simply concatenate the arrays and sort the resulting
+             * array.
              *
-             * <p>The implementation was adapted from Tim Peters's list sort for Python
+             * <p>
+             * The implementation was adapted from Tim Peters's list sort for Python
              * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-             * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
-             * Sorting and Information Theoretic Complexity", in Proceedings of the
-             * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
-             * January 1993.
+             * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
+             * Information Theoretic Complexity", in Proceedings of the Fourth Annual
+             * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
              *
              * @see Arrays#sort
-             * @param comparator the {@code Comparator} used to compare sublist nodes.
-             *                   A {@code null} value indicates that the elements'
-             *                   natural ordering should be used
+             * @param comparator the {@code Comparator} used to compare sublist nodes. A
+             *                   {@code null} value indicates that the elements' natural
+             *                   ordering should be used
              * @throws ClassCastException if the sublist contains elements that are not
-             *         <i>mutually comparable</i> using the specified comparator
+             *                            <i>mutually comparable</i> using the specified
+             *                            comparator
              */
             @Override
             public void sort(Comparator<? super Node<E>> comparator) {
@@ -4344,28 +4632,32 @@ public class NodableLinkedList<E>
              * Sorts this sublist according to the order induced by the specified
              * comparator.
              *
-             * <p>The specified comparator compares the nodes not the
-             * elements of the nodes. for example:
-             * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-             * {@code sort((node1, node2) -> { return node1.element().compareTo(node2.element()); });}.
+             * <p>
+             * The specified comparator compares the nodes not the elements of the nodes.
+             * for example: {@code sort((node1, node2) -> { return node1.compareTo(node2);
+             * });}, or {@code sort((node1, node2) -> { return
+             * node1.element().compareTo(node2.element()); });}.
              *
-             * If the specified comparator is {@code null} then all elements in this
-             * sublist must implement the {@code Comparable} interface and the elements'
-             * natural ordering should be used.
+             * If the specified comparator is {@code null} then all elements in this sublist
+             * must implement the {@code Comparable} interface and the elements' natural
+             * ordering should be used.
              * 
-             * <p><strong>Implementation Note:</strong>
-             * This implementation is a stable, iterative mergesort that requires n lg(n) comparisons.
-             * this implementation avoids the N auxiliary storage cost normally associated with a mergesort.
+             * <p>
+             * <strong>Implementation Note:</strong> This implementation is a stable,
+             * iterative mergesort that requires n lg(n) comparisons. this implementation
+             * avoids the N auxiliary storage cost normally associated with a mergesort.
              *
              * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
-             * (<a href="https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+             * (<a href=
+             * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
              * SimonTathamMergesort</a>).
              *
-             * @param comparator the {@code Comparator} used to compare sublist nodes.
-             *                   A {@code null} value indicates that the elements'
-             *                   natural ordering should be used
+             * @param comparator the {@code Comparator} used to compare sublist nodes. A
+             *                   {@code null} value indicates that the elements' natural
+             *                   ordering should be used
              * @throws ClassCastException if the sublist contains elements that are not
-             *                            <i>mutually comparable</i> using the specified comparator
+             *                            <i>mutually comparable</i> using the specified
+             *                            comparator
              */
             public void mergeSort(Comparator<? super Node<E>> comparator) {
                 linkedNodes.mergeSort(comparator, headSentinel, getTailSentinel());
@@ -4374,28 +4666,30 @@ public class NodableLinkedList<E>
             
             /**
              * Returns a {@code ListIterator} of the nodes in this sublist (in proper
-             * sequence), starting at the specified position in this sublist.
-             * Obeys the general contract of {@code List.listIterator(int)}.
+             * sequence), starting at the specified position in this sublist. Obeys the
+             * general contract of {@code List.listIterator(int)}.
              * 
-             * <p><strong>Implementation Note:</strong>
-             * The {@code ListIterator} returned by this method behaves differently when the
-             * sublist's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+             * <p>
+             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+             * this method behaves differently when the sublist's
+             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
              * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
              *
-             * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-             * is structurally modified at any time after the Iterator is created,
-             * in any way except through the {@code ListIterator}'s own {@code remove} or
-             * {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}.  Thus, in the face of
-             * concurrent modification, the iterator fails quickly and cleanly, rather
-             * than risking arbitrary, non-deterministic behavior at an undetermined
-             * time in the future.
+             * <p>
+             * The {@code ListIterator} is <i>fail-fast</i>: if the
+             * {@code NodableLinkedList} is structurally modified at any time after the
+             * Iterator is created, in any way except through the {@code ListIterator}'s own
+             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+             * modification, the iterator fails quickly and cleanly, rather than risking
+             * arbitrary, non-deterministic behavior at an undetermined time in the future.
              *
              * @param index index of the first node to be returned from the
              *              {@code ListIterator} (by a call to {@code next})
-             * @return a ListIterator of the nodes in this sublist (in proper
-             *         sequence), starting at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
+             * @return a ListIterator of the nodes in this sublist (in proper sequence),
+             *         starting at the specified position in this sublist
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
              * @see List#listIterator(int)
              */
             @Override
@@ -4406,37 +4700,41 @@ public class NodableLinkedList<E>
             
             /**
              * Returns a {@code ListIterator} of the nodes in this sublist (in proper
-             * sequence), starting at the specified node in this sublist.
-             * if the specified nodeis {@code null}, the {@code ListIterator} will
-             * start with the first {@code Node} in this sublist.
+             * sequence), starting at the specified node in this sublist. if the specified
+             * nodeis {@code null}, the {@code ListIterator} will start with the first
+             * {@code Node} in this sublist.
              * 
-             * <p><strong>Implementation Note:</strong>
-             * The index returned by the returned {@code ListIterator}'s methods
-             * {@code nextIndex} and {@code previousIndex} is relative to the
-             * specified node which has an index of zero. Nodes which come before
-             * the specified node in this sublist, will have a negative index; nodes
-             * that come after will have a positive index. Method {@code nextIndex}
-             * returns {@code longSize()} if at the end of the sublist, and method
-             * {@code previousIndex} returns {@code -longSize()} if at the beginning
-             * of the sublist. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
-             * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
+             * <p>
+             * <strong>Implementation Note:</strong> The index returned by the returned
+             * {@code ListIterator}'s methods {@code nextIndex} and {@code previousIndex} is
+             * relative to the specified node which has an index of zero. Nodes which come
+             * before the specified node in this sublist, will have a negative index; nodes
+             * that come after will have a positive index. Method {@code nextIndex} returns
+             * {@code longSize()} if at the end of the sublist, and method
+             * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
+             * sublist. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+             * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+             * respectively.
              *
-             * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
-             * is structurally modified at any time after the Iterator is created,
-             * in any way except through the {@code ListIterator}'s own {@code remove} or
-             * {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}.  Thus, in the face of
-             * concurrent modification, the iterator fails quickly and cleanly, rather
-             * than risking arbitrary, non-deterministic behavior at an undetermined
-             * time in the future.
+             * <p>
+             * The {@code ListIterator} is <i>fail-fast</i>: if the
+             * {@code NodableLinkedList} is structurally modified at any time after the
+             * Iterator is created, in any way except through the {@code ListIterator}'s own
+             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+             * modification, the iterator fails quickly and cleanly, rather than risking
+             * arbitrary, non-deterministic behavior at an undetermined time in the future.
              *
-             * @param node first {@code Node} to be returned from the {@code ListIterator} (by a call to {@code next})
-             * @return a ListIterator of the nodes in this sublist (in proper
-             *         sequence), starting at the specified node in the sublist
+             * @param node first {@code Node} to be returned from the {@code ListIterator}
+             *             (by a call to {@code next})
+             * @return a ListIterator of the nodes in this sublist (in proper sequence),
+             *         starting at the specified node in the sublist
              * @throws IllegalArgumentException if node is not linked to this sublist
              */
             public ListIterator<Node<E>> listIterator(Node<E> node) {
-                if (node != null && !linkedNodes.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
+                if (node != null && !linkedNodes.contains(node)) {
+                    throw new IllegalArgumentException("Specified node is not linked to this list");
+                }
                 return linkedSubNodesListIterator(node);
             }            
             
@@ -4654,21 +4952,23 @@ public class NodableLinkedList<E>
     } // SubList
 
     /**
-     * Sublist node of a {@code NodableLinkedList.SubList}.
-     * A {@code SubListNode} represents a {@code NodableLinkedList.Node} (backing node)
-     * that is associated with a specific {@code SubList}. Any operation performed
-     * on a {@code SubListNode} is performed on its associated {@code SubList}.
-     * A {@code SubListNode} can be removed from its current {@code SubList} and
-     * added to a different {@code SubList}.
+     * Sublist node of a {@code NodableLinkedList.SubList}. A {@code SubListNode}
+     * represents a {@code NodableLinkedList.Node} (backing node) that is associated
+     * with a specific {@code SubList}. Any operation performed on a
+     * {@code SubListNode} is performed on its associated {@code SubList}. A
+     * {@code SubListNode} can be removed from its current {@code SubList} and added
+     * to a different {@code SubList}.
      * 
-     * <p><b>Performance Consideration:</b> Unlike operations on a {@code Node},
-     * operations on a {@code SubListNode} are not necessarily performed in constant time
-     * because it may be necessary to verify, in linear time, that the {@code SubListNode}
-     * is still a node of its associated {@code SubList}. If the {@code NodableLinkedList}
-     * which contains the {@code SubListNode}, is structurally modified in anyway except via
-     * the {@code SubListNode}, the {@code SubListNode} is invalidated and it will be necessary to
-     * verify that the {@code SubListNode} is still contained by its associated {@code SubList} the
-     * next time the {@code SubListNode} is used.
+     * <p>
+     * <b>Performance Consideration:</b> Unlike operations on a {@code Node},
+     * operations on a {@code SubListNode} are not necessarily performed in constant
+     * time because it may be necessary to verify, in linear time, that the
+     * {@code SubListNode} is still a node of its associated {@code SubList}. If the
+     * {@code NodableLinkedList} which contains the {@code SubListNode}, is
+     * structurally modified in anyway except via the {@code SubListNode}, the
+     * {@code SubListNode} is invalidated and it will be necessary to verify that
+     * the {@code SubListNode} is still contained by its associated {@code SubList}
+     * the next time the {@code SubListNode} is used.
      * 
      * @author James Pfeifer
      */
@@ -4691,14 +4991,18 @@ public class NodableLinkedList<E>
                     
         private void isStillNodeOfSubList() {
             if (expectedModCount == subList.nodableLinkedList().modCount) return;
-            if (!subList.linkedSubNodes().contains(backingNode)) throw new IllegalStateException("This SubListNode is no longer a node of its assigned sublist");
+            if (!subList.linkedSubNodes().contains(backingNode)) {
+                throw new IllegalStateException("This SubListNode is no longer a node of its assigned sublist");
+            }
             updateExpectedModCount();
         }
         
         /**
-         * Returns the {@code NodableLinkedList.Node} witch backs this {@code SubListNode}.
-          * 
-         * @return the {@code NodableLinkedList.Node} which backs this {@code SubListNode}
+         * Returns the {@code NodableLinkedList.Node} witch backs this
+         * {@code SubListNode}.
+         * 
+         * @return the {@code NodableLinkedList.Node} which backs this
+         *         {@code SubListNode}
          */
         public Node<E> backingNode() {
             return backingNode;
@@ -4723,13 +5027,16 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code NodableLinkedList.SubList} this {@code SubListNode} belongs to.
+         * Returns the {@code NodableLinkedList.SubList} this {@code SubListNode}
+         * belongs to.
          * 
-         * <p>Note, even if this {@code SubListNode} is unlinked, this {@code SubListNode}
-         * is still associated with a {@code NodableLinkedList.SubList}.
-         * In other words, a {@code null} value is never returned.
+         * <p>
+         * Note, even if this {@code SubListNode} is unlinked, this {@code SubListNode}
+         * is still associated with a {@code NodableLinkedList.SubList}. In other words,
+         * a {@code null} value is never returned.
          * 
-         * @return the {@code NodableLinkedList.SubList} this {@code SubListNode} belongs to
+         * @return the {@code NodableLinkedList.SubList} this {@code SubListNode}
+         *         belongs to
          */
         public NodableLinkedList<E>.SubList subList() {
             return subList;
@@ -4745,13 +5052,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Inserts the specified node after this {@code SubListNode}.
-         * This {@code SubListNode} must belong to a {@code SubList} and the
-         * specified node must not already belong to a list.
+         * Inserts the specified node after this {@code SubListNode}. This
+         * {@code SubListNode} must belong to a {@code SubList} and the specified node
+         * must not already belong to a list.
          * 
          * @param node the {@code Node} to be inserted after this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or is already a node of a list
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
+         * @throws IllegalArgumentException if node is {@code null} or is already a node
+         *                                  of a list
          */
         private void addNodeAfterMe(Node<E> node) {
             if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
@@ -4762,13 +5071,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Inserts the specified node before this {@code SubListNode}.
-         * This {@code SubListNode} must belong to a {@code SubList} and
-         * the specified node must not already belong to a list.
+         * Inserts the specified node before this {@code SubListNode}. This
+         * {@code SubListNode} must belong to a {@code SubList} and the specified node
+         * must not already belong to a list.
          * 
          * @param node the {@code Node} to be inserted before this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or is already a node of a list
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
+         * @throws IllegalArgumentException if node is {@code null} or is already a node
+         *                                  of a list
          */
         private void addNodeBeforeMe(Node<E> node) {
             if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
@@ -4779,13 +5090,15 @@ public class NodableLinkedList<E>
         }        
         
         /**
-         * Inserts this {@code SubListNode} after the specified node.
-         * This {@code SubListNode} must not already belong to a list,
-         * and the specified node must belong to a list.
+         * Inserts this {@code SubListNode} after the specified node. This
+         * {@code SubListNode} must not already belong to a list, and the specified node
+         * must belong to a list.
          * 
          * @param node the {@code Node} this {@code SubListNode} is to be inserted after
-         * @throws IllegalStateException if this {@code SubListNode} is already a node of a list
-         * @throws IllegalArgumentException if node is {@code null} or not a node of a list
+         * @throws IllegalStateException    if this {@code SubListNode} is already a
+         *                                  node of a list
+         * @throws IllegalArgumentException if node is {@code null} or not a node of a
+         *                                  list
          */
         public void addAfter(Node<E> node) {
             if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");
@@ -4794,19 +5107,25 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Inserts this {@code SubListNode} after the specified subListNode.
-         * This {@code SubListNode} must not already belong to a list,
-         * and the specified subListNode must belong to a list.
+         * Inserts this {@code SubListNode} after the specified subListNode. This
+         * {@code SubListNode} must not already belong to a list, and the specified
+         * subListNode must belong to a list.
          * 
-         * <p>The specified subListNode is verified that it is still contained
-         * by its associated {@code SubList}.
+         * <p>
+         * The specified subListNode is verified that it is still contained by its
+         * associated {@code SubList}.
          * 
-         * @param subListNode the {@code SubListNode} this {@code SubListNode} is to be inserted after
-         * @throws IllegalStateException if this {@code SubListNode} is already a node of a list
-         * @throws IllegalArgumentException if subListNode is {@code null} or not a node of a list
+         * @param subListNode the {@code SubListNode} this {@code SubListNode} is to be
+         *                    inserted after
+         * @throws IllegalStateException    if this {@code SubListNode} is already a
+         *                                  node of a list
+         * @throws IllegalArgumentException if subListNode is {@code null} or not a node
+         *                                  of a list
          */
         public void addAfter(SubListNode<E> subListNode) {
-            if (subListNode == null || !subListNode.isLinked()) throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
+            if (subListNode == null || !subListNode.isLinked()) {
+                throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
+            }
             subListNode.subList().checkForModificationException();
             subListNode.isStillNodeOfSubList();
             addAfter(subListNode.backingNode);
@@ -4816,34 +5135,45 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Inserts this {@code SubListNode} before the specified node.
-         * This {@code SubListNode} must not already belong to a list,
-         * and the specified node must belong to a list.
+         * Inserts this {@code SubListNode} before the specified node. This
+         * {@code SubListNode} must not already belong to a list, and the specified node
+         * must belong to a list.
          * 
-         * @param node the {@code Node} this {@code SubListNode} is to be inserted before
-         * @throws IllegalStateException if this {@code SubListNode} is already a node of a list
-         * @throws IllegalArgumentException if node is {@code null} or not a node of a list
+         * @param node the {@code Node} this {@code SubListNode} is to be inserted
+         *             before
+         * @throws IllegalStateException    if this {@code SubListNode} is already a
+         *                                  node of a list
+         * @throws IllegalArgumentException if node is {@code null} or not a node of a
+         *                                  list
          */
         public void addBefore(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            }
             if (this.isLinked()) throw new IllegalStateException("This sublist node is already a node of a list");
             subList.linkedSubNodes().addNodeBefore(backingNode, node);
         }
         
         /**
-         * Inserts this {@code SubListNode} before the specified subListNode.
-         * This {@code SubListNode} must not already belong to a list,
-         * and the specified subListNode must belong to a list.
+         * Inserts this {@code SubListNode} before the specified subListNode. This
+         * {@code SubListNode} must not already belong to a list, and the specified
+         * subListNode must belong to a list.
          * 
-         * <p>The specified subListNode is verified that it is still contained
-         * by its associated {@code SubList}.
+         * <p>
+         * The specified subListNode is verified that it is still contained by its
+         * associated {@code SubList}.
          * 
-         * @param subListNode the {@code SubListNode} this {@code SubListNode} is to be inserted before
-         * @throws IllegalStateException if this {@code SubListNode} is already a node of a list
-         * @throws IllegalArgumentException if subListNode is {@code null} or not a node of a list
+         * @param subListNode the {@code SubListNode} this {@code SubListNode} is to be
+         *                    inserted before
+         * @throws IllegalStateException    if this {@code SubListNode} is already a
+         *                                  node of a list
+         * @throws IllegalArgumentException if subListNode is {@code null} or not a node
+         *                                  of a list
          */
         public void addBefore(SubListNode<E> subListNode) {
-            if (subListNode == null || !subListNode.isLinked()) throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
+            if (subListNode == null || !subListNode.isLinked()) {
+                throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
+            }
             subListNode.subList.checkForModificationException();
             subListNode.isStillNodeOfSubList();
             addBefore(subListNode.backingNode);
@@ -4853,12 +5183,15 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns {@code true} if there exists a node which comes after this {@code SubListNode}
-         * in a {@code SubList}.  In other words, returns {@code true} if this {@code SubListNode} is not
-         * the last node of a {@code SubList}. 
+         * Returns {@code true} if there exists a node which comes after this
+         * {@code SubListNode} in a {@code SubList}. In other words, returns
+         * {@code true} if this {@code SubListNode} is not the last node of a
+         * {@code SubList}.
          * 
-         * @return {@code true} if there exists a node which comes after this {@code SubListNode} 
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @return {@code true} if there exists a node which comes after this
+         *         {@code SubListNode}
+         * @throws IllegalStateException if this {@code SubListNode} is no longer a node
+         *                               of its sublist
          */
         public boolean hasNext() {
             subList.checkForModificationException();
@@ -4867,12 +5200,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns {@code true} if there exists a node which comes before this {@code SubListNode}
-         * in a {@code SubList}.  In other words, returns {@code true} if this {@code SubListNode} is not
-         * the first node of a {@code SubList}.
+         * Returns {@code true} if there exists a node which comes before this
+         * {@code SubListNode} in a {@code SubList}. In other words, returns
+         * {@code true} if this {@code SubListNode} is not the first node of a
+         * {@code SubList}.
          * 
-         * @return {@code true} if there exists a node which comes before this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @return {@code true} if there exists a node which comes before this
+         *         {@code SubListNode}
+         * @throws IllegalStateException if this {@code SubListNode} is no longer a node
+         *                               of its sublist
          */
         public boolean hasPrevious() {
             subList.checkForModificationException();
@@ -4881,12 +5217,12 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the index of this {@code SubListNode} in its {@code SubList},
-         * or -1 if this {@code SubListNode} does not belong to a {@code SubList} or
-         * the {@code index > Integer.MAX_VALUE}.
+         * Returns the index of this {@code SubListNode} in its {@code SubList}, or -1
+         * if this {@code SubListNode} does not belong to a {@code SubList} or the
+         * {@code index > Integer.MAX_VALUE}.
          *
-         * @return the index of this {@code SubListNode} in its {@code SubList},
-         *         or -1 if this {@code SubListNode} does not belong to a {@code SubList} or
+         * @return the index of this {@code SubListNode} in its {@code SubList}, or -1
+         *         if this {@code SubListNode} does not belong to a {@code SubList} or
          *         the {@code index > Integer.MAX_VALUE}.
          */
         public int index() {
@@ -4896,12 +5232,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code SubListNode} which comes after this {@code SubListNode} in a {@code SubList}.
-         * if this {@code SubListNode} is the last or only node, {@code null} is returned.
+         * Returns the {@code SubListNode} which comes after this {@code SubListNode} in
+         * a {@code SubList}. if this {@code SubListNode} is the last or only node,
+         * {@code null} is returned.
          * 
-         * @return the {@code SubListNode} which comes after this {@code SubListNode} in a {@code SubList}, or
-         *         {@code null} if this {@code SubListNode} is the last or only node
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @return the {@code SubListNode} which comes after this {@code SubListNode} in
+         *         a {@code SubList}, or {@code null} if this {@code SubListNode} is the
+         *         last or only node
+         * @throws IllegalStateException if this {@code SubListNode} is no longer a node
+         *                               of its sublist
          */
         public SubListNode<E> next() {
             subList.checkForModificationException();
@@ -4911,12 +5250,15 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code SubListNode} which comes before this {@code SubListNode} in a {@code SubList}.
-         * if this {@code SubListNode} is the first or only node, {@code null} is returned.
+         * Returns the {@code SubListNode} which comes before this {@code SubListNode}
+         * in a {@code SubList}. if this {@code SubListNode} is the first or only node,
+         * {@code null} is returned.
          * 
-         * @return the {@code SubListNode} which comes before this {@code SubListNode} in a {@code SubList}, or
-         *         {@code null} if this {@code SubListNode} is the first or only node
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @return the {@code SubListNode} which comes before this {@code SubListNode}
+         *         in a {@code SubList}, or {@code null} if this {@code SubListNode} is
+         *         the first or only node
+         * @throws IllegalStateException if this {@code SubListNode} is no longer a node
+         *                               of its sublist
          */
         public SubListNode<E> previous() {
             subList.checkForModificationException();
@@ -4928,7 +5270,8 @@ public class NodableLinkedList<E>
         /**
          * Removes this {@code SubListNode} from the {@code SubList} it is linked to.
          * 
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @throws IllegalStateException if this {@code SubListNode} is no longer a node
+         *                               of its sublist
          */
         public void remove() {
             subList.checkForModificationException();
@@ -4937,50 +5280,62 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Replaces this {@code SubListNode}, in a {@code SubList}, with the specified node.
-         * This {@code SubListNode} must belong to a {@code SubList}, and
-         * the specified node must not already belong to a list.
+         * Replaces this {@code SubListNode}, in a {@code SubList}, with the specified
+         * node. This {@code SubListNode} must belong to a {@code SubList}, and the
+         * specified node must not already belong to a list.
          * 
          * @param node node to replace this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         public void replaceWith(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement node is null or already a node of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Replacement node is null or already a node of a list");
+            }
             subList.checkForModificationException();
             isStillNodeOfSubList();
             subList.linkedSubNodes().replaceNode(backingNode, node);
         }
         
         /**
-         * Replaces this {@code SubListNode}, in a {@code SubList}, with the specified subListNode.
-         * This {@code SubListNode} must belong to a {@code SubList}, and
+         * Replaces this {@code SubListNode}, in a {@code SubList}, with the specified
+         * subListNode. This {@code SubListNode} must belong to a {@code SubList}, and
          * the specified subListNode must not already belong to a list.
          * 
-         * <p>The specified subListNode is marked that it is contained
-         * by its associated {@code SubList}.
+         * <p>
+         * The specified subListNode is marked that it is contained by its associated
+         * {@code SubList}.
          * 
          * @param subListNode {@code SubListNode} to replace this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         public void replaceWith(SubListNode<E> subListNode) {
-            if (subListNode == null || subListNode.isLinked()) throw new IllegalArgumentException("Specified SubListNode is null or belongs to a different SubList"); 
+            if (subListNode == null || subListNode.isLinked()) {
+                throw new IllegalArgumentException("Specified SubListNode is null or belongs to a different SubList"); 
+            }
             replaceWith(subListNode.backingNode);
             subListNode.subList = this.subList;
             subListNode.updateExpectedModCount();
         }
 
         /**
-         * Swaps this {@code SubListNode} with the specified node. Both this {@code SubListNode} and
-         * the specified node must belong to a list, but they can be different lists.
+         * Swaps this {@code SubListNode} with the specified node. Both this
+         * {@code SubListNode} and the specified node must belong to a list, but they
+         * can be different lists.
          * 
-         * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
-         * different lists. if synchronization is required, both lists should be synchronized by the same
-         * object.
+         * <p>
+         * <strong>Synchronization consideration:</strong> This operation can
+         * potentially operate on two different lists. if synchronization is required,
+         * both lists should be synchronized by the same object.
          * 
          * @param node the {@code Node} to swap with this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
          * @throws IllegalArgumentException if node is {@code null} or not linked
          */
         public void swapWith(Node<E> node) {
@@ -4992,22 +5347,29 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Swaps this {@code SubListNode} with the specified subListNode. Both this {@code SubListNode}
-         * and the specified sSubListNode must belong to a {@code SubList}, but they can be different sublists.
+         * Swaps this {@code SubListNode} with the specified subListNode. Both this
+         * {@code SubListNode} and the specified sSubListNode must belong to a
+         * {@code SubList}, but they can be different sublists.
          * 
-         * <p>Both this {@code SubListNode} and the specified subListNode are marked
-         * that they are contained by their possibly new associated sublists.
+         * <p>
+         * Both this {@code SubListNode} and the specified subListNode are marked that
+         * they are contained by their possibly new associated sublists.
          * 
-         * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
-         * different lists. if synchronization is required, both lists should be synchronized by the same
-         * object.
+         * <p>
+         * <strong>Synchronization consideration:</strong> This operation can
+         * potentially operate on two different lists. if synchronization is required,
+         * both lists should be synchronized by the same object.
          * 
-         * @param subListNode the {@code SubListNode} to swap with this {@code SubListNode}
-         * @throws IllegalStateException if this {@code SubListNode} is no longer a node of its sublist
+         * @param subListNode the {@code SubListNode} to swap with this
+         *                    {@code SubListNode}
+         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
+         *                                  node of its sublist
          * @throws IllegalArgumentException if subListNode is {@code null} or not linked
          */
         public void swapWith(SubListNode<E> subListNode) {
-            if (subListNode == null || !subListNode.isLinked()) throw new IllegalArgumentException("The specified subListNode is null or not a node of a sublist");
+            if (subListNode == null || !subListNode.isLinked()) {
+                throw new IllegalArgumentException("The specified subListNode is null or not a node of a sublist");
+            }
             final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
             this.subList.checkForModificationException();
             thatSubList.checkForModificationException();
@@ -5028,19 +5390,20 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns (and marks) this {@code SubListNode} as a {@code SubListNode}
-         * which has just been verified that it is still a node of its associated
+         * Returns (and marks) this {@code SubListNode} as a {@code SubListNode} which
+         * has just been verified that it is still a node of its associated
          * {@code SubList}.
          * 
-         * <p><b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is
-         * not verified that it is still a node of its associated {@code SubList}.
-         * If it is not a node of its associated {@code SubList}, the results of
-         * using this {@code SubListNode} are unpredictable. This method is provided
-         * to avoid the performance cost of verifying a {@code SubListNode} is still
-         * a node of its associated {@code SubList} when it's certain that it still is.
-         * Note, just like any {@code SubListNode}, if the {@code NodableLinkedList}
-         * is subsequently modified, this {@code SubListNode}, will once again have
-         * to be verified.
+         * <p>
+         * <b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is not verified
+         * that it is still a node of its associated {@code SubList}. If it is not a
+         * node of its associated {@code SubList}, the results of using this
+         * {@code SubListNode} are unpredictable. This method is provided to avoid the
+         * performance cost of verifying a {@code SubListNode} is still a node of its
+         * associated {@code SubList} when it's certain that it still is. Note, just
+         * like any {@code SubListNode}, if the {@code NodableLinkedList} is
+         * subsequently modified, this {@code SubListNode}, will once again have to be
+         * verified.
          * 
          * @return this {@code SubListNode} marked as verified that it is still a node
          *         of its associated {@code SubList}
@@ -5051,18 +5414,17 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Compares this {@code SubListNode} with the specified object
-         * ({@code Node} or {@code SubListNode}) for equality.
-         * Returns {@code true} if and only if the specified object is
-         * a {@code Node} or a {@code SubListNode}, and both pairs of
-         * elements in the two nodes are <i>equal</i>.
-         * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
+         * Compares this {@code SubListNode} with the specified object ({@code Node} or
+         * {@code SubListNode}) for equality. Returns {@code true} if and only if the
+         * specified object is a {@code Node} or a {@code SubListNode}, and both pairs
+         * of elements in the two nodes are <i>equal</i>. (Two elements {@code e1} and
+         * {@code e2} are <i>equal</i> if
          * {@code (e1==null ? e2==null : e1.equals(e2))}.)
          *
-         * @param object {@code Object} ({@code Node} or {@code SubListNode}
-         *               to be compared for equality with this {@code SubListNode}
-         * @return {@code true} if the specified object ({@code Node} or {@code SubListNode})
-         *                      is equal to this {@code SubListNode}
+         * @param object {@code Object} ({@code Node} or {@code SubListNode} to be
+         *               compared for equality with this {@code SubListNode}
+         * @return {@code true} if the specified object ({@code Node} or
+         *         {@code SubListNode}) is equal to this {@code SubListNode}
          */
         @Override
         public boolean equals(Object object) {
@@ -5070,18 +5432,17 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Compares this {@code SubListNode} to the specified node for order.
-         * Returns a negative integer, zero, or a positive integer as this
-         * sublist node's element is less than, equal to, or greater than
-         * the specified node's element.
+         * Compares this {@code SubListNode} to the specified node for order. Returns a
+         * negative integer, zero, or a positive integer as this sublist node's element
+         * is less than, equal to, or greater than the specified node's element.
          *
          * @param node {@code Node} to be compared to this {@code SubListNode}.
-         * @return a negative integer, zero, or a positive integer as
-         *         this {@code SubListNode}'s element is less than, equal to,
-         *         or greater than the specified node's element.
+         * @return a negative integer, zero, or a positive integer as this
+         *         {@code SubListNode}'s element is less than, equal to, or greater than
+         *         the specified node's element.
          * @throws NullPointerException if the specified node is {@code null}
-         * @throws ClassCastException if the nodes' element types prevent them from
-         *                            being compared.
+         * @throws ClassCastException   if the nodes' element types prevent them from
+         *                              being compared.
          */
         @Override
         public int compareTo(Node<E> node) {
@@ -5090,25 +5451,26 @@ public class NodableLinkedList<E>
         
         /**
          * Compares this {@code SubListNode} to the specified subListNode for order.
-         * Returns a negative integer, zero, or a positive integer as this
-         * sublist node's element is less than, equal to, or greater than
-         * the specified subListNode's element.
+         * Returns a negative integer, zero, or a positive integer as this sublist
+         * node's element is less than, equal to, or greater than the specified
+         * subListNode's element.
          *
-         * @param subListNode {@code SubListNode} to be compared to this {@code SubListNode}.
-         * @return a negative integer, zero, or a positive integer as
-         *         this {@code SubListNode}'s element is less than, equal to,
-         *         or greater than the specified subListNode's element.
+         * @param subListNode {@code SubListNode} to be compared to this
+         *                    {@code SubListNode}.
+         * @return a negative integer, zero, or a positive integer as this
+         *         {@code SubListNode}'s element is less than, equal to, or greater than
+         *         the specified subListNode's element.
          * @throws NullPointerException if the specified subListNode is {@code null}
-         * @throws ClassCastException if the nodes' element types prevent them from
-         *                            being compared.
+         * @throws ClassCastException   if the nodes' element types prevent them from
+         *                              being compared.
          */
         public int compareTo(SubListNode<E> subListNode) {
             return backingNode.compareTo(subListNode.backingNode);
         }        
 
         /**
-         * Returns the hash code value of this {@code SubListNode}.
-         * Has the same hash code as its backing {@code Node}.
+         * Returns the hash code value of this {@code SubListNode}. Has the same hash
+         * code as its backing {@code Node}.
          *
          * @return the hash code value of this {@code SubListNode}
          */
@@ -5120,24 +5482,26 @@ public class NodableLinkedList<E>
     } // SubListNode
 
     /**
-     * Node of a {@code NodableLinkedList}. Contains references to the
-     * previous and next nodes in a doubly-linked list, and contains an
-     * element which can be {@code null}. Does not belong to any
-     * particular {@code NodableLinkedList} until the node is inserted/added.
-     * Once inserted, the node remains linked to a {@code NodableLinkedList} until
-     * removed. A node can belong to different lists, just not at the same time.
+     * Node of a {@code NodableLinkedList}. Contains references to the previous and
+     * next nodes in a doubly-linked list, and contains an element which can be
+     * {@code null}. Does not belong to any particular {@code NodableLinkedList}
+     * until the node is inserted/added. Once inserted, the node remains linked to a
+     * {@code NodableLinkedList} until removed. A node can belong to different
+     * lists, just not at the same time.
      * 
-     * <p>All operations, except {@code index} and {@code subListNode},
-     * are performed in constant time.
+     * <p>
+     * All operations, except {@code index} and {@code subListNode}, are performed
+     * in constant time.
      * 
-     * @serialData Only the element is serialized. the references to the
-     *             next and previous nodes in a list, are not serialized.
-     *             When deserialized, the node will not be linked to any list.
+     * @serialData Only the element is serialized. the references to the next and
+     *             previous nodes in a list, are not serialized. When deserialized,
+     *             the node will not be linked to any list.
      * 
      * @author James Pfeifer
      * @param <E> the type of element held in this {@code Node}
      */
-    public static class Node<E> implements Serializable, Cloneable, Comparable<Node<E>> {
+    public static class Node<E>
+        implements Serializable, Cloneable, Comparable<Node<E>> {
 
         private static final long serialVersionUID = 5774389459071333685L;
 
@@ -5164,9 +5528,9 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Constructs a {@code Node} as a copy of the specified node.
-         * The constructed {@code Node} will contain the same element
-         * as the specified node, and will not be linked.
+         * Constructs a {@code Node} as a copy of the specified node. The constructed
+         * {@code Node} will contain the same element as the specified node, and will
+         * not be linked.
          * 
          * @param node {@code Node} to be copied
          */
@@ -5193,30 +5557,30 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code LinkedNodes} list this {@code Node}
-         *         belongs to, or {@code null} if not linked.
+         * Returns the {@code LinkedNodes} list this {@code Node} belongs to, or
+         * {@code null} if not linked.
          * 
-         * @return the {@code LinkedNodes} list this {@code Node}
-         *         belongs to, or {@code null} if not linked
+         * @return the {@code LinkedNodes} list this {@code Node} belongs to, or
+         *         {@code null} if not linked
          */
         public NodableLinkedList<E>.LinkedNodes linkedNodes() {
             return linkedNodes;
         }
 
         /**
-         * Returns the {@code NodableLinkedList} this {@code Node}
-         *         belongs to, or {@code null} if not linked.
-         *         
-         * @return the {@code NodableLinkedList} this {@code Node}
-         *         belongs to, or {@code null} if not linked
+         * Returns the {@code NodableLinkedList} this {@code Node} belongs to, or
+         * {@code null} if not linked.
+         * 
+         * @return the {@code NodableLinkedList} this {@code Node} belongs to, or
+         *         {@code null} if not linked
          */
         public NodableLinkedList<E> nodableLinkedList() {
             return (this.isLinked()) ? linkedNodes.nodableLinkedList() : null;
         }		
 
         /**
-         * Returns a shallow copy of this {@code Node}.  The clone will have the
-         * same element as this {@code Node}, but will not be linked to any list.
+         * Returns a shallow copy of this {@code Node}. The clone will have the same
+         * element as this {@code Node}, but will not be linked to any list.
          *
          * @return a shallow copy of this {@code Node}
          */
@@ -5244,12 +5608,14 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Inserts this {@code Node} after the specified node. This {@code Node}
-         * must not already belong to a list, and the specified node must belong to a list.
+         * Inserts this {@code Node} after the specified node. This {@code Node} must
+         * not already belong to a list, and the specified node must belong to a list.
          * 
          * @param node the {@code Node} this {@code Node} is to be inserted after
-         * @throws IllegalStateException if this {@code Node} is already a node of a list
-         * @throws IllegalArgumentException if node is {@code null} or not a node of a list
+         * @throws IllegalStateException    if this {@code Node} is already a node of a
+         *                                  list
+         * @throws IllegalArgumentException if node is {@code null} or not a node of a
+         *                                  list
          */
         public void addAfter(Node<E> node) {
             if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");
@@ -5258,30 +5624,35 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Inserts this {@code Node} after the specified subListNode.
-         * This {@code Node} must not already belong to a list, and the
-         * specified subListNode must belong to a {@code SubList}.
+         * Inserts this {@code Node} after the specified subListNode. This {@code Node}
+         * must not already belong to a list, and the specified subListNode must belong
+         * to a {@code SubList}.
          * 
-         * <p>The specified subListNode is verified that it is still contained
-         * by its associated {@code SubList}.
+         * <p>
+         * The specified subListNode is verified that it is still contained by its
+         * associated {@code SubList}.
          * 
-         * @param subListNode the {@code SubListNode} this {@code Node} is to be inserted after
-         * @throws IllegalStateException if this {@code Node} is already a node of a list
-         * @throws IllegalArgumentException if subListNode is {@code null} or not a node of a sublist
-         */        
+         * @param subListNode the {@code SubListNode} this {@code Node} is to be
+         *                    inserted after
+         * @throws IllegalStateException    if this {@code Node} is already a node of a
+         *                                  list
+         * @throws IllegalArgumentException if subListNode is {@code null} or not a node
+         *                                  of a sublist
+         */       
         public void addAfter(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
             subListNode.addNodeAfterMe(this);
         }
 
         /**
-         * Inserts this {@code Node} before the specified node.
-         * This {@code Node} must not already belong to a list, and
-         * the specified node must belong to a list.
+         * Inserts this {@code Node} before the specified node. This {@code Node} must
+         * not already belong to a list, and the specified node must belong to a list.
          * 
          * @param node the {@code Node} this {@code Node} is to be inserted before
-         * @throws IllegalStateException if this {@code Node} is already a node of a list
-         * @throws IllegalArgumentException if node is {@code null} or not a node of a list
+         * @throws IllegalStateException    if this {@code Node} is already a node of a
+         *                                  list
+         * @throws IllegalArgumentException if node is {@code null} or not a node of a
+         *                                  list
          */
         public void addBefore(Node<E> node) {
             if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");		
@@ -5291,16 +5662,20 @@ public class NodableLinkedList<E>
         
 
         /**
-         * Inserts this {@code Node} before the specified subListNode.
-         * This {@code Node} must not already belong to a list, and
-         * the specified subListNode must belong to a {@code SubList}.
+         * Inserts this {@code Node} before the specified subListNode. This {@code Node}
+         * must not already belong to a list, and the specified subListNode must belong
+         * to a {@code SubList}.
          * 
-         * <p>The specified subListNode is verified that it is still contained
-         * by its associated {@code SubList}.
+         * <p>
+         * The specified subListNode is verified that it is still contained by its
+         * associated {@code SubList}.
          * 
-         * @param subListNode the {@code SubListNode} this {@code Node} is to be inserted before
-         * @throws IllegalStateException if this {@code Node} is already a node of a list
-         * @throws IllegalArgumentException if subListNode is {@code null} or not a node of a sublist
+         * @param subListNode the {@code SubListNode} this {@code Node} is to be
+         *                    inserted before
+         * @throws IllegalStateException    if this {@code Node} is already a node of a
+         *                                  list
+         * @throws IllegalArgumentException if subListNode is {@code null} or not a node
+         *                                  of a sublist
          */
         public void addBefore(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
@@ -5308,11 +5683,12 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns {@code true} if there exists a {@code Node} which comes after this {@code Node}
-         * in a list.  In other words, returns {@code true} if this {@code Node} is not
-         * the last node of a list. 
+         * Returns {@code true} if there exists a {@code Node} which comes after this
+         * {@code Node} in a list. In other words, returns {@code true} if this
+         * {@code Node} is not the last node of a list.
          * 
-         * @return {@code true} if there exists a {@code Node} which comes after this {@code Node} 
+         * @return {@code true} if there exists a {@code Node} which comes after this
+         *         {@code Node}
          * @throws IllegalStateException if this {@code Node} is not linked
          */
         public boolean hasNext() {
@@ -5321,11 +5697,12 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns {@code true} if there exists a {@code Node} which comes before this {@code Node}
-         * in a list.  In other words, returns {@code true} if this {@code Node} is not
-         * the first node of a list.
+         * Returns {@code true} if there exists a {@code Node} which comes before this
+         * {@code Node} in a list. In other words, returns {@code true} if this
+         * {@code Node} is not the first node of a list.
          * 
-         * @return {@code true} if there exists a {@code Node} which comes before this {@code Node}
+         * @return {@code true} if there exists a {@code Node} which comes before this
+         *         {@code Node}
          * @throws IllegalStateException if this {@code Node} is not linked
          */
         public boolean hasPrevious() {
@@ -5334,16 +5711,14 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the index of this {@code Node} in a list,
-         * or -1 if this {@code Node} does not belong to a list or
-         * the {@code index > Integer.MAX_VALUE}.
+         * Returns the index of this {@code Node} in a list, or -1 if this {@code Node}
+         * does not belong to a list or the {@code index > Integer.MAX_VALUE}.
          * 
-         * <p><b>Performance Consideration:</b> This operation is performed
-         * in linear time.
+         * <p>
+         * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
-         * @return the index of this {@code Node} in a list,
-         *         or -1 if this {@code Node} does not belong to a list or
-         *         the {@code index > Integer.MAX_VALUE}
+         * @return the index of this {@code Node} in a list, or -1 if this {@code Node}
+         *         does not belong to a list or the {@code index > Integer.MAX_VALUE}
          */
         public int index() {
             if (!this.isLinked()) return -1;
@@ -5352,8 +5727,8 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code Node} which comes after this {@code Node} in a list.
-         * if this {@code Node} is the last or only {@code Node}, {@code null} is returned.
+         * Returns the {@code Node} which comes after this {@code Node} in a list. if
+         * this {@code Node} is the last or only {@code Node}, {@code null} is returned.
          * 
          * @return the {@code Node} which comes after this {@code Node} in a list, or
          *         {@code null} if this {@code Node} is the last or only {@code Node}
@@ -5365,8 +5740,9 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns the {@code Node} which comes before this {@code Node} in a list.
-         * if this {@code Node} is the first or only {@code Node}, {@code null} is returned.
+         * Returns the {@code Node} which comes before this {@code Node} in a list. if
+         * this {@code Node} is the first or only {@code Node}, {@code null} is
+         * returned.
          * 
          * @return the {@code Node} which comes before this {@code Node} in a list, or
          *         {@code null} if this {@code Node} is the first or only {@code Node}
@@ -5388,13 +5764,14 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Replaces this {@code Node}, in a list, with the specified node.
-         * This {@code Node} must belong to a list, and the specified node
-         * must not already belong to a list.
+         * Replaces this {@code Node}, in a list, with the specified node. This
+         * {@code Node} must belong to a list, and the specified node must not already
+         * belong to a list.
          * 
          * @param node {@code Node} to replace this {@code Node}
-         * @throws IllegalStateException if this {@code Node} is not linked
-         * @throws IllegalArgumentException if node is {@code null} or already a node of a list
+         * @throws IllegalStateException    if this {@code Node} is not linked
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
          */
         public void replaceWith(Node<E> node) {
             if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement node is null or already a node of a list");
@@ -5403,16 +5780,16 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Swaps this {@code Node} with the specified node.
-         * Both this {@code Node} and the specified node must belong to a list,
-         * but they can be different lists.
+         * Swaps this {@code Node} with the specified node. Both this {@code Node} and
+         * the specified node must belong to a list, but they can be different lists.
          * 
-         * <p><strong>Synchronization consideration:</strong> This operation can potentially operate on two
-         * different lists. if synchronization is required, both lists should be synchronized by the same
-         * object.
+         * <p>
+         * <strong>Synchronization consideration:</strong> This operation can
+         * potentially operate on two different lists. if synchronization is required,
+         * both lists should be synchronized by the same object.
          * 
          * @param node the {@code Node} to swap with this {@code Node}
-         * @throws IllegalStateException if this {@code Node} is not linked
+         * @throws IllegalStateException    if this {@code Node} is not linked
          * @throws IllegalArgumentException if node is {@code null} or not linked
          */
         public void swapWith(Node<E> node) {
@@ -5455,16 +5832,19 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns a {@code SubListNode}, backed by this {@code Node}, for the specified subList.
-         * The returned {@code SubListNode} is backed by this {@code Node} which must be a node
-         * of the specified subList, or unlinked.
+         * Returns a {@code SubListNode}, backed by this {@code Node}, for the specified
+         * subList. The returned {@code SubListNode} is backed by this {@code Node}
+         * which must be a node of the specified subList, or unlinked.
          * 
-         * <p><b>Performance Consideration:</b> This {@code Node}, if linked, is verified,
+         * <p>
+         * <b>Performance Consideration:</b> This {@code Node}, if linked, is verified,
          * in linear time, that it is actually a node of the specified subList.
          * 
          * @param subList {@code SubList} containing this {@code Node}
-         * @return a {@code SubListNode}, backed by this {@code Node}, for the specified subList
-         * @throws IllegalStateException if this {@code Node} is not a node of the specified subList
+         * @return a {@code SubListNode}, backed by this {@code Node}, for the specified
+         *         subList
+         * @throws IllegalStateException if this {@code Node} is not a node of the
+         *                               specified subList
          */
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
             if (this.isLinked() && !subList.linkedSubNodes().contains(this)) {
@@ -5474,40 +5854,41 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns an unverified {@code SubListNode}, backed by this {@code Node},
-         * for the specified subList. The returned {@code SubListNode} is backed
-         * by this {@code Node} which must be a node of the specified subList, or unlinked.
+         * Returns an unverified {@code SubListNode}, backed by this {@code Node}, for
+         * the specified subList. The returned {@code SubListNode} is backed by this
+         * {@code Node} which must be a node of the specified subList, or unlinked.
          * 
-         * <p><b>Use with CAUTION:</b> This {@code Node}, if linked, is not verified that it
-         * is a node of the specified subList. If it is not a node of the
-         * specified subList, the results of using the returned
-         * {@code SubListNode} are unpredictable. This method is provided to avoid the
-         * cost of verifying a {@code Node} is a node of the specified subList when
-         * it's certain that it is. For example, nodes returned by a sublist's iterator
-         * don't need to be verified. Note, just like any {@code SubListNode}, if the
-         * {@code NodableLinkedList} is subsequently modified, the returned {@code SubListNode},
-         * will have to be reverified.
+         * <p>
+         * <b>Use with CAUTION:</b> This {@code Node}, if linked, is not verified that
+         * it is a node of the specified subList. If it is not a node of the specified
+         * subList, the results of using the returned {@code SubListNode} are
+         * unpredictable. This method is provided to avoid the cost of verifying a
+         * {@code Node} is a node of the specified subList when it's certain that it is.
+         * For example, nodes returned by a sublist's iterator don't need to be
+         * verified. Note, just like any {@code SubListNode}, if the
+         * {@code NodableLinkedList} is subsequently modified, the returned
+         * {@code SubListNode}, will have to be reverified.
          * 
          * @param subList {@code SubList} believed to contain this {@code Node}
-         * @return an unverified {@code SubListNode}, backed by this {@code Node}, for the specified subList
+         * @return an unverified {@code SubListNode}, backed by this {@code Node}, for
+         *         the specified subList
          */
         public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList) {
             return new SubListNode<E>(this, subList);
         }      
         
         /**
-         * Compares this {@code Node} with the specified object
-         * ({@code Node} or {@code SubListNode}) for equality.
-         * Returns {@code true} if and only if the specified object
-         * is also a {@code Node} or a {@code SubListNode},
-         * and both pairs of elements in the two nodes are <i>equal</i>.
-         * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
+         * Compares this {@code Node} with the specified object ({@code Node} or
+         * {@code SubListNode}) for equality. Returns {@code true} if and only if the
+         * specified object is also a {@code Node} or a {@code SubListNode}, and both
+         * pairs of elements in the two nodes are <i>equal</i>. (Two elements {@code e1}
+         * and {@code e2} are <i>equal</i> if
          * {@code (e1==null ? e2==null : e1.equals(e2))}.)
          *
-         * @param object {@code Object} ({@code Node} or {@code SubListNode})
-         *               to be compared for equality with this {@code Node}
-         * @return {@code true} if the specified object ({@code Node} or {@code SubListNode})
-         *                      is equal to this {@code Node}
+         * @param object {@code Object} ({@code Node} or {@code SubListNode}) to be
+         *               compared for equality with this {@code Node}
+         * @return {@code true} if the specified object ({@code Node} or
+         *         {@code SubListNode}) is equal to this {@code Node}
          */
         @Override
         public boolean equals(Object object) {
@@ -5525,18 +5906,17 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Compares this {@code Node} to the specified node for order.
-         * Returns a negative integer, zero, or a positive integer as
-         * this {@code Node}'s element is less than, equal to, or greater
-         * than the specified node's element.
+         * Compares this {@code Node} to the specified node for order. Returns a
+         * negative integer, zero, or a positive integer as this {@code Node}'s element
+         * is less than, equal to, or greater than the specified node's element.
          *
          * @param node {@code Node} to be compared to this {@code Node}
-         * @return a negative integer, zero, or a positive integer as
-         *         this {@code Node}'s element is less than, equal to, or
-         *         greater than the specified node's element
+         * @return a negative integer, zero, or a positive integer as this
+         *         {@code Node}'s element is less than, equal to, or greater than the
+         *         specified node's element
          * @throws NullPointerException if the specified node is {@code null}
-         * @throws ClassCastException if the nodes' element types prevent them from
-         *                            being compared
+         * @throws ClassCastException   if the nodes' element types prevent them from
+         *                              being compared
          */
         @Override
         public int compareTo(Node<E> node) {
@@ -5553,18 +5933,17 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Compares this {@code Node} to the specified subListNode for order.
-         * Returns a negative integer, zero, or a positive integer as this
-         * node's element is less than, equal to, or greater than the specified
-         * subListNode's element.
+         * Compares this {@code Node} to the specified subListNode for order. Returns a
+         * negative integer, zero, or a positive integer as this node's element is less
+         * than, equal to, or greater than the specified subListNode's element.
          *
          * @param subListNode {@code SubListNode} to be compared to this {@code Node}
-         * @return a negative integer, zero, or a positive integer as
-         *         this {@code Node}'s element is less than, equal to, or greater
-         *         than the specified subListNode's element
+         * @return a negative integer, zero, or a positive integer as this
+         *         {@code Node}'s element is less than, equal to, or greater than the
+         *         specified subListNode's element
          * @throws NullPointerException if the specified subListNode is {@code null}
-         * @throws ClassCastException if the nodes' element types prevent them from
-         *                            being compared
+         * @throws ClassCastException   if the nodes' element types prevent them from
+         *                              being compared
          */
         public int compareTo(SubListNode<E> subListNode) {
             return this.compareTo(subListNode.backingNode());
