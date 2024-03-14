@@ -32,6 +32,9 @@
  * this exception to your version of the library, but you are not
  * obligated to do so.  If you do not wish to do so, delete this
  * exception statement from your version.
+ *
+ * Please contact James Pfeifer at james@pfeifdom.net if you need additional
+ * information or have any questions.
  */
 
 package net.pfeifdom.java.util;
@@ -920,14 +923,14 @@ public class NodableLinkedList<E>
     @Override
     public boolean removeFirstOccurrence(Object object) {
         if (object == null) {
-            for (Node<E> node = getFirstNode(); node != null; linkedNodes.getNodeAfter(node)) {
+            for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
                 if (node.element == null) {
                     linkedNodes.removeNode(node);
                     return true;
                 }			
             }			
         } else {
-            for (Node<E> node = getFirstNode(); node != null; linkedNodes.getNodeAfter(node)) {
+            for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
                 if (object.equals(node.element)) {
                     linkedNodes.removeNode(node);
                     return true;
@@ -1245,26 +1248,26 @@ public class NodableLinkedList<E>
     }	
 
     /**
-     * Returns a list-iterator of the elements in this list (in proper
+     * Returns a {@code ListIterator} of the elements in this list (in proper
      * sequence), starting at the specified position in this list.
      * Obeys the general contract of {@code List.listIterator(int)}.
      * 
      * <p><strong>Implementation Note:</strong>
-     * The ListIterator returned by this method behaves differently when the
+     * The {@code ListIterator} returned by this method behaves differently when the
      * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
      * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
      *
-     * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+     * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
      * is structurally modified at any time after the Iterator is created,
-     * in any way except through the list-iterator's own {@code remove} or
-     * {@code add} methods, the list-iterator will throw a
+     * in any way except through the {@code ListIterator}'s own {@code remove} or
+     * {@code add} methods, the {@code ListIterator} will throw a
      * {@code ConcurrentModificationException}.  Thus, in the face of
      * concurrent modification, the iterator fails quickly and cleanly, rather
      * than risking arbitrary, non-deterministic behavior at an undetermined
      * time in the future.
      *
      * @param index index of the first element to be returned from the
-     *              list-iterator (by a call to {@code next})
+     *              {@code ListIterator} (by a call to {@code next})
      * @return a ListIterator of the elements in this list (in proper
      *         sequence), starting at the specified position in this list
      * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
@@ -1277,30 +1280,31 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns a list-iterator of the elements in this list (in proper
+     * Returns a {@code ListIterator} of the elements in this list (in proper
      * sequence), starting at the specified node in this list.
-     * if the specified node is {@code null}, the list-iterator will
+     * if the specified node is {@code null}, the {@code ListIterator} will
      * start with the first node in this list.    
      * 
      * <p><strong>Implementation Note:</strong>
-     * The index returned by {@code nextIndex} and {@code previousIndex}
-     * is relative to the specified node which has an index of 0.
-     * Nodes which come before the specified node in this list, will
-     * have a negative index; nodes that come after will have a positive index. 
-     * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
-     * method {@code previousIndex} returns {@code -longSize()} if at the beginning
-     * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+     * The index returned by the returned {@code ListIterator}'s methods
+     * {@code nextIndex} and {@code previousIndex} is relative to the
+     * specified node which has an index of zero. Nodes which come before
+     * the specified node in this list, will have a negative index; nodes that
+     * come after will have a positive index. Method {@code nextIndex} returns
+     * {@code longSize()} if at the end of the list, and method {@code previousIndex}
+     * returns {@code -longSize()} if at the beginning of the list.
+     * if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
      * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
      *
-     * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+     * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
      * is structurally modified at any time after the Iterator is created,
-     * in any way except through the list-iterator's own {@code remove} or {@code add}
-     * methods, the list-iterator will throw a {@code ConcurrentModificationException}.
+     * in any way except through the {@code ListIterator}'s own {@code remove} or {@code add}
+     * methods, the {@code ListIterator} will throw a {@code ConcurrentModificationException}.
      * Thus, in the face of concurrent modification, the iterator fails quickly and cleanly,
      * rather than risking arbitrary, non-deterministic behavior at an undetermined
      * time in the future.
      *
-     * @param node node of the first element to be returned from the list-iterator
+     * @param node node of the first element to be returned from the {@code ListIterator}
      *             (by a call to {@code next})
      * @return a ListIterator of the elements in this list (in proper
      *         sequence), starting at the specified node in this list
@@ -2391,26 +2395,26 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns a list-iterator of the nodes in this list (in proper
+         * Returns a {@code ListIterator} of the nodes in this list (in proper
          * sequence), starting at the specified position in this list.
          * Obeys the general contract of {@code List.listIterator(int)}.
          * 
          * <p><strong>Implementation Note:</strong>
-         * The ListIterator returned by this method behaves differently when the
+         * The {@code ListIterator} returned by this method behaves differently when the
          * list's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
          * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
          *
-         * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
          * is structurally modified at any time after the Iterator is created,
-         * in any way except through the list-iterator's own {@code remove} or
-         * {@code add} methods, the list-iterator will throw a
+         * in any way except through the {@code ListIterator}'s own {@code remove} or
+         * {@code add} methods, the {@code ListIterator} will throw a
          * {@code ConcurrentModificationException}.  Thus, in the face of
          * concurrent modification, the iterator fails quickly and cleanly, rather
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
          * @param index index of the first node to be returned from the
-         *              list-iterator (by a call to {@code next})
+         *              {@code ListIterator} (by a call to {@code next})
          * @return a ListIterator of the nodes in this list (in proper
          *         sequence), starting at the specified position in this list
          * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
@@ -2423,31 +2427,33 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns a list-iterator of the nodes in this list (in proper
+         * Returns a {@code ListIterator} of the nodes in this list (in proper
          * sequence), starting at the specified node in this list.
-         * if the specified node is {@code null}, the list-iterator will
+         * if the specified node is {@code null}, the {@code ListIterator} will
          * start with the first {@code Node} in this list.
          * 
          * <p><strong>Implementation Note:</strong>
-         * The index returned by {@code nextIndex} and {@code previousIndex}
-         * is relative to the specified node which has an index of 0.
-         * Nodes which come before the specified node in this list, will
-         * have a negative index; nodes that come after will have a positive index. 
-         * Method {@code nextIndex} returns {@code longSize()} if at the end of the list, and
-         * method {@code previousIndex} returns {@code -longSize()} if at the beginning
+         * The index returned by the returned {@code ListIterator}'s methods
+         * {@code nextIndex} and {@code previousIndex} is relative to the
+         * specified node which has an index of zero. Nodes which come before
+         * the specified node in this list, will have a negative index; nodes
+         * that come after will have a positive index. Method {@code nextIndex}
+         * returns {@code longSize()} if at the end of the list, and method
+         * {@code previousIndex} returns {@code -longSize()} if at the beginning
          * of the list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
          * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
          *
-         * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
          * is structurally modified at any time after the Iterator is created,
-         * in any way except through the list-iterator's own {@code remove} or
-         * {@code add} methods, the list-iterator will throw a
+         * in any way except through the {@code ListIterator}'s own {@code remove} or
+         * {@code add} methods, the {@code ListIterator} will throw a
          * {@code ConcurrentModificationException}.  Thus, in the face of
          * concurrent modification, the iterator fails quickly and cleanly, rather
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
-         * @param node first node to be returned from the list-iterator (by a call to {@code next})
+         * @param node first node to be returned from the {@code ListIterator}
+         *             (by a call to {@code next})
          * @return a ListIterator of the nodes in this list (in proper
          *         sequence), starting at the specified node in this list
          * @throws IllegalArgumentException if node is not linked to this list
@@ -3479,26 +3485,26 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a list-iterator of the elements in this {@code SubList} (in proper
+         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in proper
          * sequence), starting at the specified position in this {@code SubList}.
          * Obeys the general contract of {@code List.listIterator(int)}.
          * 
          * <p><strong>Implementation Note:</strong>
-         * The ListIterator returned by this method behaves differently when the
+         * The {@code ListIterator} returned by this method behaves differently when the
          * sublist's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
          * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
          *
-         * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
          * is structurally modified at any time after the Iterator is created,
-         * in any way except through the list-iterator's own {@code remove} or
-         * {@code add} methods, the list-iterator will throw a
+         * in any way except through the {@code ListIterator}'s own {@code remove} or
+         * {@code add} methods, the {@code ListIterator} will throw a
          * {@code ConcurrentModificationException}.  Thus, in the face of
          * concurrent modification, the iterator fails quickly and cleanly, rather
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
          * @param index index of the first element to be returned from the
-         *              list-iterator (by a call to {@code next})
+         *              {@code ListIterator} (by a call to {@code next})
          * @return a ListIterator of the elements in this {@code SubList} (in proper
          *         sequence), starting at the specified position in this {@code SubList}
          * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
@@ -3511,31 +3517,32 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns a list-iterator of the elements in this {@code SubList} (in proper
+         * Returns a {@code ListIterator} of the elements in this {@code SubList} (in proper
          * sequence), starting at the specified node in this {@code SubList}.
-         * if the specified node is {@code null}, the list-iterator will
+         * if the specified node is {@code null}, the {@code ListIterator} will
          * start with the first {@code Node} in this {@code SubList}.    
          * 
          * <p><strong>Implementation Note:</strong>
-         * The index returned by {@code nextIndex} and {@code previousIndex}
-         * is relative to the specified node which has an index of 0.
-         * Nodes which come before the specified node in this {@code SubList}, will
-         * have a negative index; nodes that come after will have a positive index. 
-         * Method {@code nextIndex} returns {@code longSize()} if at the end of the {@code SubList}, and
+         * The index returned by the returned {@code ListIterator}'s methods
+         * {@code nextIndex} and {@code previousIndex} is relative to the
+         * specified node which has an index of zero. Nodes which come before
+         * the specified node in this {@code SubList}, will have a negative index;
+         * nodes that come after will have a positive index. Method {@code nextIndex}
+         * returns {@code longSize()} if at the end of the {@code SubList}, and
          * method {@code previousIndex} returns {@code -longSize()} if at the beginning
          * of the {@code SubList}. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
          * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
          *
-         * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+         * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
          * is structurally modified at any time after the Iterator is created,
-         * in any way except through the list-iterator's own {@code remove} or
-         * {@code add} methods, the list-iterator will throw a
+         * in any way except through the {@code ListIterator}'s own {@code remove} or
+         * {@code add} methods, the {@code ListIterator} will throw a
          * {@code ConcurrentModificationException}.  Thus, in the face of
          * concurrent modification, the iterator fails quickly and cleanly, rather
          * than risking arbitrary, non-deterministic behavior at an undetermined
          * time in the future.
          *
-         * @param node {@code Node} of the first element to be returned from the list-iterator
+         * @param node {@code Node} of the first element to be returned from the {@code ListIterator}
          *             (by a call to {@code next})
          * @return a ListIterator of the elements in this {@code SubList} (in proper
          *         sequence), starting at the specified node in this {@code SubList}
@@ -4366,26 +4373,26 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Returns a list-iterator of the nodes in this sublist (in proper
+             * Returns a {@code ListIterator} of the nodes in this sublist (in proper
              * sequence), starting at the specified position in this sublist.
              * Obeys the general contract of {@code List.listIterator(int)}.
              * 
              * <p><strong>Implementation Note:</strong>
-             * The ListIterator returned by this method behaves differently when the
+             * The {@code ListIterator} returned by this method behaves differently when the
              * sublist's {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
              * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
              *
-             * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+             * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
              * is structurally modified at any time after the Iterator is created,
-             * in any way except through the list-iterator's own {@code remove} or
-             * {@code add} methods, the list-iterator will throw a
+             * in any way except through the {@code ListIterator}'s own {@code remove} or
+             * {@code add} methods, the {@code ListIterator} will throw a
              * {@code ConcurrentModificationException}.  Thus, in the face of
              * concurrent modification, the iterator fails quickly and cleanly, rather
              * than risking arbitrary, non-deterministic behavior at an undetermined
              * time in the future.
              *
              * @param index index of the first node to be returned from the
-             *              list-iterator (by a call to {@code next})
+             *              {@code ListIterator} (by a call to {@code next})
              * @return a ListIterator of the nodes in this sublist (in proper
              *         sequence), starting at the specified position in this sublist
              * @throws IndexOutOfBoundsException if the index is out of range {@code (index < 0 || index > longSize())}
@@ -4398,31 +4405,32 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Returns a list-iterator of the nodes in this sublist (in proper
+             * Returns a {@code ListIterator} of the nodes in this sublist (in proper
              * sequence), starting at the specified node in this sublist.
-             * if the specified nodeis {@code null}, the list-iterator will
+             * if the specified nodeis {@code null}, the {@code ListIterator} will
              * start with the first {@code Node} in this sublist.
              * 
              * <p><strong>Implementation Note:</strong>
-             * The index returned by {@code nextIndex} and {@code previousIndex}
-             * is relative to the specified node which has an index of 0.
-             * Nodes which come before the specified node in this sublist, will
-             * have a negative index; nodes that come after will have a positive index. 
-             * Method {@code nextIndex} returns {@code longSize()} if at the end of the sublist, and
-             * method {@code previousIndex} returns {@code -longSize()} if at the beginning
+             * The index returned by the returned {@code ListIterator}'s methods
+             * {@code nextIndex} and {@code previousIndex} is relative to the
+             * specified node which has an index of zero. Nodes which come before
+             * the specified node in this sublist, will have a negative index; nodes
+             * that come after will have a positive index. Method {@code nextIndex}
+             * returns {@code longSize()} if at the end of the sublist, and method
+             * {@code previousIndex} returns {@code -longSize()} if at the beginning
              * of the sublist. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
              * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned respectively.
              *
-             * <p>The list-iterator is <i>fail-fast</i>: if the {@code NodableLinkedList}
+             * <p>The {@code ListIterator} is <i>fail-fast</i>: if the {@code NodableLinkedList}
              * is structurally modified at any time after the Iterator is created,
-             * in any way except through the list-iterator's own {@code remove} or
-             * {@code add} methods, the list-iterator will throw a
+             * in any way except through the {@code ListIterator}'s own {@code remove} or
+             * {@code add} methods, the {@code ListIterator} will throw a
              * {@code ConcurrentModificationException}.  Thus, in the face of
              * concurrent modification, the iterator fails quickly and cleanly, rather
              * than risking arbitrary, non-deterministic behavior at an undetermined
              * time in the future.
              *
-             * @param node first {@code Node} to be returned from the list-iterator (by a call to {@code next})
+             * @param node first {@code Node} to be returned from the {@code ListIterator} (by a call to {@code next})
              * @return a ListIterator of the nodes in this sublist (in proper
              *         sequence), starting at the specified node in the sublist
              * @throws IllegalArgumentException if node is not linked to this sublist
