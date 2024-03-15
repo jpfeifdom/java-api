@@ -287,7 +287,10 @@ public class NodableLinkedList<E>
     private void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
         stream.writeLong(longSize());
-        for (Node<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
+        for (   Node<E> node = getFirstNode();
+                node != null;
+                node = linkedNodes.getNodeAfter(node))
+        {
             stream.writeObject(node.element);
         }
     }
@@ -934,9 +937,9 @@ public class NodableLinkedList<E>
     @Override
     public boolean removeFirstOccurrence(Object object) {
         if (object == null) {
-            for (Node<E> node = getFirstNode();
-                 node != null;
-                 node = linkedNodes.getNodeAfter(node))
+            for (   Node<E> node = getFirstNode();
+                    node != null;
+                    node = linkedNodes.getNodeAfter(node))
             {
                 if (node.element == null) {
                     linkedNodes.removeNode(node);
@@ -944,9 +947,9 @@ public class NodableLinkedList<E>
                 }			
             }			
         } else {
-            for (Node<E> node = getFirstNode();
-                 node != null;
-                 node = linkedNodes.getNodeAfter(node))
+            for (   Node<E> node = getFirstNode();
+                    node != null;
+                    node = linkedNodes.getNodeAfter(node))
             {
                 if (object.equals(node.element)) {
                     linkedNodes.removeNode(node);
@@ -969,9 +972,9 @@ public class NodableLinkedList<E>
     @Override
     public boolean removeLastOccurrence(Object object) {
         if (object == null) {
-            for (Node<E> node = getLastNode();
-                 node != null;
-                 node = linkedNodes.getNodeBefore(node))
+            for (   Node<E> node = getLastNode();
+                    node != null;
+                    node = linkedNodes.getNodeBefore(node))
             {
                 if (node.element == null) {
                     linkedNodes.removeNode(node);
@@ -979,9 +982,9 @@ public class NodableLinkedList<E>
                 }
             }			
         } else {
-            for (Node<E> node = getLastNode();
-                 node != null;
-                 node = linkedNodes.getNodeBefore(node))
+            for (   Node<E> node = getLastNode();
+                    node != null;
+                    node = linkedNodes.getNodeBefore(node))
             {
                 if (object.equals(node.element)) {
                     linkedNodes.removeNode(node);
@@ -1238,9 +1241,9 @@ public class NodableLinkedList<E>
         if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
         final Object[] elements = new Object[size()];
         int index = 0;
-        for (Node<E> node = getFirstNode();
-             node != null;
-             node = linkedNodes.getNodeAfter(node))
+        for (   Node<E> node = getFirstNode();
+                node != null;
+                node = linkedNodes.getNodeAfter(node))
         {
             elements[index++] = node.element;
         }
@@ -1297,9 +1300,9 @@ public class NodableLinkedList<E>
         }
         int index = 0;
         Object[] elements = array;
-        for (Node<E> node = getFirstNode();
-             node != null;
-             node = linkedNodes.getNodeAfter(node))
+        for (   Node<E> node = getFirstNode();
+                node != null;
+                node = linkedNodes.getNodeAfter(node))
         {
             elements[index++] = node.element;			
         }
@@ -1346,8 +1349,8 @@ public class NodableLinkedList<E>
     /**
      * Returns a {@code ListIterator} of the elements in this list (in proper
      * sequence), starting at the specified node in this list. if the specified node
-     * is {@code null}, the {@code ListIterator} will start with the first node in
-     * this list.
+     * is {@code null}, the {@code ListIterator} will be positioned right after
+     * the last {@code Node} in this list.
      * 
      * <p>
      * <strong>Implementation Note:</strong> The index returned by the returned
@@ -1357,7 +1360,7 @@ public class NodableLinkedList<E>
      * that come after will have a positive index. Method {@code nextIndex} returns
      * {@code longSize()} if at the end of the list, and method
      * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-     * list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
      * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
      * respectively.
      *
@@ -1577,8 +1580,11 @@ public class NodableLinkedList<E>
         private long indexOfNode(Node<E> node) {
             // assert this.contains(node) : "Node is not an element of this list";
             long index = 0L;
-            Node<E> cursorNode = headSentinel.next;
-            for (; cursorNode != tailSentinel; cursorNode = cursorNode.next, index++) {
+            
+            for (   Node<E> cursorNode = headSentinel.next;
+                    cursorNode != tailSentinel;
+                    cursorNode = cursorNode.next, index++)
+            {
                 if (cursorNode == node) return index;				
             }
             return -1L;
@@ -1662,9 +1668,9 @@ public class NodableLinkedList<E>
             if (!(object instanceof Node)) return -1;
             if (!this.contains((Node<?>) object)) return -1;
             long index = size - 1L;
-            for (Node<E> node = tailSentinel.previous;
-                 node != headSentinel;
-                 node = node.previous, index--)
+            for (   Node<E> node = tailSentinel.previous;
+                    node != headSentinel;
+                    node = node.previous, index--)
             {
                 if (node == object) return (index > Integer.MAX_VALUE) ? -1 : (int)index;
             }
@@ -1860,13 +1866,13 @@ public class NodableLinkedList<E>
             long nodeIndex;
             final long lastIndex = size - 1L;
             if (getIndex < (lastIndex >> 1)) {
-                for (node = getFirst(), nodeIndex = 0L;
-                     nodeIndex < getIndex && node != tailSentinel;
-                     nodeIndex++, node = node.next);
+                for (   node = getFirst(), nodeIndex = 0L;
+                        nodeIndex < getIndex && node != tailSentinel;
+                        nodeIndex++, node = node.next);
             } else {
-                for (node = getLast(),  nodeIndex = lastIndex;
-                     nodeIndex > getIndex && node != headSentinel;
-                     nodeIndex--, node = node.previous);
+                for (   node = getLast(), nodeIndex = lastIndex;
+                        nodeIndex > getIndex && node != headSentinel;
+                        nodeIndex--, node = node.previous);
             }       
             return node;        
         }        
@@ -2239,9 +2245,9 @@ public class NodableLinkedList<E>
             @SuppressWarnings("unchecked")
             final Node<E>[] sortedNodes = new Node[(int)size];
             int index = 0;
-            for (Node<E> node = headSentinel.next;
-                 node != tailSentinel;
-                 node = node.next)
+            for (   Node<E> node = headSentinel.next;
+                    node != tailSentinel;
+                    node = node.next)
             {
                 sortedNodes[index++] = node;
             }
@@ -2489,9 +2495,9 @@ public class NodableLinkedList<E>
             if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
             final Object[] nodes = new Object[(int)size];
             int index = 0;
-            for (Node<E> node = headSentinel.next;
-                 node != tailSentinel;
-                 node = node.next)
+            for (   Node<E> node = headSentinel.next;
+                    node != tailSentinel;
+                    node = node.next)
             {
                 nodes[index++] = node;				
             }
@@ -2540,9 +2546,9 @@ public class NodableLinkedList<E>
             }
             int index = 0;
             Object[] nodes = array;
-            for (Node<E> node = headSentinel.next;
-                 node != tailSentinel;
-                 node = node.next)
+            for (   Node<E> node = headSentinel.next;
+                    node != tailSentinel;
+                    node = node.next)
             {
                 nodes[index++] = node;			
             }
@@ -2587,8 +2593,8 @@ public class NodableLinkedList<E>
         /**
          * Returns a {@code ListIterator} of the nodes in this list (in proper
          * sequence), starting at the specified node in this list. if the specified node
-         * is {@code null}, the {@code ListIterator} will start with the first
-         * {@code Node} in this list.
+         * is {@code null}, the {@code ListIterator} will be positioned right after
+         * the last {@code Node} in this list.
          * 
          * <p>
          * <strong>Implementation Note:</strong> The index returned by the returned
@@ -2598,7 +2604,7 @@ public class NodableLinkedList<E>
          * that come after will have a positive index. Method {@code nextIndex} returns
          * {@code longSize()} if at the end of the list, and method
          * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-         * list. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+         * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
          * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
          * respectively.
          *
@@ -2700,7 +2706,7 @@ public class NodableLinkedList<E>
                 Node<E> tailSentinel)
         {
             return new LinkedNodesListIterator(
-                    (node == null) ? headSentinel.next : node,
+                    (node == null) ? this.tailSentinel : node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
                     (tailSentinel == null) ? this.tailSentinel : tailSentinel
                     );
@@ -2873,8 +2879,8 @@ public class NodableLinkedList<E>
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
                 if (action == null) throw new NullPointerException();
                 while (modCount == expectedModCount &&
-                       (cursorNode.next != tailSentinel &&
-                        cursorNode.next != LinkedNodes.this.tailSentinel))
+                       cursorNode.next != tailSentinel &&
+                       cursorNode.next != LinkedNodes.this.tailSentinel)
                 {
                     action.accept(cursorNode.next);
                     cursorNode = cursorNode.next;
@@ -3200,6 +3206,7 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeFirst(Node<E> node) {
+            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
             linkedSubNodes.add(0, node);
         }
 
@@ -3211,6 +3218,7 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeLast(Node<E> node) {
+            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
             linkedSubNodes.addNodeAfter(node, getLastNode());
         }        
         
@@ -3744,8 +3752,8 @@ public class NodableLinkedList<E>
         /**
          * Returns a {@code ListIterator} of the elements in this {@code SubList} (in
          * proper sequence), starting at the specified node in this {@code SubList}. if
-         * the specified node is {@code null}, the {@code ListIterator} will start with
-         * the first {@code Node} in this {@code SubList}.
+         * the specified node is {@code null}, the {@code ListIterator} will be
+         * positioned right after the last {@code Node} in this {@code SubList}.
          * 
          * <p>
          * <strong>Implementation Note:</strong> The index returned by the returned
@@ -3756,7 +3764,7 @@ public class NodableLinkedList<E>
          * {@code nextIndex} returns {@code longSize()} if at the end of the
          * {@code SubList}, and method {@code previousIndex} returns {@code -longSize()}
          * if at the beginning of the {@code SubList}. if
-         * {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+         * {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
          * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
          * respectively.
          *
@@ -4051,7 +4059,8 @@ public class NodableLinkedList<E>
                     // size is unknown, tailSentinel is known
                     while (cursorNode != node &&
                            cursorNode != this.tailSentinel &&
-                           cursorNode != linkedNodes.tailSentinel) {
+                           cursorNode != linkedNodes.tailSentinel)
+                    {
                         cursorIndex++;
                         cursorNode = cursorNode.next;
                     }
@@ -4093,9 +4102,10 @@ public class NodableLinkedList<E>
                     // assert tailSentinel != null : "tail sentinel shouldn't be null";
                     Node<E> node;
                     size = 0L;
-                    for (node = headSentinel.next;
-                         node != tailSentinel && node != linkedNodes.tailSentinel;
-                         node = node.next) {
+                    for (   node = headSentinel.next;
+                            node != tailSentinel && node != linkedNodes.tailSentinel;
+                            node = node.next)
+                    {
                         size++;
                     }
                     if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
@@ -4701,8 +4711,8 @@ public class NodableLinkedList<E>
             /**
              * Returns a {@code ListIterator} of the nodes in this sublist (in proper
              * sequence), starting at the specified node in this sublist. if the specified
-             * nodeis {@code null}, the {@code ListIterator} will start with the first
-             * {@code Node} in this sublist.
+             * node is {@code null}, the {@code ListIterator} will be positioned right
+             * after the last {@code Node} in this sublist.
              * 
              * <p>
              * <strong>Implementation Note:</strong> The index returned by the returned
@@ -4712,7 +4722,7 @@ public class NodableLinkedList<E>
              * that come after will have a positive index. Method {@code nextIndex} returns
              * {@code longSize()} if at the end of the sublist, and method
              * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-             * sublist. if {@code index < Integer.MAX_VALUE or index > Integer.MAX_VALUE},
+             * sublist. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
              * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
              * respectively.
              *
@@ -4752,7 +4762,7 @@ public class NodableLinkedList<E>
             
             private LinkedSubNodesListIterator linkedSubNodesListIterator(Node<E> node) {
                 checkForModificationException();
-                if (node == null) return new LinkedSubNodesListIterator(this.headSentinel.next, this.headSentinel, this.tailSentinel, this.size);
+                if (node == null) return new LinkedSubNodesListIterator(getTailSentinel(), this.headSentinel, this.tailSentinel, this.size);
                 if (!this.contains(node)) throw new IllegalArgumentException("specified node is not part of this sublist");
                 return new LinkedSubNodesListIterator(node, this.headSentinel, this.tailSentinel, this.size);
             }            
