@@ -2386,7 +2386,7 @@ public class NodableLinkedList<E>
         private SubList newSubList(int fromIndex, int toIndex) {
             if (fromIndex < 0) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
             if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-            if (fromIndex > toIndex) throw new IllegalArgumentException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
+            if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
             final long size = toIndex - fromIndex;
             if (fromIndex == longSize()) return new SubList(tailSentinel.previous, tailSentinel, null, size);
             final Node<E> headSentinel = get(fromIndex).previous;
@@ -4391,6 +4391,7 @@ public class NodableLinkedList<E>
              */
             @Override
             public boolean contains(Object object) {
+                checkForModificationException();
                 Node<?> node;
                 if (object instanceof Node) {
                     node = (Node<?>)object;
@@ -4405,6 +4406,7 @@ public class NodableLinkedList<E>
             }
             
             private boolean contains(Node<?> node) {
+                checkForModificationException();
                 return (getIndex(node) < 0L) ? false : true;
             }
             
@@ -4625,6 +4627,7 @@ public class NodableLinkedList<E>
              */
             @Override
             public void sort(Comparator<? super Node<E>> comparator) {
+                checkForModificationException();
                 if (longSize() < 2L) return;
                 if (longSize() > Integer.MAX_VALUE-8) { mergeSort(comparator); return; }
                 @SuppressWarnings("unchecked")
@@ -4670,6 +4673,7 @@ public class NodableLinkedList<E>
              *                            comparator
              */
             public void mergeSort(Comparator<? super Node<E>> comparator) {
+                checkForModificationException();
                 linkedNodes.mergeSort(comparator, headSentinel, getTailSentinel());
                 updateSizeAndModCount(0L);
             }
@@ -5000,7 +5004,7 @@ public class NodableLinkedList<E>
         }
                     
         private void isStillNodeOfSubList() {
-            if (expectedModCount == subList.nodableLinkedList().modCount) return;
+            if (expectedModCount == subList.nodableLinkedList().modCount && isLinked()) return;
             if (!subList.linkedSubNodes().contains(backingNode)) {
                 throw new IllegalStateException("This SubListNode is no longer a node of its assigned sublist");
             }
@@ -5649,8 +5653,13 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if subListNode is {@code null} or not a node
          *                                  of a sublist
          */       
+        @SuppressWarnings("unlikely-arg-type")
         public void addAfter(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
+            if (!subListNode.subList().linkedSubNodes().contains(subListNode)) {
+                throw new IllegalArgumentException("This SubListNode is no longer a node of its assigned sublist");
+            }
+            if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
             subListNode.addNodeAfterMe(this);
         }
 
@@ -5687,8 +5696,13 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if subListNode is {@code null} or not a node
          *                                  of a sublist
          */
+        @SuppressWarnings("unlikely-arg-type")
         public void addBefore(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
+            if (!subListNode.subList().linkedSubNodes().contains(subListNode)) {
+                throw new IllegalArgumentException("This SubListNode is no longer a node of its assigned sublist");
+            }
+            if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
             subListNode.addNodeBeforeMe(this);
         }
 
@@ -5956,6 +5970,7 @@ public class NodableLinkedList<E>
          *                              being compared
          */
         public int compareTo(SubListNode<E> subListNode) {
+            if (subListNode == null) throw new NullPointerException("The specified subListNode is null");
             return this.compareTo(subListNode.backingNode());
         }        
 
