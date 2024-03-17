@@ -4260,6 +4260,25 @@ public class NodableLinkedList<E>
                 removeNode(node);
                 return node;
             }
+
+            /**
+             * Removes, if present, the specified object ({@code Node}) from this sublist. If
+             * this sublist does not contain the specified object ({@code Node}), it is
+             * unchanged.
+             * 
+             * @param object {@code Object} ({@code Node}) to be removed from this sublist
+             * @return {@code true} if this sublist contained the specified object
+             *         ({@code Node})
+             */
+            @Override
+            public boolean remove(Object object) {
+                if (!(object instanceof Node)) return false;
+                @SuppressWarnings("unchecked")
+                final Node<E> node = (Node<E>)object;
+                if (!this.contains(node)) return false;
+                removeNode(node);
+                return true;        
+            }
             
             /**
              * Replaces the {@code Node} at the specified position in this sublist with the
@@ -4302,7 +4321,10 @@ public class NodableLinkedList<E>
                 checkForModificationException();
                 final long initialSize = longSize();
                 final Node<E> tailSentinel = getTailSentinel();
-                for (Node<E> node: collection) addNodeBefore(node, tailSentinel);
+                for (Node<E> node: collection) {
+                    if (node == null || node.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    addNodeBefore(node, tailSentinel);
+                }
                 return longSize() != initialSize;
             }
             
