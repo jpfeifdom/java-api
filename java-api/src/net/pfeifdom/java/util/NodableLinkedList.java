@@ -138,7 +138,6 @@ import java.util.function.Function;
  *                 q = q.next();
  *                 if (q == null) break; // quit if the end of the list has been reached
  *             }
- *
  *             qsize = insize; // assume the q list size is the maximum possible size although it could be smaller
  *              
  *             // we have two lists where p is the first node of the first list (p list), and
@@ -4035,7 +4034,6 @@ public class NodableLinkedList<E>
              *                               the sublists's first node in the list
              */
             private long getIndex(Node<?> node) {
-                // assert node != null : "Node is null";
                 if (!linkedNodes.contains(node)) return -1;
                 long cursorIndex = 0L;
                 Node<E> cursorNode = this.headSentinel.next;
@@ -4272,6 +4270,7 @@ public class NodableLinkedList<E>
              */
             @Override
             public boolean remove(Object object) {
+                checkForModificationException();
                 if (!(object instanceof Node)) return false;
                 @SuppressWarnings("unchecked")
                 final Node<E> node = (Node<E>)object;
@@ -4428,7 +4427,6 @@ public class NodableLinkedList<E>
             }
             
             private boolean contains(Node<?> node) {
-                checkForModificationException();
                 return (getIndex(node) < 0L) ? false : true;
             }
             
@@ -5025,12 +5023,17 @@ public class NodableLinkedList<E>
             this.expectedModCount = subList.nodableLinkedList().modCount;
         }
                     
-        private void isStillNodeOfSubList() {
-            if (expectedModCount == subList.nodableLinkedList().modCount && isLinked()) return;
-            if (!subList.linkedSubNodes().contains(backingNode)) {
+        private void checkIfStillNodeOfSubList() {
+            if (!isStillNodeOfSubList()) {
                 throw new IllegalStateException("This SubListNode is no longer a node of its assigned sublist");
             }
+        }
+        
+        private boolean isStillNodeOfSubList() {
+            if (expectedModCount == subList.nodableLinkedList().modCount && isLinked()) return true;
+            if (!subList.linkedSubNodes().contains(backingNode)) return false;
             updateExpectedModCount();
+            return true;
         }
         
         /**
@@ -5087,43 +5090,35 @@ public class NodableLinkedList<E>
             backingNode.set(element);
         }
 
-        /**
-         * Inserts the specified node after this {@code SubListNode}. This
-         * {@code SubListNode} must belong to a {@code SubList} and the specified node
-         * must not already belong to a list.
-         * 
-         * @param node the {@code Node} to be inserted after this {@code SubListNode}
-         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
-         *                                  node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or is already a node
-         *                                  of a list
-         */
-        private void addNodeAfterMe(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
-            subList.checkForModificationException();
-            isStillNodeOfSubList();
-            subList.linkedSubNodes().addNodeAfter(node, backingNode);
-            updateExpectedModCount();
-        }
+//        /**
+//         * Inserts the specified node after this {@code SubListNode}. This
+//         * {@code SubListNode} must belong to a {@code SubList} and the specified node
+//         * must not already belong to a list.
+//         * 
+//         * @param node the {@code Node} to be inserted after this {@code SubListNode}
+//         */
+//        private void addNodeAfterMe(Node<E> node) {
+//            //if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
+//            //subList.checkForModificationException();
+//            //isStillNodeOfSubList();
+//            subList.linkedSubNodes().addNodeAfter(node, backingNode);
+//            updateExpectedModCount();
+//        }
 
-        /**
-         * Inserts the specified node before this {@code SubListNode}. This
-         * {@code SubListNode} must belong to a {@code SubList} and the specified node
-         * must not already belong to a list.
-         * 
-         * @param node the {@code Node} to be inserted before this {@code SubListNode}
-         * @throws IllegalStateException    if this {@code SubListNode} is no longer a
-         *                                  node of its sublist
-         * @throws IllegalArgumentException if node is {@code null} or is already a node
-         *                                  of a list
-         */
-        private void addNodeBeforeMe(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
-            subList.checkForModificationException();
-            isStillNodeOfSubList();
-            subList.linkedSubNodes().addNodeBefore(node, backingNode);
-            updateExpectedModCount();
-        }        
+//        /**
+//         * Inserts the specified node before this {@code SubListNode}. This
+//         * {@code SubListNode} must belong to a {@code SubList} and the specified node
+//         * must not already belong to a list.
+//         * 
+//         * @param node the {@code Node} to be inserted before this {@code SubListNode}
+//         */
+//        private void addNodeBeforeMe(Node<E> node) {
+//            //if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
+//            //subList.checkForModificationException();
+//            //isStillNodeOfSubList();
+//            subList.linkedSubNodes().addNodeBefore(node, backingNode);
+//            updateExpectedModCount();
+//        }        
         
         /**
          * Inserts this {@code SubListNode} after the specified node. This
@@ -5163,7 +5158,7 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
             }
             subListNode.subList().checkForModificationException();
-            subListNode.isStillNodeOfSubList();
+            subListNode.checkIfStillNodeOfSubList();
             addAfter(subListNode.backingNode);
             subListNode.updateExpectedModCount();
             this.subList = subListNode.subList;
@@ -5211,7 +5206,7 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("The specified subListNode is null or not a node of a list");
             }
             subListNode.subList.checkForModificationException();
-            subListNode.isStillNodeOfSubList();
+            subListNode.checkIfStillNodeOfSubList();
             addBefore(subListNode.backingNode);
             subListNode.updateExpectedModCount();
             this.subList = subListNode.subList;
@@ -5231,7 +5226,7 @@ public class NodableLinkedList<E>
          */
         public boolean hasNext() {
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             return subList.linkedSubNodes().hasNodeAfter(backingNode);
         }
 
@@ -5248,7 +5243,7 @@ public class NodableLinkedList<E>
          */
         public boolean hasPrevious() {
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             return subList.linkedSubNodes().hasNodeBefore(backingNode);
         }
 
@@ -5280,7 +5275,7 @@ public class NodableLinkedList<E>
          */
         public SubListNode<E> next() {
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             final Node<E> node = subList.linkedSubNodes().getNodeAfter(backingNode);
             return (node == null) ? null : new SubListNode<E>(node, subList);
         }
@@ -5298,7 +5293,7 @@ public class NodableLinkedList<E>
          */
         public SubListNode<E> previous() {
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             final Node<E> node = subList.linkedSubNodes().getNodeBefore(backingNode);
             return (node == null) ? null : new SubListNode<E>(node, subList);
         }
@@ -5311,7 +5306,7 @@ public class NodableLinkedList<E>
          */
         public void remove() {
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             subList.linkedSubNodes().removeNode(backingNode);
         }
 
@@ -5331,7 +5326,7 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("Replacement node is null or already a node of a list");
             }
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             subList.linkedSubNodes().replaceNode(backingNode, node);
         }
         
@@ -5377,7 +5372,7 @@ public class NodableLinkedList<E>
         public void swapWith(Node<E> node) {
             if (node == null || !node.isLinked()) throw new IllegalArgumentException("The specified node is null or not a node of a list");
             subList.checkForModificationException();
-            isStillNodeOfSubList();
+            checkIfStillNodeOfSubList();
             Node.swapNodes(this.backingNode, node);
             subList.linkedSubNodes().swappedNodes(backingNode, node);
         }
@@ -5409,8 +5404,8 @@ public class NodableLinkedList<E>
             final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
             this.subList.checkForModificationException();
             thatSubList.checkForModificationException();
-            subListNode.isStillNodeOfSubList();
-            this.isStillNodeOfSubList();
+            subListNode.checkIfStillNodeOfSubList();
+            this.checkIfStillNodeOfSubList();
             Node.swapNodes(this.backingNode, subListNode.backingNode);
             if (this.subList == thatSubList) {
                 // sublist nodes are in the same sublist
@@ -5445,6 +5440,7 @@ public class NodableLinkedList<E>
          *         of its associated {@code SubList}
          */
         public SubListNode<E> unverified() {
+            subList.checkForModificationException();
             updateExpectedModCount();
             return this;
         }        
@@ -5675,14 +5671,15 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if subListNode is {@code null} or not a node
          *                                  of a sublist
          */       
-        @SuppressWarnings("unlikely-arg-type")
         public void addAfter(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
-            if (!subListNode.subList().linkedSubNodes().contains(subListNode)) {
+            subListNode.subList().checkForModificationException();
+            if (!subListNode.isStillNodeOfSubList()) {
                 throw new IllegalArgumentException("This SubListNode is no longer a node of its assigned sublist");
             }
             if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
-            subListNode.addNodeAfterMe(this);
+            subListNode.subList().linkedSubNodes().addNodeAfter(this, subListNode.backingNode());
+            subListNode.updateExpectedModCount();
         }
 
         /**
@@ -5718,14 +5715,15 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if subListNode is {@code null} or not a node
          *                                  of a sublist
          */
-        @SuppressWarnings("unlikely-arg-type")
         public void addBefore(SubListNode<E> subListNode) {
             if (subListNode == null) throw new IllegalArgumentException("Specified SubListNode is null");
-            if (!subListNode.subList().linkedSubNodes().contains(subListNode)) {
+            subListNode.subList().checkForModificationException();
+            if (!subListNode.isStillNodeOfSubList()) {
                 throw new IllegalArgumentException("This SubListNode is no longer a node of its assigned sublist");
             }
             if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
-            subListNode.addNodeBeforeMe(this);
+            subListNode.subList().linkedSubNodes().addNodeBefore(this, subListNode.backingNode());
+            subListNode.updateExpectedModCount();
         }
 
         /**
@@ -5889,10 +5887,13 @@ public class NodableLinkedList<E>
          * @param subList {@code SubList} containing this {@code Node}
          * @return a {@code SubListNode}, backed by this {@code Node}, for the specified
          *         subList
+         * @throws IllegalArgumentException if the specified subList is {@code null}
          * @throws IllegalStateException if this {@code Node} is not a node of the
          *                               specified subList
          */
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
+            if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
+            subList.checkForModificationException();
             if (this.isLinked() && !subList.linkedSubNodes().contains(this)) {
                 throw new IllegalStateException("Node is not a node of the specified subList");
             }
@@ -5918,8 +5919,11 @@ public class NodableLinkedList<E>
          * @param subList {@code SubList} believed to contain this {@code Node}
          * @return an unverified {@code SubListNode}, backed by this {@code Node}, for
          *         the specified subList
+         * @throws IllegalArgumentException if the specified subList is {@code null}
          */
         public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList) {
+            if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
+            subList.checkForModificationException();
             return new SubListNode<E>(this, subList);
         }      
         
