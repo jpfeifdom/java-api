@@ -1118,8 +1118,7 @@ public class NodableLinkedList<E>
      * {@code toIndex} are equal, the returned {@code SubList} is empty.) The
      * returned {@code SubList} is backed by this list, so structural changes in the
      * returned {@code SubList} are reflected in this list. The returned
-     * {@code SubList} supports all of the optional list operations supported by
-     * this list.
+     * {@code SubList} supports all of the optional {@code List} operations.
      *
      * <p>
      * This method eliminates the need for explicit range operations (of the sort
@@ -1163,8 +1162,8 @@ public class NodableLinkedList<E>
      * Returns a view of the portion of this list between the specified firstNode,
      * and lastNode (both inclusive). The returned {@code SubList} is backed by this
      * list, so structural changes in the returned {@code SubList} are reflected in
-     * this list. The returned {@code SubList} supports all of the optional list
-     * operations supported by this list.
+     * this list. The returned {@code SubList} supports all of the optional {@code List}
+     * operations.
      * 
      * <p>
      * If the specified firstNode is {@code null}, an empty {@code SubList},
@@ -1576,11 +1575,11 @@ public class NodableLinkedList<E>
             return (node.previous == headSentinel) ? null : node.previous;
         }
 
-        private long indexOfNode(Node<E> node) {
+        private long indexOfNode(Node<?> node) {
             // assert this.contains(node) : "Node is not an element of this list";
             long index = 0L;
             
-            for (   Node<E> cursorNode = headSentinel.next;
+            for (   Node<?> cursorNode = headSentinel.next;
                     cursorNode != tailSentinel;
                     cursorNode = cursorNode.next, index++)
             {
@@ -1641,8 +1640,7 @@ public class NodableLinkedList<E>
         @Override
         public int indexOf(Object object) {
             if (!(object instanceof Node)) return -1;
-            @SuppressWarnings("unchecked")
-            final Node<E> node = (Node<E>)object;
+            final Node<?> node = (Node<?>)object;
             if (!this.contains(node)) return -1;
             final long index = indexOfNode(node);
             return (index > Integer.MAX_VALUE) ? -1 : (int)index;
@@ -1667,7 +1665,7 @@ public class NodableLinkedList<E>
             if (!(object instanceof Node)) return -1;
             if (!this.contains((Node<?>) object)) return -1;
             long index = size - 1L;
-            for (   Node<E> node = tailSentinel.previous;
+            for (   Node<?> node = tailSentinel.previous;
                     node != headSentinel;
                     node = node.previous, index--)
             {
@@ -2342,7 +2340,7 @@ public class NodableLinkedList<E>
          * are equal, the returned {@code SubList} is empty.) The returned
          * {@code SubList} is backed by this list, so structural changes in the returned
          * {@code SubList} are reflected in this lsit. The returned {@code SubList}
-         * supports all of the optional list operations supported by this list.
+         * supports all of the optional {@code List} operations.
          *
          * <p>
          * This method eliminates the need for explicit range operations (of the sort
@@ -2397,8 +2395,8 @@ public class NodableLinkedList<E>
          * Returns a view of the portion of this list between the specified firstNode,
          * and lastNode (both inclusive). The returned {@code SubList} is backed by this
          * list, so structural changes in the returned {@code SubList} are reflected in
-         * this list. The returned {@code SubList} supports all of the optional list
-         * operations supported by this list.
+         * this list. The returned {@code SubList} supports all of the optional {@code List}
+         * operations.
          * 
          * <p>
          * If the specified firstNode is {@code null}, an empty {@code SubList},
@@ -3210,6 +3208,21 @@ public class NodableLinkedList<E>
         }
 
         /**
+         * Inserts the specified subListNode at the beginning of this {@code SubList}.
+         *
+         * @param subListNode the {@code SubListNode} to be inserted at the beginning of
+         *                    this {@code SubList}
+         * @throws IllegalArgumentException if subListNode is {@code null} or already a
+         *                                  node of a sublist
+         */
+        public void addSubListNodeFirst(SubListNode<E> subListNode) {
+            if (subListNode == null || subListNode.isLinked()) throw new IllegalArgumentException("SubListNode is null or already an element of a list");
+            linkedSubNodes.add(0, subListNode.backingNode());
+            subListNode.subList = this;
+            subListNode.updateExpectedModCount();
+        }        
+
+        /**
          * Appends the specified node to the end of this {@code SubList}.
          *
          * @param node {@code Node} to be appended to the end of this {@code SubList}
@@ -3219,6 +3232,21 @@ public class NodableLinkedList<E>
         public void addNodeLast(Node<E> node) {
             if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
             linkedSubNodes.addNodeAfter(node, getLastNode());
+        }
+
+        /**
+         * Appends the specified subListNode to the end of this {@code SubList}.
+         *
+         * @param subListNode {@code SubListNode} to be appended to the end of this
+         *                    {@code SubList}
+         * @throws IllegalArgumentException if subListNode is {@code null} or already a
+         *                                  node of a sublist
+         */
+        public void addSubListNodeLast(SubListNode<E> subListNode) {
+            if (subListNode == null || subListNode.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            linkedSubNodes.addNodeAfter(subListNode.backingNode(), getLastNode());
+            subListNode.subList = this;
+            subListNode.updateExpectedModCount();
         }        
         
         /**
@@ -3617,8 +3645,7 @@ public class NodableLinkedList<E>
          * toIndex are equal, the returned {@code SubList} is empty.) The returned
          * {@code SubList} is backed by this {@code SubList}, so structural changes in
          * the returned {@code SubList} are reflected in this {@code SubList}. The
-         * returned {@code SubList} supports all of the optional list operations
-         * supported by this {@code SubList}.
+         * returned {@code SubList} supports all of the optional {@code List} operations.
          *
          * <p>
          * This method eliminates the need for explicit range operations (of the sort
@@ -3664,8 +3691,7 @@ public class NodableLinkedList<E>
          * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
          * backed by this {@code SubList}, so structural changes in the returned
          * {@code SubList} are reflected in this {@code SubList}. The returned
-         * {@code SubList} supports all of the optional list operations supported by
-         * this {@code SubList}.
+         * {@code SubList} supports all of the optional {@code List} operations.
          * 
          * <p>
          * If the specified firstNode is {@code null}, an empty {@code SubList},
@@ -4149,35 +4175,48 @@ public class NodableLinkedList<E>
             }
 
             /**
-             * Returns the index of the specified object ({@code Node}) in this sublist, or
-             * -1 if there is no such index (this sublist does not contain the specified
-             * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
+             * Returns the index of the specified object ({@code Node} or
+             * {@code SubListNode}) in this sublist, or -1 if there is no such index (this
+             * sublist does not contain the specified object ({@code Node} or
+             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}).
+             * Note, a specified {@code SubListNode} must be associated with this sublist.
              * 
-             * @param object {@code Object} ({@code Node}) to search for
-             * @return the index of the specified object ({@code Node}) in this sublist, or
-             *         -1 if there is no such index
+             * @param object {@code Object} ({@code Node} or {@code SubListNode}) to search
+             *               for
+             * @return the index of the specified object ({@code Node} or
+             *         {@code SubListNode}) in this sublist, or -1 if there is no such index
              */
             @Override
             public int indexOf(Object object) {
                 checkForModificationException();
-                if (!(object instanceof Node)) return -1;
-                @SuppressWarnings("unchecked")
-                final Node<E> node = (Node<E>)object;
+                Node<?> node;
+                if (object instanceof Node) {
+                    node = (Node<?>)object;
+                } else if (object instanceof SubListNode) {
+                    final SubListNode<?> sublistnode = (SubListNode<?>)object;
+                    if (sublistnode.subList() != this.subList()) return -1;
+                    node = ((SubListNode<?>)object).backingNode();
+                } else {
+                    return -1;
+                }
                 final long index = getIndex(node);
                 return (index > Integer.MAX_VALUE) ? -1 : (int)index;
             }
             
             /**
-             * Returns the index of the specified object ({@code Node}) in this sublist, or
-             * -1 if there is no such index (this sublist does not contain the specified
-             * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}).
+             * Returns the index of the specified object ({@code Node} or
+             * {@code SubListNode}) in this sublist, or -1 if there is no such index (this
+             * sublist does not contain the specified object ({@code Node} or
+             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}).
+             * Note, a specified {@code SubListNode} must be associated with this sublist.
              * 
              * <p>
              * Note that {@code lastIndexOf} is identical in function to {@code indexOf}.
              *
-             * @param object {@code Object} ({@code Node}) to search for
-             * @return the index of the specified object ({@code Node}) in this sublist, or
-             *         -1 if there is no such index
+             * @param object {@code Object} ({@code Node} or {@code SubListNode}) to search
+             *               for
+             * @return the index of the specified object ({@code Node} or
+             *         {@code SubListNode}) in this sublist, or -1 if there is no such index
              */
             @Override
             public int lastIndexOf(Object object) {
@@ -4260,21 +4299,29 @@ public class NodableLinkedList<E>
             }
 
             /**
-             * Removes, if present, the specified object ({@code Node}) from this sublist. If
-             * this sublist does not contain the specified object ({@code Node}), it is
-             * unchanged.
+             * Removes, if present, the specified object ({@code Node} or
+             * {@code SubListNode}) from this sublist. If this sublist does not contain the
+             * specified object ({@code Node} or {@code SubListNode}), it is unchanged.
+             * Note, a specified {@code SubListNode} must be associated with this sublist.
              * 
-             * @param object {@code Object} ({@code Node}) to be removed from this sublist
+             * @param object {@code Object} ({@code Node} or {@code SubListNode}) to be
+             *               removed from this sublist
              * @return {@code true} if this sublist contained the specified object
-             *         ({@code Node})
+             *         ({@code Node} or {@code SubListNode})
              */
+            @SuppressWarnings("unchecked")
             @Override
             public boolean remove(Object object) {
                 checkForModificationException();
-                if (!(object instanceof Node)) return false;
-                @SuppressWarnings("unchecked")
-                final Node<E> node = (Node<E>)object;
-                if (!this.contains(node)) return false;
+                if (!this.contains(object)) return false;
+                Node<E> node;
+                if (object instanceof Node) {
+                    node = (Node<E>)object;
+                } else if (object instanceof SubListNode) {
+                    node = ((SubListNode<E>)object).backingNode();
+                } else {
+                    return false;
+                }
                 removeNode(node);
                 return true;        
             }
@@ -4436,8 +4483,7 @@ public class NodableLinkedList<E>
              * toIndex are equal, the returned {@code SubList} is empty.) The returned
              * {@code SubList} is backed by this sublist, so structural changes in the
              * returned {@code SubList} are reflected in this sublist. The returned
-             * {@code SubList} supports all of the optional list operations supported by
-             * this sublist.
+             * {@code SubList} supports all of the optional {@code List} operations.
              *
              * <p>
              * This method eliminates the need for explicit range operations (of the sort
@@ -4493,7 +4539,7 @@ public class NodableLinkedList<E>
              * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
              * backed by this sublist, so structural changes in the returned {@code SubList}
              * are reflected in this sublist. The returned {@code SubList} supports all of
-             * the optional list operations supported by this sublist.
+             * the optional {@code List} operations.
              * 
              * <p>
              * If the specified firstNode is {@code null}, an empty {@code SubList},
@@ -5565,6 +5611,7 @@ public class NodableLinkedList<E>
          * not be linked.
          * 
          * @param node {@code Node} to be copied
+         * @throws NullPointerException if the specified node is {@code null}
          */
         public Node(Node<E> node) {
             this.element = node.element;
