@@ -588,7 +588,7 @@ public class NodableLinkedList<E>
      * Note that {@code addAll(longSize(), Collection)} is identical in function to
      * {@code addAll(Collection)}.
      *
-     * @param index      index at which to insert the first element from the
+     * @param index      position where to insert the first element from the
      *                   specified collection
      * @param collection collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
@@ -598,7 +598,9 @@ public class NodableLinkedList<E>
      */
     @Override
     public boolean addAll(int index, Collection<? extends E> collection) {
-        if (index < 0 || index > longSize()) throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        if (index < 0 || index > longSize()) {
+            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        }
         final long initialSize = longSize();
         if (index == longSize()) {
             for (E element: collection) addLast(element);
@@ -629,7 +631,9 @@ public class NodableLinkedList<E>
      */
     public boolean addAll(Node<E> node, Collection<? extends E> collection) {
         if (node == null) return addAll(collection);
-        if (!linkedNodes.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
+        if (!linkedNodes.contains(node)) {
+            throw new IllegalArgumentException("Specified node is not linked to this list");
+        }
         final long initialSize = longSize();
         for (E element: collection) linkedNodes.addNodeBefore(node(element), node);
         return longSize() != initialSize;
@@ -652,7 +656,7 @@ public class NodableLinkedList<E>
      * the element currently at that position (if any) and any subsequent elements
      * to the right (adds one to their indices).
      *
-     * @param index   index at which the specified element is to be inserted
+     * @param index   position where the specified element is to be inserted
      * @param element element to be inserted
      * @throws IndexOutOfBoundsException if the index is out of range
      *                                   {@code (index < 0 || index > longSize())}
@@ -1236,7 +1240,9 @@ public class NodableLinkedList<E>
      */
     @Override
     public Object[] toArray() {
-        if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+        if (longSize() > Integer.MAX_VALUE) {
+            throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+        }
         final Object[] elements = new Object[size()];
         int index = 0;
         for (   Node<E> node = getFirstNode();
@@ -1292,7 +1298,9 @@ public class NodableLinkedList<E>
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] array) {
-        if (longSize() > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+        if (longSize() > Integer.MAX_VALUE) {
+            throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+        }
         if (array.length < size()) {
             array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(),size());
         }
@@ -1705,7 +1713,7 @@ public class NodableLinkedList<E>
          * Note that {@code addAll(longSize(), Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param index      index at which to insert the first node from the specified
+         * @param index      position where to insert the first node from the specified
          *                   collection
          * @param collection collection containing nodes to be added to this list
          * @return {@code true} if this list changed as a result of the call
@@ -1717,7 +1725,9 @@ public class NodableLinkedList<E>
          */
         @Override
         public boolean addAll(int index, Collection<? extends Node<E>> collection) {
-            if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+            if (index < 0 || index > size) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+            }
             final long initialSize = size;
             if (index == size) {
                 for (Node<E> node: collection) addLast(node);
@@ -1755,7 +1765,9 @@ public class NodableLinkedList<E>
          */
         public boolean addAll(Node<E> node, Collection<? extends Node<E>> collection) {
             if (node == null) return addAll(collection);
-            if (!this.contains(node)) throw new IllegalArgumentException("Specified node is not linked to this list");
+            if (!this.contains(node)) {
+                throw new IllegalArgumentException("Specified node is not linked to this list");
+            }
             final long initialSize = longSize();
             for (Node<E> collectionNode: collection) {
                 if (collectionNode == null || collectionNode.isLinked()) {
@@ -1785,7 +1797,7 @@ public class NodableLinkedList<E>
          * {@code Node} currently at that position (if any) and any subsequent nodes to
          * the right (adds one to their indices).
          *
-         * @param index index at which the specified node is to be inserted
+         * @param index position where the specified node is to be inserted
          * @param node  {@code Node} to be inserted
          * @throws IndexOutOfBoundsException if the index is out of range
          *                                   {@code (index < 0 || index > longSize())}
@@ -2292,7 +2304,11 @@ public class NodableLinkedList<E>
             mergeSort(comparator, headSentinel, tailSentinel);
         }
         
-        private void mergeSort(Comparator<? super Node<E>> comparator, Node<E> headSentinel, Node<E> tailSentinel) {
+        private void mergeSort(
+                Comparator<? super Node<E>> comparator,
+                Node<E> headSentinel,
+                Node<E> tailSentinel)
+        {
             Node<E> pNode, qNode, sortedNode, sortedLastNode;
             int inSize, nMerges, pSize, qSize;
             inSize = 1;
@@ -2381,9 +2397,15 @@ public class NodableLinkedList<E>
         }
         
         private SubList newSubList(int fromIndex, int toIndex) {
-            if (fromIndex < 0) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-            if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-            if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
+            if (fromIndex < 0) {
+                throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            }
+            if (toIndex > longSize()) {
+                throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
+            }
+            if (fromIndex > toIndex) {
+                throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
+            }
             final long size = toIndex - fromIndex;
             if (fromIndex == longSize()) return new SubList(tailSentinel.previous, tailSentinel, null, size);
             final Node<E> headSentinel = get(fromIndex).previous;
@@ -2457,17 +2479,27 @@ public class NodableLinkedList<E>
                 return new SubList(tailSentinel.previous, tailSentinel, null, 0L);
             } else if (firstNode == null) {
                 // only the lastNode is specified
-                if (!contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
+                if (!contains(lastNode)) {
+                    throw new IllegalArgumentException("Specified last node is not linked to this list");
+                }
                 return new SubList(lastNode.previous, lastNode, null, 0L);
             } else if (lastNode == null) {
                 // only the firstNode is specified
-                if (!contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
+                if (!contains(firstNode)) {
+                    throw new IllegalArgumentException("Specified first node is not linked to this list");
+                }
                 return new SubList(firstNode, firstNode.next, null, 0L);
             }
             // both firstNode and LastNode are specified 
-            if (!this.contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
-            if (!this.contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
-            if (lastNode.next == firstNode) throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
+            if (!this.contains(firstNode)) {
+                throw new IllegalArgumentException("Specified first node is not linked to this list");
+            }
+            if (!this.contains(lastNode)) {
+                throw new IllegalArgumentException("Specified last node is not linked to this list");
+            }
+            if (lastNode.next == firstNode) {
+                throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
+            }
             return new SubList(firstNode.previous, lastNode.next, null, -1L);
         }
 
@@ -2489,7 +2521,9 @@ public class NodableLinkedList<E>
          */
         @Override
         public Object[] toArray() {
-            if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
+            if (size > Integer.MAX_VALUE) {
+                throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
+            }
             final Object[] nodes = new Object[(int)size];
             int index = 0;
             for (   Node<E> node = headSentinel.next;
@@ -2537,7 +2571,9 @@ public class NodableLinkedList<E>
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
-            if (size > Integer.MAX_VALUE) throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
+            if (size > Integer.MAX_VALUE) {
+                throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
+            }
             if (array.length < size) {
                 array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int)size);
             }
@@ -2583,7 +2619,9 @@ public class NodableLinkedList<E>
          */
         @Override
         public ListIterator<Node<E>> listIterator(int index) {
-            if (index < 0 || index > size) throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+            if (index < 0 || index > size) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+            }
             return linkedNodesListIterator(index);
         }
 
@@ -2690,7 +2728,7 @@ public class NodableLinkedList<E>
                     index, node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
                     (tailSentinel == null) ? this.tailSentinel : tailSentinel
-                    );
+            );
         }
         
         private LinkedNodesListIterator linkedNodesListIterator(Node<E> node) {
@@ -2706,7 +2744,7 @@ public class NodableLinkedList<E>
                     (node == null) ? this.tailSentinel : node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
                     (tailSentinel == null) ? this.tailSentinel : tailSentinel
-                    );
+            );
         }
 
         private class LinkedNodesListIterator implements ListIterator<Node<E>> {
@@ -2766,7 +2804,9 @@ public class NodableLinkedList<E>
             
             private Node<E> targetNode() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                if (targetNode == null) {
+                    throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                }
                 return targetNode;
             }
 
@@ -2850,7 +2890,9 @@ public class NodableLinkedList<E>
             @Override
             public void remove() {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                if (targetNode == null) {
+                    throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                }
                 if (cursorNode == targetNode) {
                     cursorIndex--;
                     cursorNode = cursorNode.previous;
@@ -2863,8 +2905,12 @@ public class NodableLinkedList<E>
             @Override
             public void set(Node<E> node) {
                 if (modCount != expectedModCount) throw new ConcurrentModificationException();
-                if (targetNode == null) throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");
+                if (targetNode == null) {
+                    throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                }
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Replacement Node is null or already an element of a list");
+                }
                 if (cursorNode == targetNode) cursorNode = node;
                 replaceNode(targetNode, node);
                 targetNode = node;
@@ -3203,7 +3249,9 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeFirst(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
             linkedSubNodes.add(0, node);
         }
 
@@ -3216,9 +3264,11 @@ public class NodableLinkedList<E>
          *                                  node of a sublist
          */
         public void addSubListNodeFirst(SubListNode<E> subListNode) {
-            if (subListNode == null || subListNode.isLinked()) throw new IllegalArgumentException("SubListNode is null or already an element of a list");
+            if (subListNode == null || subListNode.isLinked()) {
+                throw new IllegalArgumentException("SubListNode is null or already an element of a list");
+            }
             linkedSubNodes.add(0, subListNode.backingNode());
-            subListNode.subList = this;
+            subListNode.setSubList(this);
             subListNode.updateExpectedModCount();
         }        
 
@@ -3230,7 +3280,9 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeLast(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
             linkedSubNodes.addNodeAfter(node, getLastNode());
         }
 
@@ -3243,9 +3295,11 @@ public class NodableLinkedList<E>
          *                                  node of a sublist
          */
         public void addSubListNodeLast(SubListNode<E> subListNode) {
-            if (subListNode == null || subListNode.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+            if (subListNode == null || subListNode.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
             linkedSubNodes.addNodeAfter(subListNode.backingNode(), getLastNode());
-            subListNode.subList = this;
+            subListNode.setSubList(this);
             subListNode.updateExpectedModCount();
         }        
         
@@ -3404,7 +3458,7 @@ public class NodableLinkedList<E>
          * {@code SubList}. Shifts the element currently at that position (if any) and
          * any subsequent elements to the right (adds one to their indices).
          *
-         * @param index   index at which the specified element is to be inserted
+         * @param index   position where the specified element is to be inserted
          * @param element element to be inserted
          * @throws IndexOutOfBoundsException if the index is out of range
          *                                   {@code (index < 0 || index > longSize())}
@@ -3482,7 +3536,7 @@ public class NodableLinkedList<E>
          * Note that {@code addAll(longSize(), Collection)} is identical in function to
          * {@code addAll(Collection)}.
          *
-         * @param index      index at which to insert the first element from the
+         * @param index      position where to insert the first element from the
          *                   specified collection
          * @param collection collection containing elements to be added to this
          *                   {@code SubList}
@@ -3528,7 +3582,9 @@ public class NodableLinkedList<E>
         public boolean addAll(Node<E> node, Collection<? extends E> collection) {
             checkForModificationException();
             if (node == null) return addAll(collection);
-            if (!linkedSubNodes.contains(node)) throw new IllegalArgumentException("specified node is not part of this sublist");
+            if (!linkedSubNodes.contains(node)) {
+                throw new IllegalArgumentException("specified node is not part of this sublist");
+            }
             boolean changed = false;
             for (E element: collection) {
                 linkedSubNodes.addNodeBefore(node(element), node);
@@ -3868,11 +3924,13 @@ public class NodableLinkedList<E>
             }
             
             /**
-             * Returns the {@code SubList} this {@code LinkedSubNodes} is backing.
+             * Returns the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
+             * object is backing.
              * 
-             * @return the {@code SubList} this {@code LinkedSubNodes} is backing.
+             * @return the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
+             *         object is backing
              */
-            public SubList subList() {
+            public SubList nodableLinkedListSubList() {
                 return SubList.this;
             }
             
@@ -4132,7 +4190,9 @@ public class NodableLinkedList<E>
                     {
                         size++;
                     }
-                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
+                    if (node != tailSentinel) {
+                        throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublist's first node in the list");
+                    }
                 }
                 return size;
             }
@@ -4170,7 +4230,9 @@ public class NodableLinkedList<E>
                         node = node.next;
                         removeNode(nodeToRemove);
                     }
-                    if (node != tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sulist's first node in the list");
+                    if (node != tailSentinel) {
+                        throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sulist's first node in the list");
+                    }
                 }
             }
 
@@ -4178,8 +4240,9 @@ public class NodableLinkedList<E>
              * Returns the index of the specified object ({@code Node} or
              * {@code SubListNode}) in this sublist, or -1 if there is no such index (this
              * sublist does not contain the specified object ({@code Node} or
-             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}).
-             * Note, a specified {@code SubListNode} must be associated with this sublist.
+             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}). Note, a -1 is
+             * returned if a {@code SubListNode} is specified and it is not associated with
+             * this sublist.
              * 
              * @param object {@code Object} ({@code Node} or {@code SubListNode}) to search
              *               for
@@ -4194,7 +4257,7 @@ public class NodableLinkedList<E>
                     node = (Node<?>)object;
                 } else if (object instanceof SubListNode) {
                     final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                    if (sublistnode.subList() != this.subList()) return -1;
+                    if (sublistnode.subList() != this.nodableLinkedListSubList()) return -1;
                     node = ((SubListNode<?>)object).backingNode();
                 } else {
                     return -1;
@@ -4207,8 +4270,9 @@ public class NodableLinkedList<E>
              * Returns the index of the specified object ({@code Node} or
              * {@code SubListNode}) in this sublist, or -1 if there is no such index (this
              * sublist does not contain the specified object ({@code Node} or
-             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}).
-             * Note, a specified {@code SubListNode} must be associated with this sublist.
+             * {@code SubListNode}) or the {@code index > Integer.MAX_VALUE}). Note, a -1 is
+             * returned if a {@code SubListNode} is specified and it is not associated with
+             * this sublist.
              * 
              * <p>
              * Note that {@code lastIndexOf} is identical in function to {@code indexOf}.
@@ -4252,7 +4316,7 @@ public class NodableLinkedList<E>
              *                                   {@code (index < 0 || index >= longSize())}
              */
             public SubListNode<E> getSubListNode(int index) {
-                return new SubListNode<E>(get(index), this.subList());
+                return new SubListNode<E>(get(index), this.nodableLinkedListSubList());
             }            
             
             /**
@@ -4260,7 +4324,7 @@ public class NodableLinkedList<E>
              * the {@code Node} currently at that position (if any) and any subsequent nodes
              * to the right (adds one to their indices).
              *
-             * @param index index at which the specified node is to be inserted
+             * @param index position where the specified node is to be inserted
              * @param node  {@code Node} to be inserted
              * @throws IndexOutOfBoundsException if the index is out of range
              *                                   {@code (index < 0 || index > longSize())}
@@ -4273,8 +4337,35 @@ public class NodableLinkedList<E>
                 if (sizeIsKnown() && (index < 0L || index > longSize())) {
                     throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
                 }
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Node is null or already an element of a list");
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node is null or already an element of a list");
+                }
                 addNodeBefore(node, getNode(index));
+            }
+            
+            /**
+             * Inserts the specified subListNode at the specified position in this sublist.
+             * Shifts the {@code Node} currently at that position (if any) and any
+             * subsequent nodes to the right (adds one to their indices).
+             *
+             * @param index       position where the specified subListNode is to be inserted
+             * @param subListNode {@code SubListNode} to be inserted
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
+             * @throws IllegalArgumentException  if subListNode is {@code null} or already a
+             *                                   node of a sublist
+             */
+             public void add(int index, SubListNode<E> subListNode) {
+                checkForModificationException();
+                if (sizeIsKnown() && (index < 0L || index > longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
+                if (subListNode == null || subListNode.isLinked()) {
+                    throw new IllegalArgumentException("SubListNode is null or already an element of a sublist");
+                }
+                addNodeBefore(subListNode.backingNode(), getNode(index));
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
             }
             
             /**
@@ -4297,12 +4388,33 @@ public class NodableLinkedList<E>
                 removeNode(node);
                 return node;
             }
+            
+            /**
+             * Removes and returns the {@code SubListNode} at the specified position in this
+             * sublist. Shifts any subsequent nodes to the left (subtracts one from their
+             * indices).
+             *
+             * @param index the index of the {@code SubListNode} to be removed
+             * @return the {@code SubListrNode} previously at the specified position
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
+             */
+            public SubListNode<E> removeSubListNode(int index) {
+                checkForModificationException();
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
+                final Node<E> node = get(index);
+                removeNode(node);
+                return new SubListNode<E>(node, this.nodableLinkedListSubList());
+            }            
 
             /**
              * Removes, if present, the specified object ({@code Node} or
              * {@code SubListNode}) from this sublist. If this sublist does not contain the
              * specified object ({@code Node} or {@code SubListNode}), it is unchanged.
-             * Note, a specified {@code SubListNode} must be associated with this sublist.
+             * Note, a specified {@code SubListNode} will not be removed if it is not
+             * associated with this sublist.
              * 
              * @param object {@code Object} ({@code Node} or {@code SubListNode}) to be
              *               removed from this sublist
@@ -4344,11 +4456,40 @@ public class NodableLinkedList<E>
                 if (sizeIsKnown() && (index < 0L || index >= longSize())) {
                     throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
                 }
-                if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
+                }
                 final Node<E> originalNode = get(index);
                 replaceNode(originalNode, node);
                 return originalNode;
             }
+            
+            /**
+             * Replaces the {@code SubListNode} at the specified position in this sublist
+             * with the specified subListNode.
+             *
+             * @param index       index of the {@code SubListNode} to replace
+             * @param subListNode {@code SubListNode} to be stored at the specified position
+             * @return the {@code SubListNode} previously at the specified position
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index >= longSize())}
+             * @throws IllegalArgumentException  if subListNode is {@code null} or already a
+             *                                   node of a sublist
+             */
+            public SubListNode<E> setSubListNode(int index, SubListNode<E> subListNode) {
+                checkForModificationException();
+                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+                }
+                if (subListNode == null || subListNode.isLinked()) {
+                    throw new IllegalArgumentException("Replacement subListNode is null or already an element of a sublist");           
+                }
+                final Node<E> originalNode = get(index);
+                replaceNode(originalNode, subListNode.backingNode());
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
+                return new SubListNode<E>(originalNode, this.nodableLinkedListSubList());
+            }            
             
             /**
              * Appends all of the nodes in the specified collection to the end of this
@@ -4368,11 +4509,41 @@ public class NodableLinkedList<E>
                 final long initialSize = longSize();
                 final Node<E> tailSentinel = getTailSentinel();
                 for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    if (node == null || node.isLinked()) {
+                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                    }
                     addNodeBefore(node, tailSentinel);
                 }
                 return longSize() != initialSize;
             }
+            
+            /**
+             * Appends all of the {@code SubListNode}s in the specified collection to the
+             * end of this sublist, in the order that they are returned by the specified
+             * collection's iterator. The behavior of this operation is undefined if the
+             * specified collection is modified while the operation is in progress.
+             *
+             * @param collection collection containing {@code SubListNode}s to be added to
+             *                   this sublist
+             * @return {@code true} if this sublist changed as a result of the call
+             * @throws NullPointerException     if the specified collection is {@code null}
+             * @throws IllegalArgumentException if any {@code SubListNode} in the collection
+             *                                  is {@code null} or already a node of a list
+             */
+            public boolean addAllSubListNodes(Collection<? extends SubListNode<E>> collection) {
+                checkForModificationException();
+                final long initialSize = longSize();
+                final Node<E> tailSentinel = getTailSentinel();
+                for (SubListNode<E> subListNode: collection) {
+                    if (subListNode == null || subListNode.isLinked()) {
+                        throw new IllegalArgumentException("SubListNode in collection is null or already a node of a sublist");
+                    }
+                    addNodeBefore(subListNode.backingNode(), tailSentinel);
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                }
+                for (SubListNode<E> subListNode: collection) subListNode.updateExpectedModCount();
+                return longSize() != initialSize;
+            }            
             
             /**
              * Inserts all of the nodes in the specified collection into this sublist,
@@ -4386,7 +4557,7 @@ public class NodableLinkedList<E>
              * Note that {@code addAll(longSize(), Collection)} is identical in function to
              * {@code addAll(Collection)}.
              *
-             * @param index      index at which to insert the first {@code Node} from the
+             * @param index      position where to insert the first {@code Node} from the
              *                   specified collection
              * @param collection collection containing nodes to be added to this sublist
              * @return {@code true} if this sublist changed as a result of the call
@@ -4405,10 +4576,55 @@ public class NodableLinkedList<E>
                 boolean changed = false;            
                 final Node<E> targetNode = getNode(index);
                 for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    if (node == null || node.isLinked()) {
+                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                    }
                     addNodeBefore(node, targetNode);
                     changed = true;
                 }
+                return changed;
+            }
+            
+            /**
+             * Inserts all of the {@code SubListNode}s in the specified collection into this
+             * sublist, starting at the specified position. Shifts the {@code Node}
+             * currently at that position (if any) and any subsequent nodes to the right
+             * (increases their indices). The new {@code SubListNode}s will appear in this
+             * sublist in the order that they are returned by the specified collection's
+             * iterator. if the specified {@code index == longSize()}, the
+             * {@code SubListNode}s will be appended to the end of this sublist.
+             * 
+             * Note that {@code addAllSubListNodes(longSize(), Collection)} is identical in
+             * function to {@code addAllSubListNodes(Collection)}.
+             *
+             * @param index      position where to insert the first {@code SubListNode} from
+             *                   the specified collection
+             * @param collection collection containing {@code SubListNode}s to be added to
+             *                   this sublist
+             * @return {@code true} if this sublist changed as a result of the call
+             * @throws IllegalArgumentException  if any {@code SubListNode} in the
+             *                                   collection is {@code null} or already a
+             *                                   node of a sublist
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
+             * @throws NullPointerException      if the specified collection is {@code null}
+             */
+            public boolean addAllSubListNodes(int index, Collection<? extends SubListNode<E>> collection) {
+                checkForModificationException();
+                if (sizeIsKnown() && (index < 0 || index > size)) {
+                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
+                }
+                boolean changed = false;            
+                final Node<E> targetNode = getNode(index);
+                for (SubListNode<E> subListNode: collection) {
+                    if (subListNode == null || subListNode.isLinked()) {
+                        throw new IllegalArgumentException("SubListNode in collection is null or already a node of a sublist");
+                    }
+                    addNodeBefore(subListNode.backingNode(), targetNode);
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                    changed = true;
+                }
+                for (SubListNode<E> subListNode: collection) subListNode.updateExpectedModCount();
                 return changed;
             }            
             
@@ -4435,15 +4651,64 @@ public class NodableLinkedList<E>
             public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> collection) {
                 checkForModificationException();
                 if (targetNode == null) return addAll(collection);
-                if (!this.contains(targetNode)) throw new IllegalArgumentException("specified targetNode is not part of this sublist");
+                if (!this.contains(targetNode)) {
+                    throw new IllegalArgumentException("specified targetNode is not part of this sublist");
+                }
                 boolean changed = false;
                 for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) throw new IllegalArgumentException("Node in collection is null or already an element of a list");
+                    if (node == null || node.isLinked()) {
+                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                    }
                     addNodeBefore(node, targetNode);
                     changed = true;
                 }
                 return changed;
             }
+            
+            /**
+             * Inserts all of the {@code SubListNode}s in the specified collection into this
+             * sublist, before the specified targetNode. Shifts the {@code Node} currently
+             * at that position and any subsequent nodes to the right (increases their
+             * indices). The new {@code SubListNode}s will appear in this sublist in the
+             * order that they are returned by the specified collection's iterator. if the
+             * specified targetNode is {@code null}, the nodes will be appended to the end
+             * of this sublist.
+             * 
+             * Note that {@code addAllSubListNodes(null, Collection)} is identical in
+             * function to {@code addAllSubListNodes(Collection)}.
+             *
+             * @param targetNode {@code Node} the specified collection is to be inserted
+             *                   before
+             * @param collection collection containing {@code SubListNode}s to be added to
+             *                   this sublist
+             * @return {@code true} if this sublist changed as a result of the call
+             * @throws IllegalArgumentException if targetNode is not linked to this sublist,
+             *                                  or any {@code SubListNode} in the collection
+             *                                  is {@code null} or already a node of a
+             *                                  sublist
+             * @throws NullPointerException     if the specified collection is {@code null}
+             */           
+            public boolean addAllSubListNodes(
+                    Node<E> targetNode,
+                    Collection<? extends SubListNode<E>> collection)
+            {
+                checkForModificationException();
+                if (targetNode == null) return addAllSubListNodes(collection);
+                if (!this.contains(targetNode)) {
+                    throw new IllegalArgumentException("specified targetNode is not part of this sublist");
+                }
+                boolean changed = false;
+                for (SubListNode<E> subListNode: collection) {
+                    if (subListNode == null || subListNode.isLinked()) {
+                        throw new IllegalArgumentException("SubListNode in collection is null or already a node of a sublist");
+                    }
+                    addNodeBefore(subListNode.backingNode(), targetNode);
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                    changed = true;
+                }
+                for (SubListNode<E> subListNode: collection) subListNode.updateExpectedModCount();
+                return changed;
+            }            
             
             /**
              * Returns {@code true} if this sublist contains the specified object
@@ -4465,7 +4730,7 @@ public class NodableLinkedList<E>
                     node = (Node<?>)object;
                 } else if (object instanceof SubListNode) {
                     final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                    if (sublistnode.subList() != this.subList()) return false;
+                    if (sublistnode.subList() != this.nodableLinkedListSubList()) return false;
                     node = sublistnode.backingNode();
                 } else {
                     return false;
@@ -4583,7 +4848,6 @@ public class NodableLinkedList<E>
              *                                  firstNode in this sublist.
              */
             public SubList.LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
-                checkForModificationException();
                 return newSubList(firstNode, lastNode).linkedSubNodes;
             }
             
@@ -4595,16 +4859,24 @@ public class NodableLinkedList<E>
                     return new SubList(tailSentinel.previous, tailSentinel, SubList.this, 0L);
                 } else if (firstNode == null) {
                     // only the lastNode is specified
-                    if (!contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this sublist");
+                    if (!contains(lastNode)) {
+                        throw new IllegalArgumentException("Specified last node is not linked to this sublist");
+                    }
                     return new SubList(lastNode.previous, lastNode, SubList.this, 0L);
                 } else if (lastNode == null) {
                     // only the firstNode is specified
-                    if (!contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this sublist");
+                    if (!contains(firstNode)) {
+                        throw new IllegalArgumentException("Specified first node is not linked to this sublist");
+                    }
                     return new SubList(firstNode, firstNode.next, SubList.this, 0L);
                 }
                 // both firstNode and LastNode are specified
-                if (!linkedNodes.contains(firstNode)) throw new IllegalArgumentException("Specified first node is not linked to this list");
-                if (!linkedNodes.contains(lastNode)) throw new IllegalArgumentException("Specified last node is not linked to this list");
+                if (!linkedNodes.contains(firstNode)) {
+                    throw new IllegalArgumentException("Specified first node is not linked to this list");
+                }
+                if (!linkedNodes.contains(lastNode)) {
+                    throw new IllegalArgumentException("Specified last node is not linked to this list");
+                }
                 Node<E> node;
                 long subListSize = 0;
                 boolean foundFirstNode = false;
@@ -4621,7 +4893,9 @@ public class NodableLinkedList<E>
                 } else {
                     long listSize = 0;
                     for (node = headSentinel.next; node != tailSentinel; node = node.next) {
-                        if (node == linkedNodes.tailSentinel) throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the specified first node in the list");
+                        if (node == linkedNodes.tailSentinel) {
+                            throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the specified first node in the list");
+                        }
                         listSize++;
                         if (node == firstNode) foundFirstNode = true;
                         if (foundFirstNode) subListSize++;
@@ -4778,6 +5052,18 @@ public class NodableLinkedList<E>
                 return linkedSubNodesListIterator(index);
             }
             
+            private LinkedSubNodesListIterator linkedSubNodesListIterator(long index) {
+                checkForModificationException();
+                Node<E> node;
+                if (index < 0L) {
+                    index = longSize();
+                    node = tailSentinel();                
+                } else {
+                    node = getNode(index);
+                }
+                return new LinkedSubNodesListIterator(index, node, this.headSentinel, this.tailSentinel, this.size);
+            }            
+            
             /**
              * Returns a {@code ListIterator} of the nodes in this sublist (in proper
              * sequence), starting at the specified node in this sublist. if the specified
@@ -4818,22 +5104,14 @@ public class NodableLinkedList<E>
                 return linkedSubNodesListIterator(node);
             }            
             
-            private LinkedSubNodesListIterator linkedSubNodesListIterator(long index) {
-                checkForModificationException();
-                Node<E> node;
-                if (index < 0L) {
-                    index = longSize();
-                    node = tailSentinel();                
-                } else {
-                    node = getNode(index);
-                }
-                return new LinkedSubNodesListIterator(index, node, this.headSentinel, this.tailSentinel, this.size);
-            }
-            
             private LinkedSubNodesListIterator linkedSubNodesListIterator(Node<E> node) {
                 checkForModificationException();
-                if (node == null) return new LinkedSubNodesListIterator(getTailSentinel(), this.headSentinel, this.tailSentinel, this.size);
-                if (!this.contains(node)) throw new IllegalArgumentException("specified node is not part of this sublist");
+                if (node == null) {
+                    return new LinkedSubNodesListIterator(getTailSentinel(), this.headSentinel, this.tailSentinel, this.size);
+                }
+                if (!this.contains(node)) {
+                    throw new IllegalArgumentException("specified node is not part of this sublist");
+                }
                 return new LinkedSubNodesListIterator(node, this.headSentinel, this.tailSentinel, this.size);
             }            
             
@@ -4846,7 +5124,13 @@ public class NodableLinkedList<E>
                 private long size; // unknown if < 0
                 final private Node<E> tailSentinel; // unknown if null
                 
-                private LinkedSubNodesListIterator(long index, Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
+                private LinkedSubNodesListIterator(
+                        long index,
+                        Node<E> node,
+                        Node<E> headSentinel,
+                        Node<E> tailSentinel,
+                        long size)
+                {
                     // assert index >= 0 && index <= longSize() : "index out of range; index=" + index + ", size=" + longSize();
                     // assert node != null && node.linkedNodes == linkedNodes : "Specified node is null or is not linked to this list";
                     // assert headSentinel != null && headSentinel.linkedNodes == linkedNodes : "head sentinel is null or is not linked to this list";
@@ -4861,7 +5145,12 @@ public class NodableLinkedList<E>
                     // note if the tailSentinel is unknown, this listIterator will iterate to the end of the parent list
                 }
                 
-                private LinkedSubNodesListIterator(Node<E> node, Node<E> headSentinel, Node<E> tailSentinel, long size) {
+                private LinkedSubNodesListIterator(
+                        Node<E> node,
+                        Node<E> headSentinel,
+                        Node<E> tailSentinel,
+                        long size)
+                {
                     this.tailSentinel = tailSentinel;
                     this.size = size;
                     this.listIterator = linkedNodes.linkedNodesListIterator(node, headSentinel, knownTailSentinel(tailSentinel));
@@ -5065,6 +5354,10 @@ public class NodableLinkedList<E>
             updateExpectedModCount();
         }
         
+        private void setSubList(NodableLinkedList<E>.SubList subList) {
+            this.subList = subList;
+        }
+        
         private void updateExpectedModCount() {
             this.expectedModCount = subList.nodableLinkedList().modCount;
         }
@@ -5135,36 +5428,6 @@ public class NodableLinkedList<E>
         public void set(E element) {
             backingNode.set(element);
         }
-
-//        /**
-//         * Inserts the specified node after this {@code SubListNode}. This
-//         * {@code SubListNode} must belong to a {@code SubList} and the specified node
-//         * must not already belong to a list.
-//         * 
-//         * @param node the {@code Node} to be inserted after this {@code SubListNode}
-//         */
-//        private void addNodeAfterMe(Node<E> node) {
-//            //if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
-//            //subList.checkForModificationException();
-//            //isStillNodeOfSubList();
-//            subList.linkedSubNodes().addNodeAfter(node, backingNode);
-//            updateExpectedModCount();
-//        }
-
-//        /**
-//         * Inserts the specified node before this {@code SubListNode}. This
-//         * {@code SubListNode} must belong to a {@code SubList} and the specified node
-//         * must not already belong to a list.
-//         * 
-//         * @param node the {@code Node} to be inserted before this {@code SubListNode}
-//         */
-//        private void addNodeBeforeMe(Node<E> node) {
-//            //if (node == null || node.isLinked()) throw new IllegalArgumentException("Specified node is null or is already a node of a list");
-//            //subList.checkForModificationException();
-//            //isStillNodeOfSubList();
-//            subList.linkedSubNodes().addNodeBefore(node, backingNode);
-//            updateExpectedModCount();
-//        }        
         
         /**
          * Inserts this {@code SubListNode} after the specified node. This
@@ -5178,7 +5441,9 @@ public class NodableLinkedList<E>
          *                                  list
          */
         public void addAfter(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            }
             if (this.isLinked()) throw new IllegalStateException("This sublist node is already a node of a list");
             subList.linkedSubNodes().addNodeAfter(backingNode, node);
         }
@@ -5416,7 +5681,9 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if node is {@code null} or not linked
          */
         public void swapWith(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("The specified node is null or not a node of a list");
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("The specified node is null or not a node of a list");
+            }
             subList.checkForModificationException();
             checkIfStillNodeOfSubList();
             Node.swapNodes(this.backingNode, node);
@@ -5697,7 +5964,9 @@ public class NodableLinkedList<E>
          *                                  list
          */
         public void addAfter(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("Specified Node is null or not a node of a list");
+            }
             if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
             node.linkedNodes.addNodeAfter(this, node);
         }
@@ -5740,7 +6009,9 @@ public class NodableLinkedList<E>
          *                                  list
          */
         public void addBefore(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("Specified Node is null or not a node of a list");		
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("Specified Node is null or not a node of a list");		
+            }
             if (this.isLinked()) throw new IllegalStateException("This node is already a node of a list");
             node.linkedNodes.addNodeBefore(this, node);
         }
@@ -5865,7 +6136,9 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void replaceWith(Node<E> node) {
-            if (node == null || node.isLinked()) throw new IllegalArgumentException("Replacement node is null or already a node of a list");
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Replacement node is null or already a node of a list");
+            }
             if (!this.isLinked()) throw new IllegalStateException("This node is not a node of a list");
             linkedNodes.replaceNode(this, node);			
         }
@@ -5884,7 +6157,9 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if node is {@code null} or not linked
          */
         public void swapWith(Node<E> node) {
-            if (node == null || !node.isLinked()) throw new IllegalArgumentException("The specified node is null or not a node of a list");
+            if (node == null || !node.isLinked()) {
+                throw new IllegalArgumentException("The specified node is null or not a node of a list");
+            }
             if (!this.isLinked()) throw new IllegalStateException("This node is not a node of a list");
             swapNodes(this, node);
         }
