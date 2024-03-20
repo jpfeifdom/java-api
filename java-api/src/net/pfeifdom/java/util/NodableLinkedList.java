@@ -60,52 +60,68 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Doubly-linked list implementation of the {@code List} and {@code Deque} interfaces,
- * with the capability to perform insert and remove operations at any point in the list
- * in constant time. Implements all optional list operations, and permits all elements
- * (including {@code null}).
+ * Doubly-linked list implementation of the {@code List} and {@code Deque}
+ * interfaces, with the capability to perform insert and remove operations, at
+ * any point in the list, in constant time. Implements all optional list
+ * operations, and permits all elements (including {@code null}).
  * 
- * <p>Implements all the same constructors and methods as the {@code java.util.LinkedList} class,
- * but includes additional methods: {@code longSize} which returns the size of the list as a {@code long},
- * {@code node} which returns a new {@code NodableLinkedList.Node}, {@code linkedNodes} which returns the
- * {@code NodableLinkedList.LinkedNodes} object (list of nodes) backing the {@code NodableLinkedList},
- * and {@code addNode}, {@code addNodeFirst}, {@code addNodeLast}, {@code getFirstNode}, {@code getLastNode},
- * {@code removeFirstNode}, {@code removeLastNode}, {@code addAll(Node)}, {@code listIterator(Node)} and
- * {@code subList(firstNode, lastNode)} which perform operations on a {@code NodableLinkedList.Node}.
- * Also the method {@code mergeSort} has been implemented, which can sort any size list.
+ * <p>
+ * Implements all the same constructors and methods as the
+ * {@code java.util.LinkedList} class, but includes additional methods:
+ * {@code longSize} which returns the size of the list as a {@code long},
+ * {@code node} which returns a new {@code NodableLinkedList.Node},
+ * {@code linkedNodes} which returns the {@code NodableLinkedList.LinkedNodes}
+ * object (list of nodes) backing the {@code NodableLinkedList}, and
+ * {@code addNode}, {@code addNodeFirst}, {@code addNodeLast},
+ * {@code getFirstNode}, {@code getLastNode}, {@code removeFirstNode},
+ * {@code removeLastNode}, {@code addAll(Node)}, {@code listIterator(Node)} and
+ * {@code subList(firstNode, lastNode)} which perform operations on a
+ * {@code NodableLinkedList.Node}. Also the method {@code mergeSort} has been
+ * implemented, which can sort any size list.
  * 
- * <p>This implementation behaves differently than the standard {@code java.util.LinkedList} class
- * when it comes to lists which contain more than {@code Integer.MAX_VALUE} elements. The {@code size}
- * method returns Integer.MAX_VALUE when the list's {@code size > Integer.MAX_VALUE}. The method
- * {@code longSize} can be used to get the actual size of the list. The {@code indexOf} and
- * {@code lastIndexOf} methods return -1 if the {@code index > Integer.MAX_VALUE}. The
- * {@code toArray} methods throw an IllegalStateException if the list's {@code size > Integer_MAX_VALUE}.
- * The {@code nextIndex} and {@code previousIndex} methods of the {@code java.util.ListIterator}
- * returned by {@code listIterator}, return -1 if the {@code index > Integer_MAX_VALUE}.
+ * <p>
+ * This implementation behaves differently than the standard
+ * {@code java.util.LinkedList} class when it comes to lists which contain more
+ * than {@code Integer.MAX_VALUE} elements. The {@code size} method returns
+ * Integer.MAX_VALUE when the list's {@code size > Integer.MAX_VALUE}. The
+ * method {@code longSize} can be used to get the actual size of the list. The
+ * {@code indexOf} and {@code lastIndexOf} methods return -1 if the
+ * {@code index > Integer.MAX_VALUE}. The {@code toArray} methods throw an
+ * IllegalStateException if the list's {@code size > Integer_MAX_VALUE}. The
+ * {@code nextIndex} and {@code previousIndex} methods of the
+ * {@code java.util.ListIterator} returned by {@code listIterator}, return -1 if
+ * the {@code index > Integer_MAX_VALUE}.
  * 
- * <p>There are two ways to visualize a {@code NodableLinkedList}: one as a list of elements
- * (the standard view), and the other as a list of nodes which contain the elements and references
- * to the previous and next nodes in a list. The latter view is implemented by the inner
- * class {@code LinkedNodes}. A {@code NodableLinkedList} is backed by one and only one
- * {@code LinkedNodes} object. Method {@link #linkedNodes()} returns the {@code LinkedNodes}
- * object backing a {@code NodableLinkedList} instance.
+ * <p>
+ * There are two ways to visualize a {@code NodableLinkedList}: one as a list of
+ * elements (the standard view), and the other as a list of nodes which contain
+ * the elements and references to the previous and next nodes in a list. The
+ * latter view is implemented by the inner class {@code LinkedNodes}. A
+ * {@code NodableLinkedList} is backed by one and only one {@code LinkedNodes}
+ * object. Method {@link #linkedNodes()} returns the {@code LinkedNodes} object
+ * backing a {@code NodableLinkedList} instance.
  * 
- * <p>A large {@code NodableLinkedList} can be as much as 33% - 34% larger than a
- * {@code java.util.LinkedList}. An empty {@code NodableLinkedList} is almost 5 times larger
- * than an empty {@code java.util.LinkedList}.
+ * <p>
+ * A large {@code NodableLinkedList} can be as much as 33% - 34% larger than a
+ * {@code java.util.LinkedList}. An empty {@code NodableLinkedList} is almost 5
+ * times larger than an empty {@code java.util.LinkedList}.
  * 
- * <p>All of the operations perform as could be expected for a doubly-linked
- * list.  Operations that index into the list will traverse the list from
- * the beginning or the end, whichever is closer to the specified index.
- * Indexes can only be used to reference the first Integer.MAX_VALUE+1 elements.
+ * <p>
+ * All of the operations perform as could be expected for a doubly-linked list.
+ * Operations that index into the list will traverse the list from the beginning
+ * or the end, whichever is closer to the specified index. Indexes can only be
+ * used to reference the first Integer.MAX_VALUE+1 elements.
  * 
- * <p><b>Example 1:</b> This example performs a Mergesort on a {@code NodableLinkedList} of
- * integers. The algorithm used in this example is an adaptation of an algorithm by Simon Tatham
- * (<a href="https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
- * SimonTathamMergesort</a>). All {@code NodableLinkedList} operations in this example
- * perform in constant time.
+ * <p>
+ * <b>Example 1:</b> This example performs a Mergesort on a
+ * {@code NodableLinkedList} of integers. The algorithm used in this example is
+ * an adaptation of an algorithm by Simon Tatham (<a href=
+ * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+ * SimonTathamMergesort</a>). All {@code NodableLinkedList} operations in this
+ * example perform in constant time.
  * 
- * <pre>{@code
+ * <pre>
+ * {@code
  * void NodableLinkedListMergeSort(NodableLinkedList<Integer> list) {
  *       
  *     NodableLinkedList.Node<Integer> p, q, e, tail;
@@ -175,12 +191,15 @@ import java.util.function.Function;
  *         insize *= 2; // make another pass with the p and q lists twice the size
  *     }
  * }
- * }</pre>
+ * }
+ * </pre>
  * 
- * <p><b>Example 2:</b> This example performs an Arrays.sort on a {@code NodableLinkedList}
- * of strings.
+ * <p>
+ * <b>Example 2:</b> This example performs an Arrays.sort on a
+ * {@code NodableLinkedList} of strings.
  * 
- * <pre>{@code
+ * <pre>
+ * {@code
  * void NodableLinkedListArraysSort(NodableLinkedList<String> list) {
  *
  *     // copy the nodes to an array and sort the array
@@ -194,45 +213,50 @@ import java.util.function.Function;
  *         node = sortedNode.next(); // node = node.next() (sortedNode has replaced node's position in the list)
  *     }
  * }
- * }</pre>
+ * }
+ * </pre>
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
- * If multiple threads access a linked list concurrently, and at least
- * one of the threads modifies the list structurally, it <i>must</i> be
- * synchronized externally.  (A structural modification is any operation
- * that adds or deletes one or more elements (or nodes); merely setting the value
- * of an element is not a structural modification.)  This is typically
- * accomplished by synchronizing on some object that naturally
- * encapsulates the list.
+ * <p>
+ * <strong>Note that this implementation is not synchronized.</strong> If
+ * multiple threads access a linked list concurrently, and at least one of the
+ * threads modifies the list structurally, it <i>must</i> be synchronized
+ * externally. (A structural modification is any operation that adds or deletes
+ * one or more elements (or nodes); merely setting the value of an element is
+ * not a structural modification.) This is typically accomplished by
+ * synchronizing on some object that naturally encapsulates the list.
  *
  * If no such object exists, the list should be "wrapped" using the
- * {@link java.util.Collections#synchronizedList} method.  This is best done at creation time,
- * to prevent accidental unsynchronized access to the list:<pre>
- *   List list = Collections.synchronizedList(new NodableLinkedList(...));</pre>
+ * {@link java.util.Collections#synchronizedList} method. This is best done at
+ * creation time, to prevent accidental unsynchronized access to the list:
+ * 
+ * <pre>
+ *   List list = Collections.synchronizedList(new NodableLinkedList(...));
+ * </pre>
  *
- * <p>The iterators returned by this class's {@code iterator} and
- * {@code listIterator} methods are <i>fail-fast</i>: if the {@code NodableLinkedList}
- * is structurally modified at any time after the iterator is created, in
- * any way except through the Iterator's own {@code remove} or
- * {@code add} methods, the iterator will throw a {@code
- * ConcurrentModificationException}.  Thus, in the face of concurrent
- * modification, the iterator fails quickly and cleanly, rather than
- * risking arbitrary, non-deterministic behavior at an undetermined
- * time in the future.
+ * <p>
+ * The iterators returned by this class's {@code iterator} and
+ * {@code listIterator} methods are <i>fail-fast</i>: if the
+ * {@code NodableLinkedList} is structurally modified at any time after the
+ * iterator is created, in any way except through the Iterator's own
+ * {@code remove} or {@code add} methods, the iterator will throw a {@code
+ * ConcurrentModificationException}. Thus, in the face of concurrent
+ * modification, the iterator fails quickly and cleanly, rather than risking
+ * arbitrary, non-deterministic behavior at an undetermined time in the future.
  *
- * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
- * as it is, generally speaking, impossible to make any hard guarantees in the
- * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw {@code ConcurrentModificationException} on a best-effort basis.
- * Therefore, it would be wrong to write a program that depended on this
- * exception for its correctness:   <i>the fail-fast behavior of iterators
- * should be used only to detect bugs.</i>
+ * <p>
+ * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
+ * is, generally speaking, impossible to make any hard guarantees in the
+ * presence of unsynchronized concurrent modification. Fail-fast iterators throw
+ * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
+ * would be wrong to write a program that depended on this exception for its
+ * correctness: <i>the fail-fast behavior of iterators should be used only to
+ * detect bugs.</i>
  *
- * @author  James Pfeifer
- * @param   <E> the type of elements held in this collection
- * @see     List
- * @see     Node
- * @since   1.8
+ * @author James Pfeifer
+ * @param <E> the type of elements held in this collection
+ * @see List
+ * @see Node
+ * @since 1.8
  */
 public class NodableLinkedList<E>
     extends AbstractSequentialList<E>
@@ -325,8 +349,6 @@ public class NodableLinkedList<E>
     /**
      * Returns a shallow copy of this {@code NodableLinkedList}. (The elements
      * themselves are not cloned.)
-     * 
-     * The clone will have different nodes than the original.
      *
      * @return a shallow copy of this {@code NodableLinkedList} instance
      */
@@ -346,7 +368,7 @@ public class NodableLinkedList<E>
     }	
 
     /**
-     * Returns the list of nodes which back this {@code NodableLinkedList}
+     * Returns the list of nodes which back this {@code NodableLinkedList}.
      * 
      * @return the list of nodes which back this {@code NodableLinkedList}
      */
@@ -355,7 +377,7 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns a {@code Node} containing the specified element which can be
+     * Returns a new {@code Node} containing the specified element which can be
      * {@code null}. The node will not be linked to any list.
      * 
      * @param <T>     type of element to be contained within the returned
@@ -427,8 +449,7 @@ public class NodableLinkedList<E>
     }
     
     /**
-     * Returns the first node of this list, or returns {@code null} if this list is
-     * empty.
+     * Returns the first node of this list, or {@code null} if this list is empty.
      *
      * @return the first node of this list, or {@code null} if this list is empty
      */
@@ -437,8 +458,7 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns the last node of this list, or returns {@code null} if this list is
-     * empty.
+     * Returns the last node of this list, or {@code null} if this list is empty.
      *
      * @return the last node of this list, or {@code null} if this list is empty
      */
@@ -601,12 +621,11 @@ public class NodableLinkedList<E>
         if (index < 0 || index > longSize()) {
             throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
         }
+        if (index == longSize()) return addAll(collection);
         final long initialSize = longSize();
-        if (index == longSize()) {
-            for (E element: collection) addLast(element);
-        } else {
-            final Node<E> targetNode = linkedNodes.get(index);
-            for (E element: collection) linkedNodes.addNodeBefore(node(element), targetNode);;
+        final Node<E> targetNode = linkedNodes.get(index);
+        for (E element: collection) {
+            linkedNodes.addNodeBefore(node(element), targetNode);;
         }
         return longSize() != initialSize;
     }
@@ -1181,9 +1200,9 @@ public class NodableLinkedList<E>
      * <strong>Implementation Note:</strong> For performance reasons, this
      * implementation does not verify that the specified lastNode comes after (or
      * on) the specified firstNode in this list. Therefore, if the specified
-     * lastNode comes before the specified firstNode in the list, an
+     * lastNode does come before the specified firstNode in the list, an
      * {@code IllegalStateException} can be thrown for any operation on the returned
-     * {@code SubList} indicating that the end of the list was reached unexpectedly.
+     * {@code SubList}, indicating that the end of the list was reached unexpectedly.
      *
      * <p>
      * This method eliminates the need for explicit range operations (of the sort
@@ -1662,7 +1681,8 @@ public class NodableLinkedList<E>
          * 
          * <p>
          * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
-         * except {@code lastIndexOf} traverses the list backwards from the end.
+         * except {@code lastIndexOf} traverses the list backwards from the end of the
+         * list.
          *
          * @param object {@code Object} ({@code Node}) to search for
          * @return the index of the specified object ({@code Node}) in this list, or -1
@@ -1728,17 +1748,14 @@ public class NodableLinkedList<E>
             if (index < 0 || index > size) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + size);
             }
+            if (index == size) addAll(collection);
             final long initialSize = size;
-            if (index == size) {
-                for (Node<E> node: collection) addLast(node);
-            } else {
-                final Node<E> targetNode = get(index);
-                for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) {
-                        throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                    }
-                    addNodeBefore(node, targetNode);
+            final Node<E> targetNode = get(index);
+            for (Node<E> node: collection) {
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node in collection is null or already an element of a list");
                 }
+                addNodeBefore(node, targetNode);
             }
             return size != initialSize;
         }
@@ -2432,9 +2449,9 @@ public class NodableLinkedList<E>
          * <strong>Implementation Note:</strong> For performance reasons, this
          * implementation does not verify that the specified lastNode comes after (or
          * on) the specified firstNode in this list. Therefore, if the specified
-         * lastNode comes before the specified firstNode in the list, an
+         * lastNode does come before the specified firstNode in the list, an
          * {@code IllegalStateException} can be thrown for any operation on the returned
-         * {@code SubList} indicating that the end of the list was reached unexpectedly.
+         * {@code SubList}, indicating that the end of the list was reached unexpectedly.
          *
          * <p>
          * This method eliminates the need for explicit range operations (of the sort
@@ -3179,6 +3196,25 @@ public class NodableLinkedList<E>
      * {@code NodableLinkedList.SubList}.
      * 
      * <p>
+     * <strong>Implementation Note:</strong> When a {@code SubList} is created,
+     * normally either the last node is unknown (if created via subList(fromIndex,
+     * toIndex)), or the size is unknown (if created via subList(firstNode,
+     * lastNode)). To determine the unknown size or unknown last node, it would be
+     * necessary to traverse the entire sublist from beginning to end. Therefore,
+     * this implementation delays making that determination until it's necessary (if
+     * ever). This can have other performance implications. for instance, normally
+     * for a doubly-linked list, you would expect operations that index into the
+     * list will traverse the list from the beginning or the end, whichever is
+     * closer to the specified index. However, if the last node is unknown (or it's
+     * uncertain if the last node actually comes after the first node in the sublist),
+     * then this implementation has no choice but to traverse the sublist from the
+     * beginning, even if the index is closer to the end of the sublist. Performing
+     * an operation like {@code getLastNode()}, will either complete in constant
+     * time if both the size and the last node are already known, or it will
+     * traverse the entire sublist from the beginning to the end. But, when
+     * completed, both the size and the last node of the sublist will be known.
+     * 
+     * <p>
      * If the {@code NodableLinkedList} that a {@code SubList} is part of is
      * structurally modified in anyway except via operations on the {@code SubList}
      * itself, the {@code SubList} is invalidated and any future operations on the
@@ -3756,6 +3792,11 @@ public class NodableLinkedList<E>
          * the specified firstNode, is returned. if both the specified firstNode and
          * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
          * this {@code SubList}, is returned.
+         * 
+         * <p>
+         * This method verifies the specified lastNode comes after the specified
+         * FirstNode in this {@code SubList}. Also, the size of the returned
+         * {@code SubList} is known.
          *
          * <p>
          * This method eliminates the need for explicit range operations (of the sort
@@ -4275,7 +4316,10 @@ public class NodableLinkedList<E>
              * this sublist.
              * 
              * <p>
-             * Note that {@code lastIndexOf} is identical in function to {@code indexOf}.
+             * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
+             * except {@code lastIndexOf} attempts to traverse the sublist backwards from
+             * the end of the sublist. For performance reasons, the routine may traverse the
+             * sublist from the start of the list.
              *
              * @param object {@code Object} ({@code Node} or {@code SubListNode}) to search
              *               for
@@ -4284,7 +4328,30 @@ public class NodableLinkedList<E>
              */
             @Override
             public int lastIndexOf(Object object) {
-                return indexOf(object);
+                if ( !tailSentinelIsKnown() || !sizeIsKnown()) return indexOf(object);
+                
+                checkForModificationException();
+                Node<?> searchNode;
+                if (object instanceof Node) {
+                    searchNode = (Node<?>)object;
+                } else if (object instanceof SubListNode) {
+                    final SubListNode<?> sublistnode = (SubListNode<?>)object;
+                    if (sublistnode.subList() != this.nodableLinkedListSubList()) return -1;
+                    searchNode = ((SubListNode<?>)object).backingNode();
+                } else {
+                    return -1;
+                }
+                //final long index = getIndex(node);
+                //return (index > Integer.MAX_VALUE) ? -1 : (int)index;
+                
+                long index = size - 1L;
+                for (   Node<?> node = tailSentinel().previous;
+                        node != headSentinel;
+                        node = node.previous, index--)
+                {
+                    if (node == searchNode) return (index > Integer.MAX_VALUE) ? -1 : (int)index;
+                }
+                return -1;
             }
             
             /**
@@ -4522,6 +4589,9 @@ public class NodableLinkedList<E>
              * end of this sublist, in the order that they are returned by the specified
              * collection's iterator. The behavior of this operation is undefined if the
              * specified collection is modified while the operation is in progress.
+             * 
+             * <p>
+             * All {@code SubListNode}s are marked that they are contained by this sublist.
              *
              * @param collection collection containing {@code SubListNode}s to be added to
              *                   this sublist
@@ -4596,6 +4666,9 @@ public class NodableLinkedList<E>
              * 
              * Note that {@code addAllSubListNodes(longSize(), Collection)} is identical in
              * function to {@code addAllSubListNodes(Collection)}.
+             * 
+             * <p>
+             * All {@code SubListNode}s are marked that they are contained by this sublist.
              *
              * @param index      position where to insert the first {@code SubListNode} from
              *                   the specified collection
@@ -4676,6 +4749,9 @@ public class NodableLinkedList<E>
              * 
              * Note that {@code addAllSubListNodes(null, Collection)} is identical in
              * function to {@code addAllSubListNodes(Collection)}.
+             * 
+             * <p>
+             * All {@code SubListNode}s are marked that they are contained by this sublist.
              *
              * @param targetNode {@code Node} the specified collection is to be inserted
              *                   before
@@ -4813,6 +4889,11 @@ public class NodableLinkedList<E>
              * the specified firstNode, is returned. if both the specified firstNode and
              * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
              * this sublist, is returned.
+             * 
+             * <p>
+             * This method verifies the specified lastNode comes after the specified
+             * FirstNode in this {@code SubList}. Also, the size of the returned
+             * {@code SubList} is known.
              * 
              * <p>
              * This method eliminates the need for explicit range operations (of the sort
@@ -5424,9 +5505,10 @@ public class NodableLinkedList<E>
          * Replaces the element of this {@code SubListNode} with the specified element.
          * 
          * @param element element to be stored in this {@code SubListNode}
+         * @return the element previously held in this {@code SubListNode}
          */
-        public void set(E element) {
-            backingNode.set(element);
+        public E set(E element) {
+            return backingNode.set(element);
         }
         
         /**
@@ -5948,9 +6030,12 @@ public class NodableLinkedList<E>
          * Replaces the element of this {@code Node} with the specified element.
          * 
          * @param element element to be stored in this {@code Node}
+         * @return the element previously held in this {@code Node}
          */
-        public void set(E element) {
+        public E set(E element) {
+            final E originalElement = this.element;
             this.element = element;
+            return originalElement;
         }
 
         /**
