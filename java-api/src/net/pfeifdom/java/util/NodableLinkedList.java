@@ -136,7 +136,7 @@ import java.util.function.Function;
  *                      // the merged nodes are placed at the front of the list, and
  *                      // tail is the last node of the merged (sorted) nodes
  *          
- *         nmerges = 0; // number of merges performed
+ *         nmerges = 0; // number of merges performed in this pass
  *             
  *         // merge successive sublists (p and q lists) of the list, of size 'insize',
  *         // until the entire list has been processed
@@ -274,7 +274,7 @@ public class NodableLinkedList<E>
 
     //protected int modCount inherited from class java.util.AbstractList (see incrementModCount)	
 
-    private static final long serialVersionUID = 5774068172585494452L;
+    private static final long serialVersionUID = 6932924870547825064L;
 
     private transient final LinkedNodes linkedNodes = new LinkedNodes();
     private static final Field linkedNodesField;
@@ -319,10 +319,8 @@ public class NodableLinkedList<E>
     private void writeObject(ObjectOutputStream stream) throws IOException {
         stream.defaultWriteObject();
         stream.writeLong(longSize());
-        for (   ListNode<E> node = getFirstNode();
-                node != null;
-                node = linkedNodes.getNodeAfter(node))
-        {
+        for (ListNode<E> node = getFirstNode(); node != null;
+                node = linkedNodes.getNodeAfter(node)) {
             stream.writeObject(node.element());
         }
     }
@@ -1033,14 +1031,16 @@ public class NodableLinkedList<E>
     @Override
     public boolean removeLastOccurrence(Object object) {
         if (object == null) {
-            for (ListNode<E> node = getLastNode(); node != null; node = linkedNodes.getNodeBefore(node)) {
+            for (ListNode<E> node = getLastNode(); node != null;
+                    node = linkedNodes.getNodeBefore(node)) {
                 if (node.element() == null) {
                     linkedNodes.removeNode(node);
                     return true;
                 }
             }
         } else {
-            for (ListNode<E> node = getLastNode(); node != null; node = linkedNodes.getNodeBefore(node)) {
+            for (ListNode<E> node = getLastNode(); node != null;
+                    node = linkedNodes.getNodeBefore(node)) {
                 if (object.equals(node.element())) {
                     linkedNodes.removeNode(node);
                     return true;
@@ -1302,10 +1302,8 @@ public class NodableLinkedList<E>
         }
         final Object[] elements = new Object[size()];
         int index = 0;
-        for (   ListNode<E> node = getFirstNode();
-                node != null;
-                node = linkedNodes.getNodeAfter(node))
-        {
+        for (ListNode<E> node = getFirstNode(); node != null;
+                node = linkedNodes.getNodeAfter(node)) {
             elements[index++] = node.element();
         }
         return elements;
@@ -1364,10 +1362,8 @@ public class NodableLinkedList<E>
         }
         int index = 0;
         Object[] elements = array;
-        for (   ListNode<E> node = getFirstNode();
-                node != null;
-                node = linkedNodes.getNodeAfter(node))
-        {
+        for (ListNode<E> node = getFirstNode(); node != null;
+                node = linkedNodes.getNodeAfter(node)) {
             elements[index++] = node.element();			
         }
         if (array.length > size()) array[size()] = null;
@@ -1646,10 +1642,8 @@ public class NodableLinkedList<E>
             //assert this.contains(node) : "Node is not an element of this list";
             long index = 0L;
             
-            for (   ListNode<?> cursorNode = headSentinel.next;
-                    cursorNode != tailSentinel;
-                    cursorNode = cursorNode.next, index++)
-            {
+            for (ListNode<?> cursorNode = headSentinel.next; cursorNode != tailSentinel;
+                    cursorNode = cursorNode.next, index++) {
                 if (cursorNode == node) return index;				
             }
             return -1L;
@@ -1730,10 +1724,8 @@ public class NodableLinkedList<E>
             final ListNode<?> objectsNode = ((Node<?>)object).listNode();
             if (!this.contains(objectsNode)) return -1;
             long index = size - 1L;
-            for (   ListNode<?> node = tailSentinel.previous;
-                    node != headSentinel;
-                    node = node.previous, index--)
-            {
+            for (ListNode<?> node = tailSentinel.previous; node != headSentinel;
+                    node = node.previous, index--) {
                 if (node == objectsNode) {
                     return (index > Integer.MAX_VALUE) ? -1 : (int)index;
                 }
@@ -1949,13 +1941,13 @@ public class NodableLinkedList<E>
             long nodeIndex;
             final long lastIndex = size - 1L;
             if (getIndex < (lastIndex >> 1)) {
-                for (   node = getFirst(), nodeIndex = 0L;
-                        nodeIndex < getIndex && node != tailSentinel;
-                        nodeIndex++, node = node.next);
+                for (node = getFirst(), nodeIndex = 0L;
+                     nodeIndex < getIndex && node != tailSentinel;
+                     nodeIndex++, node = node.next);
             } else {
-                for (   node = getLast(), nodeIndex = lastIndex;
-                        nodeIndex > getIndex && node != headSentinel;
-                        nodeIndex--, node = node.previous);
+                for (node = getLast(), nodeIndex = lastIndex;
+                     nodeIndex > getIndex && node != headSentinel;
+                     nodeIndex--, node = node.previous);
             }       
             return node;        
         }        
@@ -3149,12 +3141,8 @@ public class NodableLinkedList<E>
                 final Object[] array = trySplit( (node) -> { return node; } );
                 return (array == null)
                        ? null
-                       : Spliterators.spliterator(
-                             array,
-                             0,
-                             batchSize,
-                             Spliterator.ORDERED | Spliterator.NONNULL
-                         );
+                       : Spliterators.spliterator(array, 0, batchSize,
+                             Spliterator.ORDERED | Spliterator.NONNULL);
             }
 
             private Object[] trySplit(Function<Node<E>, Object> action) {
@@ -3307,7 +3295,8 @@ public class NodableLinkedList<E>
             });
             return (array == null)
                    ? null
-                   : Spliterators.spliterator(array, 0, spliterator.batchSize(), Spliterator.ORDERED);
+                   : Spliterators.spliterator(array, 0, spliterator.batchSize(),
+                           Spliterator.ORDERED);
         }
 
     } // NodableLinkedListSpliterator
@@ -4918,14 +4907,14 @@ public class NodableLinkedList<E>
                 if (sizeIsKnown() && tailSentinelIsKnown()
                         && ((this.longSize() / 3) * 2) > (linkedNodes.longSize() - this.longSize())) {
                     if (!linkedNodes.contains(node)) return false;
-                    for (   ListNode<E> listNode = linkedNodes.headSentinel;
-                            listNode != this.headSentinel;
-                            listNode = listNode.next) {
+                    for (ListNode<E> listNode = linkedNodes.headSentinel;
+                         listNode != this.headSentinel;
+                         listNode = listNode.next) {
                         if (node == listNode) return false;
                     }
-                    for (   ListNode<E> listNode = this.tailSentinel;
-                            listNode != linkedNodes.tailSentinel;
-                            listNode = listNode.next) {
+                    for (ListNode<E> listNode = this.tailSentinel;
+                         listNode != linkedNodes.tailSentinel;
+                         listNode = listNode.next) {
                         if (node == listNode) return false;
                     }
                     return true;
@@ -5907,10 +5896,13 @@ public class NodableLinkedList<E>
          * can be different lists.
          * 
          * <p>
-         * If the specified node is a {@code SubListNode}s, after this operation is
-         * completed, both this {@code SubListNode} and the specified
+         * If the specified node is a {@code SubListNode}, it is verified that it is
+         * still contained by its associated {@code SubList}. Also, after this operation
+         * is completed, both this {@code SubListNode} and the specified
          * {@code SubListNode} will be marked that they are contained by their possibly
-         * new associated {@code SubList}s.
+         * new associated {@code SubList}s. If the specified node is a {@code ListNode},
+         * it is effectively inserted into this {@code SubListNode}'s associated
+         * {@code SubList}.
          * 
          * <p>
          * <strong>Synchronization consideration:</strong> This operation can
@@ -5927,13 +5919,13 @@ public class NodableLinkedList<E>
             if (node == null || !node.isLinked()) {
                 throw new IllegalArgumentException("The specified node is null or not a node of a list");
             }
+            subList.checkForModificationException();
+            checkIfStillNodeOfSubList();
             if (node instanceof SubListNode) {
-                final SubListNode<E> subListNode = (SubListNode<E>) node;
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
-                this.subList.checkForModificationException();
                 thatSubList.checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
-                this.checkIfStillNodeOfSubList();
                 ListNode.swapNodes(this.listNode(), subListNode.listNode());
                 if (this.subList == thatSubList) {
                     // sublist nodes are in the same sublist
@@ -5948,8 +5940,6 @@ public class NodableLinkedList<E>
                 this.updateExpectedModCount();
                 subListNode.updateExpectedModCount();
             } else {
-                subList.checkForModificationException();
-                checkIfStillNodeOfSubList();
                 ListNode.swapNodes(this.listNode, node.listNode());
                 subList.linkedSubNodes().swappedNodes(listNode, node.listNode());
             }
@@ -6113,7 +6103,7 @@ public class NodableLinkedList<E>
     public static class ListNode<E>
         implements Node<E>, Serializable, Cloneable, Comparable<Node<E>> {
 
-        private static final long serialVersionUID = 5774389459071333685L;
+        private static final long serialVersionUID = 8645137994022899638L;
 
         private E element;
 
@@ -6450,6 +6440,12 @@ public class NodableLinkedList<E>
          * the specified node must belong to a list, but they can be different lists.
          * 
          * <p>
+         * If the specified node is a {@code SubListNode}, it is verified that it is
+         * still contained by its associated {@code SubList}. Also, this
+         * {@code ListNode} is effectively inserted into the specified
+         * {@code SubListNode}'s associated {@code SubList}.
+         * 
+         * <p>
          * <strong>Synchronization consideration:</strong> This operation can
          * potentially operate on two different lists. if synchronization is required,
          * both lists should be synchronized by the same object.
@@ -6466,7 +6462,16 @@ public class NodableLinkedList<E>
             if (!this.isLinked()) {
                 throw new IllegalStateException("This node is not a node of a list");
             }
-            swapNodes(this, node.listNode());
+            if (node instanceof SubListNode) {
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
+                final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
+                thatSubList.checkForModificationException();
+                subListNode.checkIfArgStillNodeOfSubList();
+                swapNodes(this, node.listNode());
+                thatSubList.linkedSubNodes().swappedNodes(subListNode.listNode, this);
+            } else {
+                swapNodes(this, node.listNode());
+            }
         }
 
         private static <T> void swapNodes(ListNode<T> node1, ListNode<T> node2) {
@@ -6521,20 +6526,20 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns a {@code SubListNode}, backed by this {@code ListNode}, for the specified
-         * subList. The returned {@code SubListNode} is backed by this {@code ListNode}
-         * which must be a node of the specified subList, or unlinked.
+         * Returns a new {@code SubListNode}, backed by this {@code ListNode}, for the
+         * specified subList. The returned {@code SubListNode} is backed by this
+         * {@code ListNode} which must be a node of the specified subList, or unlinked.
          * 
          * <p>
-         * <b>Performance Consideration:</b> This {@code ListNode}, if linked, is verified,
-         * in linear time, that it is a node of the specified subList.
+         * <b>Performance Consideration:</b> This {@code ListNode}, if linked, is
+         * verified, in linear time, that it is a node of the specified subList.
          * 
          * @param subList {@code SubList} containing this {@code ListNode}
-         * @return a {@code SubListNode}, backed by this {@code ListNode}, for the specified
-         *         subList
+         * @return a {@code SubListNode}, backed by this {@code ListNode}, for the
+         *         specified subList
          * @throws IllegalArgumentException if the specified subList is {@code null}
-         * @throws IllegalStateException if this {@code ListNode} is not a node of the
-         *                               specified subList
+         * @throws IllegalStateException    if this {@code ListNode} is not a node of
+         *                                  the specified subList
          */
         @Override
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
@@ -6547,9 +6552,10 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns an unverified {@code SubListNode}, backed by this {@code ListNode},
-         * for the specified subList. The returned {@code SubListNode} is backed by this
-         * {@code ListNode} which must be a node of the specified subList, or unlinked.
+         * Returns an new unverified {@code SubListNode}, backed by this
+         * {@code ListNode}, for the specified subList. The returned {@code SubListNode}
+         * is backed by this {@code ListNode} which must be a node of the specified
+         * subList, or unlinked.
          * 
          * <p>
          * <b>Use with CAUTION:</b> This {@code ListNode}, if linked, is not verified
@@ -6568,14 +6574,11 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if the specified subList is {@code null}
          */
         @Override
-        public SubListNode<E> unverifiedSubListNode(
-                                    NodableLinkedList<E>.SubList subList
-                              )
-        {
+        public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList) {
             if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
             subList.checkForModificationException();
             return new SubListNode<E>(this, subList);
-        }      
+        }     
         
         /**
          * Compares this {@code ListNode} with the specified object ({@code Node}) for
@@ -6837,9 +6840,14 @@ public class NodableLinkedList<E>
          * the specified node must belong to a list, but they can be different lists.
          * 
          * <p>
-         * If both this {@code Node} and the specified node are {@code SubListNode}s,
-         * after this operation is completed, both will be marked that they are
-         * contained by their possibly new associated {@code SubList}s.
+         * If the specified node is a {@code SubListNode}, it is verified that it is
+         * still contained by its associated {@code SubList}. If either this
+         * {@code Node} or the specified node are {@code SubListNode}s, the other
+         * {@code Node} is effectively inserted into the {@code SubListNode}'s
+         * associated {@code SubList}. If both this {@code Node} and the specified node
+         * are {@code SubListNode}s, after this operation is completed, both will be
+         * marked that they are contained by their possibly new associated
+         * {@code SubList}s.
          * 
          * <p>
          * <strong>Synchronization consideration:</strong> This operation can
