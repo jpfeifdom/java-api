@@ -1482,8 +1482,8 @@ public class NodableLinkedList<E>
     /**
      * Doubly-linked list of nodes which back a {@code NodableLinkedList}.
      * Implements the {@code List} and {@code Deque} interfaces. The elements are of
-     * type {@code NodableLinkedList.Node}, and are never {@code null}. Implements
-     * all optional {@code List} operations
+     * type {@code NodableLinkedList.LinkNode}, and are never {@code null}.
+     * Implements all optional {@code List} operations
      *
      * <p>
      * All of the operations perform as could be expected for a doubly-linked list.
@@ -3418,7 +3418,7 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("Node is null or already an element of a list");
             }
             linkedSubNodes.add(0, node);
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.setSubList(this);
                 subListNode.updateExpectedModCount();
@@ -3441,7 +3441,7 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("Node is null or already an element of a list");
             }
             linkedSubNodes.addNodeAfter(node.linkNode(), getLastNode());
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.setSubList(this);
                 subListNode.updateExpectedModCount();
@@ -4577,7 +4577,7 @@ public class NodableLinkedList<E>
                     throw new IllegalArgumentException("Node is null or already an element of a list");
                 }
                 addNodeBefore(node.linkNode(), getNode(index));
-                if (node instanceof SubListNode) {
+                if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
                     subListNode.setSubList(this.nodableLinkedListSubList());
                     subListNode.updateExpectedModCount();
@@ -4676,7 +4676,7 @@ public class NodableLinkedList<E>
                 }
                 final LinkNode<E> originalNode = get(index);
                 replaceNode(originalNode, node.linkNode());
-                if (node instanceof SubListNode) {
+                if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
                     subListNode.setSubList(this.nodableLinkedListSubList());
                     subListNode.updateExpectedModCount();
@@ -4742,13 +4742,13 @@ public class NodableLinkedList<E>
                         throw new IllegalArgumentException("Node in collection is null or already a node of a list");
                     }
                     addNodeBefore(node.linkNode(), tailSentinel);
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>)node;
                         subListNode.setSubList(this.nodableLinkedListSubList());
                     }
                 }
                 for (Node<E> node: collection) {
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>)node;
                         subListNode.updateExpectedModCount();
                     }
@@ -4801,14 +4801,14 @@ public class NodableLinkedList<E>
                         throw new IllegalArgumentException("Node in collection is null or already a node of a list");
                     }
                     addNodeBefore(node.linkNode(), targetNode);
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>)node;
                         subListNode.setSubList(this.nodableLinkedListSubList());
                     }
                     changed = true;
                 }
                 for (Node<E> node: collection) {
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>)node;
                         subListNode.updateExpectedModCount();
                     }
@@ -4860,14 +4860,14 @@ public class NodableLinkedList<E>
                         throw new IllegalArgumentException("Node in collection is null or already a node of a list");
                     }
                     addNodeBefore(node.linkNode(), targetListNode);
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>) node;
                         subListNode.setSubList(this.nodableLinkedListSubList());
                     }
                     changed = true;
                 }
                 for (Node<E> node : collection) {
-                    if (node instanceof SubListNode) {
+                    if (node.isSubListNode()) {
                         final SubListNode<E> subListNode = (SubListNode<E>) node;
                         subListNode.updateExpectedModCount();
                     }
@@ -5596,18 +5596,6 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Returns the {@code NodableLinkedList.LinkNode} witch backs this
-         * {@code SubListNode}.
-         * 
-         * @return the {@code NodableLinkedList.LinkNode} which backs this
-         *         {@code SubListNode}
-         */
-        @Override
-        public LinkNode<E> linkNode() {
-            return linkNode;
-        }
-        
-        /**
          * Returns the element contained within this {@code SubListNode}.
          * 
          * @return the element contained within this {@code SubListNode}
@@ -5626,6 +5614,36 @@ public class NodableLinkedList<E>
         public boolean isLinked() {
             return linkNode.isLinked();
         }
+
+        /**
+         * Returns {@code false}.
+         * 
+         * @return {@code false}
+         */
+        public boolean isLinkNode() {
+            return false;
+        }
+
+        /**
+         * Returns {@code true}.
+         * 
+         * @return {@code true}
+         */
+        public boolean isSubListNode() {
+            return true;
+        }        
+        
+        /**
+         * Returns the {@code NodableLinkedList.LinkNode} witch backs this
+         * {@code SubListNode}.
+         * 
+         * @return the {@code NodableLinkedList.LinkNode} which backs this
+         *         {@code SubListNode}
+         */
+        @Override
+        public LinkNode<E> linkNode() {
+            return linkNode;
+        }        
 
         /**
          * Returns the {@code LinkedNodes} list this {@code SubListNode} belongs to, or
@@ -5705,7 +5723,7 @@ public class NodableLinkedList<E>
             if (this.isLinked()) {
                 throw new IllegalStateException("This sublist node is already a node of a list");
             }
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
@@ -5744,7 +5762,7 @@ public class NodableLinkedList<E>
             if (this.isLinked()) {
                 throw new IllegalStateException("This sublist node is already a node of a list");
             }
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList.checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
@@ -5884,7 +5902,7 @@ public class NodableLinkedList<E>
             subList.checkForModificationException();
             checkIfStillNodeOfSubList();
             subList.linkedSubNodes().replaceNode(linkNode, node.linkNode());
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList = this.subList;
                 subListNode.updateExpectedModCount();
@@ -5922,7 +5940,7 @@ public class NodableLinkedList<E>
             }
             subList.checkForModificationException();
             checkIfStillNodeOfSubList();
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
@@ -6162,16 +6180,6 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns this {@code LinkNode}
-         * 
-         * @return this {@code LinkNode}
-         */
-        @Override
-        public LinkNode<E> linkNode() {
-            return this;
-        }
-
-        /**
          * Returns {@code true} if this {@code LinkNode} belongs to a list.
          * 
          * @return {@code true} if this {@code LinkNode} belongs to a list
@@ -6180,6 +6188,34 @@ public class NodableLinkedList<E>
         public boolean isLinked() {
             return linkedNodes != null;
         }
+
+        /**
+         * Returns {@code true}.
+         * 
+         * @return {@code true}
+         */
+        public boolean isLinkNode() {
+            return true;
+        }
+
+        /**
+         * Returns {@code false}.
+         * 
+         * @return {@code false}
+         */
+        public boolean isSubListNode() {
+            return false;
+        }
+
+        /**
+         * Returns this {@code LinkNode}
+         * 
+         * @return this {@code LinkNode}
+         */
+        @Override
+        public LinkNode<E> linkNode() {
+            return this;
+        }        
 
         /**
          * Returns the {@code LinkedNodes} list this {@code LinkNode} belongs to, or
@@ -6265,7 +6301,7 @@ public class NodableLinkedList<E>
             if (this.isLinked()) {
                 throw new IllegalStateException("This node is already a node of a list");
             }
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
@@ -6302,7 +6338,7 @@ public class NodableLinkedList<E>
             if (this.isLinked()) {
                 throw new IllegalStateException("This node is already a node of a list");
             }
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
@@ -6463,7 +6499,7 @@ public class NodableLinkedList<E>
             if (!this.isLinked()) {
                 throw new IllegalStateException("This node is not a node of a list");
             }
-            if (node instanceof SubListNode) {
+            if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
@@ -6671,6 +6707,27 @@ public class NodableLinkedList<E>
          * @return the element contained within this {@code Node}
          */
         public E element();
+
+        /**
+         * Returns {@code true} if this {@code Node} belongs to a list.
+         * 
+         * @return {@code true} if this {@code Node} belongs to a list
+         */
+        public boolean isLinked();
+
+        /**
+         * Returns {@code true} if this {@code Node} is a {@code LinkNode}.
+         * 
+         * @return {@code true} if this {@code Node} is a {@code LinkNode}
+         */
+        public boolean isLinkNode();
+
+        /**
+         * Returns {@code true} if this {@code Node} is a {@code SubListNode}.
+         * 
+         * @return {@code true} if this {@code Node} is a {@code SubListNode}
+         */
+        public boolean isSubListNode();        
         
         /**
          * Returns the {@code LinkNode} backing this {@code Node}.
@@ -6683,20 +6740,13 @@ public class NodableLinkedList<E>
         public LinkNode<E> linkNode();
 
         /**
-         * Returns {@code true} if this {@code Node} belongs to a list.
-         * 
-         * @return {@code true} if this {@code Node} belongs to a list
-         */
-        public boolean isLinked();
-
-        /**
          * Returns the {@code LinkedNodes} list this {@code Node} belongs to, or
          * {@code null} if not linked.
          * 
          * @return the {@code LinkedNodes} list this {@code Node} belongs to, or
          *         {@code null} if not linked
          */
-        public NodableLinkedList<E>.LinkedNodes linkedNodes();
+        public NodableLinkedList<E>.LinkedNodes linkedNodes();        
 
         /**
          * Returns the {@code NodableLinkedList} this {@code Node} belongs to, or
