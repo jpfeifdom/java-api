@@ -36,22 +36,6 @@
  * information or have any questions.
  */
 
-/**
- * Contains collection classes.
- * 
- * <p>
- * Currently only contains one class: {@code NodableLinkedList} which is
- * basically a drop in replacement for the standard {@code java.util.LinkedList}
- * class. Use {@code NodableLinkedList} in place of {@code java.util.LinkedList}
- * when:
- * <ul>
- * <li>you require the capability to insert or remove elements, anywhere in the
- * list, in constant time
- * <li>you require the flexibility of traversing the list via the next and
- * previous pointers of the nodes which comprise the linked list
- * <li>the list could have more than {@code Integer.MAX_VALUE} elements
- * </ul>
- * 
- * @since 1.0.0
- */
-package net.pfeifdom.java.util;
+module net.pfeifdom.java_api {
+    exports net.pfeifdom.java.util;
+}
