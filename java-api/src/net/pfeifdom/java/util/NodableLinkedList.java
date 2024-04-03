@@ -131,9 +131,9 @@ import java.util.function.Function;
  * example perform in constant time.
  * <pre>
  * {@code
- * static void NodableLinkedListMergeSort(NodableLinkedList<Integer> list) {
+ * static void nodableLinkedListMergeSort(NodableLinkedList<Integer> list) {
  *       
- *     nodableLinkedList.Node<Integer> p, q, e, tail;
+ *     NodableLinkedList.Node<Integer> p, q, e, tail;
  *     int insize, nmerges, psize, qsize;
  *     
  *     if (list == null) return; // no list to sort
@@ -1017,14 +1017,16 @@ public class NodableLinkedList<E>
     @Override
     public boolean removeFirstOccurrence(Object object) {
         if (object == null) {
-            for (LinkNode<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
+            for (LinkNode<E> node = getFirstNode(); node != null;
+                    node = linkedNodes.getNodeAfter(node)) {
                 if (node.element() == null) {
                     linkedNodes.removeNode(node);
                     return true;
                 }
             }
         } else {
-            for (LinkNode<E> node = getFirstNode(); node != null; node = linkedNodes.getNodeAfter(node)) {
+            for (LinkNode<E> node = getFirstNode(); node != null;
+                    node = linkedNodes.getNodeAfter(node)) {
                 if (object.equals(node.element())) {
                     linkedNodes.removeNode(node);
                     return true;
@@ -2827,8 +2829,8 @@ public class NodableLinkedList<E>
             return linkedNodesListIterator(index, node, this.headSentinel, this.tailSentinel);
         }
         
-        private LinkedNodesListIterator linkedNodesListIterator(long index, LinkNode<E> node, LinkNode<E> headSentinel,
-                LinkNode<E> tailSentinel) {
+        private LinkedNodesListIterator linkedNodesListIterator(long index, LinkNode<E> node,
+                LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
             return new LinkedNodesListIterator(index, node,
                     (headSentinel == null) ? this.headSentinel : headSentinel,
                     (tailSentinel == null) ? this.tailSentinel : tailSentinel);
@@ -2838,8 +2840,8 @@ public class NodableLinkedList<E>
             return linkedNodesListIterator(node, this.headSentinel, this.tailSentinel);
         }
         
-        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node, LinkNode<E> headSentinel,
-                LinkNode<E> tailSentinel) {
+        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node,
+                LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
             return new LinkedNodesListIterator(
                     (node == null)         ? this.tailSentinel : node.linkNode(),
                     (headSentinel == null) ? this.headSentinel : headSentinel,
@@ -3387,7 +3389,8 @@ public class NodableLinkedList<E>
         
         private final LinkedSubNodes linkedSubNodes;
         
-        private SubList(LinkNode<E> headSentinel, LinkNode<E> tailSentinel, SubList parent, long size) {
+        private SubList(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
+                SubList parent, long size) {
             linkedSubNodes = new LinkedSubNodes(headSentinel, tailSentinel, parent, size);
         }
         
@@ -4105,7 +4108,8 @@ public class NodableLinkedList<E>
             private final LinkedSubNodes parent;
             private long size;
             
-            private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel, SubList sublist, long size) {
+            private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
+                    SubList sublist, long size) {
                 // assert headSentinel != null : "headSentinel is null";
                 // assert tailSentinel != null : "tailSentinel is null";
                 // assert headSentinel.linkedNodes == linkedNodes :
@@ -4925,8 +4929,8 @@ public class NodableLinkedList<E>
             }
 
             private boolean contains(LinkNode<?> node) {
-                if (sizeIsKnown() && tailSentinelIsKnown()
-                        && ((this.longSize() / 3) * 2) > (linkedNodes.longSize() - this.longSize())) {
+                if (sizeIsKnown() && tailSentinelIsKnown() &&
+                        ((this.longSize() / 3) * 2) > (linkedNodes.longSize() - this.longSize())) {
                     if (!linkedNodes.contains(node)) return false;
                     for (LinkNode<E> linkNode = linkedNodes.headSentinel;
                          linkNode != this.headSentinel;
@@ -5835,6 +5839,9 @@ public class NodableLinkedList<E>
          * Returns the index of this {@code SubListNode} in its {@code SubList}, or -1
          * if this {@code SubListNode} does not belong to a {@code SubList} or the
          * {@code index > Integer.MAX_VALUE}.
+         * 
+         * <p>
+         * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
          * @return the index of this {@code SubListNode} in its {@code SubList}, or -1
          *         if this {@code SubListNode} does not belong to a {@code SubList} or
@@ -5997,7 +6004,7 @@ public class NodableLinkedList<E>
          * 
          * @param subList {@code SubList} containing this {@code SubListNode's}
          *                {@code LinkNode}
-         * @return a {@code SubListNode}, backed by this {@code SubListNode's}
+         * @return a new {@code SubListNode}, backed by this {@code SubListNode's}
          *         {@code LinkNode}, for the specified subList
          * @throws IllegalArgumentException if the specified subList is {@code null}
          * @throws IllegalStateException    if this {@code SubListNode's}
@@ -6033,7 +6040,7 @@ public class NodableLinkedList<E>
          * 
          * @param subList {@code SubList} containing this {@code SubListNode's}
          *                {@code LinkNode}
-         * @return an unverified {@code SubListNode}, backed by this
+         * @return a new unverified {@code SubListNode}, backed by this
          *         {@code SubListNode's} {@code LinkNode}, for the specified subList
          * @throws IllegalArgumentException if the specified subList is {@code null}
          */
@@ -6583,7 +6590,7 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns a new {@code SubListNode}, backed by this {@code LinkNode}, for the
+         * Returns a {@code SubListNode}, backed by this {@code LinkNode}, for the
          * specified subList. The returned {@code SubListNode} is backed by this
          * {@code LinkNode} which must be a node of the specified subList, or unlinked.
          * 
@@ -6609,7 +6616,7 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns an new unverified {@code SubListNode}, backed by this
+         * Returns an unverified {@code SubListNode}, backed by this
          * {@code LinkNode}, for the specified subList. The returned {@code SubListNode}
          * is backed by this {@code LinkNode} which must be a node of the specified
          * subList, or unlinked.
@@ -6626,8 +6633,8 @@ public class NodableLinkedList<E>
          * {@code SubListNode}, will have to be reverified.
          * 
          * @param subList {@code SubList} believed to contain this {@code LinkNode}
-         * @return an unverified {@code SubListNode}, backed by this {@code LinkNode},
-         *         for the specified subList
+         * @return an unverified {@code SubListNode}, backed by this
+         *         {@code LinkNode}, for the specified subList
          * @throws IllegalArgumentException if the specified subList is {@code null}
          */
         @Override
@@ -6715,6 +6722,12 @@ public class NodableLinkedList<E>
      * is inserted/added. Once inserted, the {@code Node} remains linked to the list
      * until removed. A {@code Node} can belong to different lists, just not at the
      * same time.
+     * 
+     * <p>
+     * In general, all operations, except {@code index()} and {@code subListNode()},
+     * performed on a {@code Node}, perform in constant time. This does not
+     * necessarily apply to {@code SubListNodes} (see the description for
+     * {@code SubListNodes}).
      * 
      * @author James Pfeifer
      * @param <E> the type of element held in this {@code Node}
@@ -6854,6 +6867,9 @@ public class NodableLinkedList<E>
         /**
          * Returns the index of this {@code Node} in a list, or -1 if this {@code Node}
          * does not belong to a list or the {@code index > Integer.MAX_VALUE}.
+         * 
+         * <p>
+         * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
          * @return the index of this {@code Node} in a list, or -1 if this {@code Node}
          *         does not belong to a list or the {@code index > Integer.MAX_VALUE}
@@ -6944,7 +6960,7 @@ public class NodableLinkedList<E>
         public NodableLinkedList<E>.SubList subList();       
 
         /**
-         * Returns a new {@code SubListNode}, backed by this {@code Node's}
+         * Returns a {@code SubListNode}, backed by this {@code Node's}
          * {@code LinkNode}, for the specified subList. The {@code LinkNode} which backs
          * the returned {@code SubListNode}, must be a node of the specified subList, or
          * unlinked.
@@ -6963,7 +6979,7 @@ public class NodableLinkedList<E>
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList);
 
         /**
-         * Returns a new unverified {@code SubListNode}, backed by this {@code Node's}
+         * Returns an unverified {@code SubListNode}, backed by this {@code Node's}
          * {@code LinkNode}, for the specified subList. The {@code LinkNode} which backs
          * the returned {@code SubListNode}, must be a node of the specified subList, or
          * unlinked.
