@@ -171,7 +171,7 @@ import java.util.function.Function;
  *              
  *             // we have two lists where p is the first node of the first list (p list),
  *             // and q is the first node (or null if the list is empty) of the second
- *             // list (q list)
+ *             // list (q list); we also know the exact size of the p list
  *              
  *             // merge the p and q lists
  *             while (psize > 0 || (qsize > 0 && q != null)) {
@@ -230,11 +230,12 @@ import java.util.function.Function;
  *             sortedNodes = list.linkedNodes().toArray(new NodableLinkedList.Node[0]);
  *     Arrays.sort(sortedNodes);
  *     
- *     // copy the sorted nodes in the array back into the list
+ *     // effectively copy the sorted nodes in the array back into the list
+ *     // by rearranging the nodes in the list
  *     NodableLinkedList.Node<String> node = list.getFirstNode();
  *     for (NodableLinkedList.Node<String> sortedNode: sortedNodes) {
  *         node.swapWith(sortedNode);
- *         node = sortedNode.next(); // node = node.next() (effectively)
+ *         node = sortedNode.next(); // node = node.next() effectively
  *                                   // sortedNode has replaced node's position in the list
  *     }
  * }
@@ -320,6 +321,27 @@ public class NodableLinkedList<E>
         addAll(collection);
     }
 
+    /**
+     * Returns a shallow copy of this {@code NodableLinkedList}. (The elements
+     * themselves are not cloned.)
+     *
+     * @return a shallow copy of this {@code NodableLinkedList} instance
+     */
+    @Override
+    public Object clone() {
+        try {
+            @SuppressWarnings("unchecked")
+            final NodableLinkedList<E> clone = (NodableLinkedList<E>) super.clone();
+            linkedNodesField.setAccessible(true);
+            linkedNodesField.set(clone, clone.new LinkedNodes()); // clone.linkedNodes = clone.new LinkedNodes()
+            linkedNodesField.setAccessible(false);
+            clone.addAll(this);
+            return clone;               
+        } catch (CloneNotSupportedException | ReflectiveOperationException e) {
+            throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
+        }
+    }    
+
     // serialize
     /**
      * Save the state of this {@code NodableLinkedList} instance to a stream (that
@@ -368,28 +390,7 @@ public class NodableLinkedList<E>
         }
     }	
 
-    /**
-     * Returns a shallow copy of this {@code NodableLinkedList}. (The elements
-     * themselves are not cloned.)
-     *
-     * @return a shallow copy of this {@code NodableLinkedList} instance
-     */
-    @Override
-    public Object clone() {
-        try {
-            @SuppressWarnings("unchecked")
-            final NodableLinkedList<E> clone = (NodableLinkedList<E>) super.clone();
-            linkedNodesField.setAccessible(true);
-            linkedNodesField.set(clone, clone.new LinkedNodes()); // clone.linkedNodes = clone.new LinkedNodes()
-            linkedNodesField.setAccessible(false);
-            clone.addAll(this);
-            return clone;				
-        } catch (CloneNotSupportedException | ReflectiveOperationException e) {
-            throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
-        }
-    }	
-
-    /**
+   /**
      * Returns the list of nodes which back this {@code NodableLinkedList}.
      * 
      * @return the list of nodes which back this {@code NodableLinkedList}
@@ -2710,6 +2711,14 @@ public class NodableLinkedList<E>
          * {@code ConcurrentModificationException}. Thus, in the face of concurrent
          * modification, the iterator fails quickly and cleanly, rather than risking
          * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         * 
+         * <p>
+         * Instead of using a {@code ListIterator}, you might consider traversing this
+         * list via the next and previous methods of the {@code Nodes} which comprise
+         * this list. You can basically perform the same operations on a {@code Node} as
+         * those that you can perform via a {@code ListIterator}. In addition, You have
+         * more freedom to do what you want because you don't have to be concerned about
+         * throwing a {@code ConcurrentModificationException}.
          *
          * @param index index of the first {@code Node} to be returned from the
          *              {@code ListIterator} (by a call to {@code next})
@@ -2753,6 +2762,14 @@ public class NodableLinkedList<E>
          * {@code ConcurrentModificationException}. Thus, in the face of concurrent
          * modification, the iterator fails quickly and cleanly, rather than risking
          * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         * 
+         * <p>
+         * Instead of using a {@code ListIterator}, you might consider traversing this
+         * list via the next and previous methods of the {@code Nodes} which comprise
+         * this list. You can basically perform the same operations on a {@code Node} as
+         * those that you can perform via a {@code ListIterator}. In addition, You have
+         * more freedom to do what you want because you don't have to be concerned about
+         * throwing a {@code ConcurrentModificationException}.
          *
          * @param node first {@code Node} to be returned from the {@code ListIterator}
          *             (by a call to {@code next})
@@ -5267,6 +5284,14 @@ public class NodableLinkedList<E>
              * {@code ConcurrentModificationException}. Thus, in the face of concurrent
              * modification, the iterator fails quickly and cleanly, rather than risking
              * arbitrary, non-deterministic behavior at an undetermined time in the future.
+             * 
+             * <p>
+             * Instead of using a {@code ListIterator}, you might consider traversing this
+             * sublist via the next and previous methods of the {@code SubListNodes} which
+             * comprise this sublist. You can basically perform the same operations on a
+             * {@code SubListNode} as those that you can perform via a {@code ListIterator}.
+             * In addition, You have more freedom to do what you want because you don't have
+             * to be concerned about throwing a {@code ConcurrentModificationException}.
              *
              * @param index index of the first {@code Node} to be returned from the
              *              {@code ListIterator} (by a call to {@code next})
@@ -5320,6 +5345,14 @@ public class NodableLinkedList<E>
              * {@code ConcurrentModificationException}. Thus, in the face of concurrent
              * modification, the iterator fails quickly and cleanly, rather than risking
              * arbitrary, non-deterministic behavior at an undetermined time in the future.
+             * 
+             * <p>
+             * Instead of using a {@code ListIterator}, you might consider traversing this
+             * sublist via the next and previous methods of the {@code SubListNodes} which
+             * comprise this sublist. You can basically perform the same operations on a
+             * {@code SubListNode} as those that you can perform via a {@code ListIterator}.
+             * In addition, You have more freedom to do what you want because you don't have
+             * to be concerned about throwing a {@code ConcurrentModificationException}.
              *
              * @param node first {@code Node} to be returned from the {@code ListIterator}
              *             (by a call to {@code next})
@@ -6174,17 +6207,24 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Constructs a {@code LinkNode} as a copy of the specified node. The
-         * constructed {@code LinkNode} will contain the same element as the specified
-         * node, but will not be linked to any list even if the specified node is
-         * linked.
-         * 
-         * @param node {@code Node} to be copied
-         * @throws NullPointerException if the specified node is {@code null}
+         * Returns a shallow copy of this {@code LinkNode}. The clone will have the same
+         * element as this {@code LinkNode}, but will not be linked to any list.
+         *
+         * @return a shallow copy of this {@code LinkNode}
          */
-        public LinkNode(Node<E> node) {
-            this.element = node.element();
-        }
+        @Override
+        public LinkNode<E> clone() {
+            try {
+                @SuppressWarnings("unchecked")
+                final LinkNode<E> clone = (LinkNode<E>)super.clone();
+                clone.next = null;
+                clone.previous = null;
+                clone.linkedNodes = null;
+                return clone;               
+            } catch (CloneNotSupportedException e) {
+                throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
+            }
+        }        
 
         /**
          * Returns {@code null}; {@code LinkNodes} are never part of a {@code SubList}.
@@ -6269,26 +6309,6 @@ public class NodableLinkedList<E>
                    ? linkedNodes.nodableLinkedList()
                    : null;
         }	
-
-        /**
-         * Returns a shallow copy of this {@code LinkNode}. The clone will have the same
-         * element as this {@code LinkNode}, but will not be linked to any list.
-         *
-         * @return a shallow copy of this {@code LinkNode}
-         */
-        @Override
-        public Object clone() {
-            try {
-                @SuppressWarnings("unchecked")
-                final LinkNode<E> clone = (LinkNode<E>) super.clone();
-                clone.next = null;
-                clone.previous = null;
-                clone.linkedNodes = null;
-                return clone;				
-            } catch (CloneNotSupportedException e) {
-                throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
-            }
-        }
 
         /**
          * Replaces the element of this {@code LinkNode} with the specified element.
