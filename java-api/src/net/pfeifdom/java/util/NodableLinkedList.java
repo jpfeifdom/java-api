@@ -1591,7 +1591,6 @@ public class NodableLinkedList<E>
      */
     @Override
     public Iterator<E> descendingIterator() {
-        //return new NodableLinkedListDescendingIterator();
         return new NodableLinkedListReverseListIterator(0);
     }
 
@@ -1752,7 +1751,6 @@ public class NodableLinkedList<E>
      *
      */
     public class LinkedNodes
-        //extends AbstractSequentialList<Node<E>>
         extends InternalLinkedList
         implements List<Node<E>>, Deque<Node<E>>
     {

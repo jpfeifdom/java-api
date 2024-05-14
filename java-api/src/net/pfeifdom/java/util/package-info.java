@@ -49,6 +49,7 @@
  * list, in constant time
  * <li>you require the flexibility of traversing the list via the next and
  * previous pointers of the nodes which comprise the linked list
+ * <li>you require the capability to create a reversed list prior to JDK 21
  * <li>the list could have more than {@code Integer.MAX_VALUE} elements
  * </ul>
  * 
