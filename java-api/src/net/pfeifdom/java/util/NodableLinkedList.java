@@ -156,7 +156,7 @@ import java.util.function.Function;
  *                      // the merged nodes are placed at the front of the list, and
  *                      // tail is the last node of the merged (sorted) nodes
  *          
- *         nmerges = 0; // number of merges performed in this pass
+ *         nmerges = 0; // initialize the number of merges performed in this pass
  *             
  *         // merge successive sublists (p and q lists) of the list, of size 'insize',
  *         // until the entire list has been processed
@@ -172,7 +172,7 @@ import java.util.function.Function;
  *             psize = 0;
  *             for (int i = 0; i < insize; i++) {
  *                 psize++; // determine the size of the p list
- *                 q = q.next();
+ *                 q = q.next(); // traverse the list
  *                 if (q == null) break; // quit if the end of the list has been reached
  *             }
  *             qsize = insize; // assume the q list size is the maximum possible size
@@ -201,7 +201,7 @@ import java.util.function.Function;
  *                 }
  *                  
  *                 // remove e then add it back to the front of the list
- *                 e.remove();
+ *                 e.remove(); // remove e from the list
  *                 if (tail == null) {
  *                     // e is the first node to be added to the merged list
  *                     list.addNodeFirst(e);
@@ -286,9 +286,24 @@ import java.util.function.Function;
  * would be wrong to write a program that depended on this exception for its
  * correctness: <i>the fail-fast behavior of iterators should be used only to
  * detect bugs.</i>
+ * 
+ * <p>
+ * Instead of using a {@code ListIterator}, consider iterating over the
+ * list via {@code Nodes}. For example:
+ * <pre>
+ * {@code
+ *     // list is a NodableLinkedList<Integer>
+ *     NodableLinkedList.Node<Integer> linkNode = list.getFirstNode();
+ *     while (linkNode != null) {
+ *         System.out.println(linkNode.element());
+ *         linkNode = linkNode.next();
+ *     }
+ * }
+ * </pre>
  *
  * @author James Pfeifer
  * @param <E> the type of elements held in this collection
+ * @see java.util.LinkedList
  * @see List
  * @see Node
  * @since JDK 1.8
@@ -1257,7 +1272,72 @@ public class NodableLinkedList<E>
                 return comparator.compare(node1.element(), node2.element());
             });
         }
-    }   
+    }
+
+    /**
+     * Merge Sort
+     * 
+     * @param <T>        the type of elements held in the specified list
+     * @param list       the internal linked list to be sorted
+     * @param comparator the Comparator used to compare list elements. A null value
+     *                   indicates that the elements' natural ordering should be
+     *                   used
+     */
+    private static <T> void mergeSort(
+                    NodableLinkedList<T>.InternalLinkedList list,
+                    Comparator<? super Node<T>> comparator) {
+        LinkNode<T> pNode, qNode, sortedNode, sortedLastNode;
+        int inSize, nMerges, pSize, qSize;
+        inSize = 1;
+        while (true) {
+            sortedLastNode = null;
+            nMerges = 0;
+            pNode = list.getFirstNode();
+            while (pNode != null) {
+                nMerges++;
+                qNode = pNode;
+                pSize = 0;
+                for (int i = 0; i < inSize; i++) {
+                    pSize++;
+                    qNode = list.getNodeAfter(qNode);
+                    if (qNode == null) break;
+                }
+                qSize = inSize;
+                while (pSize > 0 || (qSize > 0 && qNode != null)) {
+                    if (pSize == 0) {
+                        sortedNode = qNode;
+                        qNode = list.getNodeAfter(qNode);
+                        qSize--;
+                    } else if (qSize == 0 || qNode == null) {
+                        sortedNode = pNode;
+                        pNode = list.getNodeAfter(pNode);
+                        pSize--;
+                    } else if (((comparator == null)
+                                ? pNode.compareTo(qNode)
+                                : comparator.compare(pNode, qNode)) <= 0)
+                    {
+                        sortedNode = pNode;
+                        pNode = list.getNodeAfter(pNode);
+                        pSize--;
+                    } else {
+                        sortedNode = qNode;
+                        qNode = list.getNodeAfter(qNode);
+                        qSize--;
+                    }
+                    list.removeNode(sortedNode);
+                    if (sortedLastNode == null) {
+                        list.addNodeFirst(sortedNode);
+                    } else {
+                        list.addNodeAfter(sortedNode, sortedLastNode);  
+                    }
+                    sortedLastNode = sortedNode;
+                }
+                pNode = qNode;
+            }
+            if (nMerges <= 1) break;
+            inSize *= 2;
+        }
+    } // mergeSort
     
     /**
      * Returns a view of the portion of this list between the specified fromIndex,
@@ -1453,167 +1533,6 @@ public class NodableLinkedList<E>
         if (array.length > size()) array[size()] = null;
         return array;
     }	
-
-    /**
-     * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified position in this list. Obeys the general
-     * contract of {@code List.listIterator(int)}.
-     * 
-     * <p>
-     * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-     * this method behaves differently when the list's
-     * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-     *
-     * <p>
-     * The {@code ListIterator} is <i>fail-fast</i>: if the
-     * {@code NodableLinkedList} is structurally modified at any time after the
-     * Iterator is created, in any way except through the {@code ListIterator's} own
-     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than risking
-     * arbitrary, non-deterministic behavior at an undetermined time in the future.
-     * 
-     * <p>
-     * Instead of using a {@code ListIterator}, consider iterating over the
-     * list via {@code Nodes}. For example:
-     * <pre>
-     * {@code
-     *     // list is a NodableLinkedList<Integer>
-     *     Node<Integer> linkNode = list.linkedNodes().get(index); // or list.getFirstNode();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     * }
-     * </pre>
-     *
-     * @param index index of the first element to be returned from the
-     *              {@code ListIterator} (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper sequence),
-     *         starting at the specified position in this list
-     * @throws IndexOutOfBoundsException if the index is out of range
-     *                                   {@code (index < 0 || index > longSize())}
-     * @see List#listIterator(int)
-     */
-    @Override
-    public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > longSize()) {
-            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-        }
-        return new NodableLinkedListListIterator(index);
-    }
-
-    /**
-     * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified node in this list. if the specified node
-     * is {@code null}, the {@code ListIterator} will be positioned right after
-     * the last {@code Node} in this list.
-     * 
-     * <p>
-     * <strong>Implementation Note:</strong> The index returned by the returned
-     * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
-     * relative to the specified node which has an index of zero. Nodes which come
-     * before the specified node in this list, will have a negative index; nodes
-     * that come after will have a positive index. Method {@code nextIndex} returns
-     * {@code longSize()} if at the end of the list, and method
-     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
-     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
-     * respectively.
-     *
-     * <p>
-     * The {@code ListIterator} is <i>fail-fast</i>: if the
-     * {@code NodableLinkedList} is structurally modified at any time after the
-     * Iterator is created, in any way except through the {@code ListIterator's} own
-     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than risking
-     * arbitrary, non-deterministic behavior at an undetermined time in the future.
-     * 
-     * <p>
-     * Instead of using a {@code ListIterator}, consider iterating over the
-     * list via {@code Nodes}. For example:
-     * <pre>
-     * {@code
-     *     // list is a NodableLinkedList<Integer>
-     *     // make sure node is a forward traversing LinkNode
-     *     Node<Integer> linkNode = list.linkedNodes().forwardLinkNode(node);
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     * }
-     * </pre>
-     *
-     * @param node node of the first element to be returned from the
-     *             {@code ListIterator} (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper sequence),
-     *         starting at the specified node in this list
-     * @throws IllegalArgumentException if node is not linked to this list
-     */
-    public ListIterator<E> listIterator(Node<E> node) {
-        if (node != null && !linkedNodes.contains(node)) {
-            throw new IllegalArgumentException("Specified node is not linked to this list");
-        }
-        return new NodableLinkedListListIterator(node);
-    }
-
-    /**
-     * Returns an iterator over the elements in this list in reverse sequential
-     * order. The elements will be returned in order from last (tail) to first
-     * (head).
-     * 
-     * <p>
-     * Instead of using a descending {@code Iterator}, consider iterating over the
-     * list via {@code nodes}. For example:
-     * <pre>
-     * {@code
-     *     Node<Integer> linkNode = getLastNode();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.previous();
-     *     }
-     *     
-     *     or use a reversed {@code LinkNode}:
-     *     
-     *     Node<Integer> linkNode = getLastNode();
-     *     if (linkNode != null) linkNode = linkNode.reversed();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     *     
-     * }
-     * </pre>
-     *
-     * @return an iterator over the elements in this list in reverse order
-     */
-    @Override
-    public Iterator<E> descendingIterator() {
-        return new NodableLinkedListReverseListIterator(0);
-    }
-
-    /**
-     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator} over
-     * the elements in this list.
-     *
-     * <p>
-     * The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#ORDERED}. Overriding implementations should document the
-     * reporting of additional characteristic values.
-     *
-     * <p>
-     * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
-     * reports {@link Spliterator#SUBSIZED} and implements {@code trySplit} to
-     * permit limited parallelism..
-     *
-     * @return a {@code Spliterator} over the elements in this list
-     */
-    @Override
-    public Spliterator<E> spliterator() {
-        return new NodableLinkedListSpliterator();
-    }
     
     /**
      * Common linked list view of LinkedNodes and SubLinkedNodes.
@@ -3076,6 +2995,19 @@ public class NodableLinkedList<E>
             return linkedNodesListIterator(index);
         }
 
+        private LinkedNodesListIterator linkedNodesListIterator(long index) {
+            //assert index >= 0 && index <= size : "index out of range; index=" + index + ", size=" + size;
+            LinkNode<E> node;
+            if (index == longSize()) {
+                index = longSize();
+                node = getTailSentinel();
+            } else {
+                node = getNode(index);
+            }
+            return new LinkedNodesListIterator(this, longSize(), index, IndexType.ABSOLUTE,
+                    node, this.getHeadSentinel(), this.getTailSentinel());
+        }
+
         /**
          * Returns a {@code ListIterator} of the {@code Nodes} in this list (in proper
          * sequence), starting at the specified node in this list. if the specified node
@@ -3130,6 +3062,12 @@ public class NodableLinkedList<E>
             }
             return linkedNodesListIterator(node);
         }
+        
+        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node) {
+            return new LinkedNodesListIterator(this, longSize(), 0L, IndexType.RELATIVE,
+                    (node == null) ? this.getTailSentinel() : node.linkNode(),
+                    this.getHeadSentinel(), this.getTailSentinel());
+        }
 
         /**
          * Returns an iterator over the {@code Nodes} in this list in reverse sequential
@@ -3165,6 +3103,11 @@ public class NodableLinkedList<E>
         public Iterator<Node<E>> descendingIterator() {
             return linkedNodesReverseListIterator(0); 
         }
+        
+        private LinkedNodesReverseListIterator linkedNodesReverseListIterator(long index) {
+            return new LinkedNodesReverseListIterator(this, longSize(), index, getNode(longSize() - index - 1),
+                    this.getTailSentinel(), this.getHeadSentinel());
+        }
 
         /**
          * Creates a <i>late-binding</i> and <i>fail-fast</i> {@link Spliterator} over
@@ -3187,50 +3130,61 @@ public class NodableLinkedList<E>
             return linkedNodesSpliterator();
         }
         
-        private LinkedNodesListIterator linkedNodesListIterator(long index) {
-            //assert index >= 0 && index <= size : "index out of range; index=" + index + ", size=" + size;
-            LinkNode<E> node;
-            if (index == longSize()) {
-                index = longSize();
-                node = getTailSentinel();
-            } else {
-                node = getNode(index);
-            }
-            return new LinkedNodesListIterator(this, longSize(), index, node, this.getHeadSentinel(), this.getTailSentinel());
-        }
-        
-        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node) {
-            return new LinkedNodesListIterator(this, longSize(), 0L,
-                    (node == null) ? this.getTailSentinel() : node.linkNode(),
-                    this.getHeadSentinel(), this.getTailSentinel());
-        }
-        
-        private LinkedNodesReverseListIterator linkedNodesReverseListIterator(long index) {
-            return new LinkedNodesReverseListIterator(this, longSize(), index, getNode(longSize() - index - 1),
-                    this.getTailSentinel(), this.getHeadSentinel());
-        }
-        
         private LinkedNodesSpliterator linkedNodesSpliterator() {
             return new LinkedNodesSpliterator(this);
         }
 
     } // LinkedNodes
 
+    /**
+     * LinkedNodes ListIterator that all other ListIterators utilize.
+     */
+    enum IndexType { ABSOLUTE, RELATIVE}
     private class LinkedNodesListIterator implements ListIterator<Node<E>> {
         
-        private final InternalLinkedList list;
+        private final InternalLinkedList list; // LinkedNodes or SubListNodes
         private final LinkNode<E> headSentinel;
         private final LinkNode<E> tailSentinel;
         private long size; // can be < 0 which indicates size is unknown
 
         private long cursorIndex;
+        private IndexType indexType;
         private LinkNode<E> cursorNode;
         private LinkNode<E> targetNode;
         private int expectedModCount = modCount();
-        private boolean relativeIndex = false;
         
-        private LinkedNodesListIterator(InternalLinkedList list, long size, long index, LinkNode<E> node,
-                LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
+        /**
+         * Constructs a ListIterator of the LinkedNodes.
+         * 
+         * The headSentinel and tailSentinel are used to define a sublist of the
+         * LinkedNodes to be iterated over. The specified size (if known) is the size of
+         * this defined sublist.
+         * 
+         * For sublists, there is no guarantee that the tailSentinel comes after the
+         * headSentinel in the list. If it doesn't, this ListIterator will iterate all
+         * the way through the list to the end, at which time, it will throw an
+         * IllegalStateException indicating the end of the list was reached
+         * unexpectedly. The specified node is guaranteed to come after the headSentinel
+         * and before the tailSentinel unless the tailSentinel comes before the
+         * headSentinel in the list.
+         * 
+         * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index is indexed from the
+         * the beginning of the list. A RELATIVE index is relative to the starting node
+         * where the starting node has an index of zero, all nodes that come before the
+         * starting node have a negative index, and all nodes that come after the
+         * starting code have a positive index.
+         * 
+         * @param list         LinkedNodes or SubListNodes to iterate over
+         * @param size         list size which may be < 0 indicating size is unknown
+         * @param index        the index of the starting node
+         * @param indexType    ABSOLUTE or RELATIVE.
+         * @param node         the starting node; the first node to be returned by a
+         *                     call to next()
+         * @param headSentinel the head sentinel of the (sub)list to be iterated over
+         * @param tailSentinel the tail sentinel of the (sub)list to be iterated over
+         */
+        private LinkedNodesListIterator(InternalLinkedList list, long size, long index, IndexType indexType,
+                LinkNode<E> node, LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
             // assert index >= 0 && index <= size :
             //     "index out of range; index=" + index + ", size=" + size;
             // assert node != null && node.linkedNodes == LinkedNodes.this :
@@ -3239,17 +3193,11 @@ public class NodableLinkedList<E>
             //     "head sentinel is null or is not linked to this list";
             // assert tailSentinel != null && tailSentinel.linkedNodes == LinkedNodes.this :
             //     "tail sentinel is null or is not linked to this list";
-            // sublist considerations:
-            // . size may be < 0 indicating size is unknown
-            // . no guarantee that the tailSentinel comes after the headSentinel in the
-            //   list
-            // . guaranteed that the node comes after the headSentinel in the list and
-            //   not after the tailSentinel unless the tailSentinel comes before the
-            //   headSentinel
             this.list = list;
             this.size = size;
             this.headSentinel = headSentinel;
             this.tailSentinel = tailSentinel;
+            this.indexType = indexType;
             cursorIndex = index - 1L;
             this.cursorNode = list.getNodeBeforeOrHeadSentinel(node);
             targetNode = null;
@@ -3340,7 +3288,7 @@ public class NodableLinkedList<E>
         @Override
         public int nextIndex() {
             checkForModificationException();
-            if (relativeIndex) {
+            if (indexType == IndexType.RELATIVE) {
                 if (!hasNext()) return (longSize() >= Integer.MAX_VALUE)
                                        ? Integer.MAX_VALUE
                                        : (int)longSize();
@@ -3359,7 +3307,7 @@ public class NodableLinkedList<E>
         @Override
         public int previousIndex() {
             checkForModificationException();
-            if (relativeIndex) {
+            if (indexType == IndexType.RELATIVE) {
                 if (!hasPrevious()) return (longSize() <= Integer.MIN_VALUE)
                                            ? Integer.MIN_VALUE
                                            : -(int)longSize();
@@ -3437,12 +3385,12 @@ public class NodableLinkedList<E>
          
         private LinkedNodesReverseListIterator(InternalLinkedList list, long size, long index,
                 LinkNode<E> node, LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
-            super(list, size, index, node, headSentinel, tailSentinel);
+            super(list, size, index, IndexType.ABSOLUTE, node, headSentinel, tailSentinel);
         }
         
         private LinkedNodesReverseListIterator(InternalLinkedList list, long size, LinkNode<E> node,
                 LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
-            super(list, size, 0L, node, headSentinel, tailSentinel);
+            super(list, size, 0L, IndexType.RELATIVE, node, headSentinel, tailSentinel);
         }
         
         @Override
@@ -3564,7 +3512,112 @@ public class NodableLinkedList<E>
             return array;
         }            
 
-    } // LinkedNodesSpliterator     
+    } // LinkedNodesSpliterator
+
+    /**
+     * Returns a {@code ListIterator} of the elements in this list (in proper
+     * sequence), starting at the specified position in this list. Obeys the general
+     * contract of {@code List.listIterator(int)}.
+     * 
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+     * this method behaves differently when the list's
+     * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+     *
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator's} own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
+     * 
+     * <p>
+     * Instead of using a {@code ListIterator}, consider iterating over the
+     * list via {@code Nodes}. For example:
+     * <pre>
+     * {@code
+     *     // list is a NodableLinkedList<Integer>
+     *     Node<Integer> linkNode = list.linkedNodes().get(index); // or list.getFirstNode();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     * }
+     * </pre>
+     *
+     * @param index index of the first element to be returned from the
+     *              {@code ListIterator} (by a call to {@code next})
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified position in this list
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index > longSize())}
+     * @see List#listIterator(int)
+     */
+    @Override
+    public ListIterator<E> listIterator(int index) {
+        if (index < 0 || index > longSize()) {
+            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        }
+        return new NodableLinkedListListIterator(index);
+    }
+
+    /**
+     * Returns a {@code ListIterator} of the elements in this list (in proper
+     * sequence), starting at the specified node in this list. if the specified node
+     * is {@code null}, the {@code ListIterator} will be positioned right after
+     * the last {@code Node} in this list.
+     * 
+     * <p>
+     * <strong>Implementation Note:</strong> The index returned by the returned
+     * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
+     * relative to the specified node which has an index of zero. Nodes which come
+     * before the specified node in this list, will have a negative index; nodes
+     * that come after will have a positive index. Method {@code nextIndex} returns
+     * {@code longSize()} if at the end of the list, and method
+     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
+     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
+     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+     * respectively.
+     *
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator's} own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
+     * 
+     * <p>
+     * Instead of using a {@code ListIterator}, consider iterating over the
+     * list via {@code Nodes}. For example:
+     * <pre>
+     * {@code
+     *     // list is a NodableLinkedList<Integer>
+     *     // make sure node is a forward traversing LinkNode
+     *     Node<Integer> linkNode = list.linkedNodes().forwardLinkNode(node);
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     * }
+     * </pre>
+     *
+     * @param node node of the first element to be returned from the
+     *             {@code ListIterator} (by a call to {@code next})
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified node in this list
+     * @throws IllegalArgumentException if node is not linked to this list
+     */
+    public ListIterator<E> listIterator(Node<E> node) {
+        if (node != null && !linkedNodes.contains(node)) {
+            throw new IllegalArgumentException("Specified node is not linked to this list");
+        }
+        return new NodableLinkedListListIterator(node);
+    }
 
     private class NodableLinkedListListIterator implements ListIterator<E> {
 
@@ -3636,6 +3689,41 @@ public class NodableLinkedList<E>
 
     } // NodableLinkedListListIterator
 
+    /**
+     * Returns an iterator over the elements in this list in reverse sequential
+     * order. The elements will be returned in order from last (tail) to first
+     * (head).
+     * 
+     * <p>
+     * Instead of using a descending {@code Iterator}, consider iterating over the
+     * list via {@code nodes}. For example:
+     * <pre>
+     * {@code
+     *     Node<Integer> linkNode = getLastNode();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.previous();
+     *     }
+     *     
+     *     or use a reversed {@code LinkNode}:
+     *     
+     *     Node<Integer> linkNode = getLastNode();
+     *     if (linkNode != null) linkNode = linkNode.reversed();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     *     
+     * }
+     * </pre>
+     *
+     * @return an iterator over the elements in this list in reverse order
+     */
+    @Override
+    public Iterator<E> descendingIterator() {
+        return new NodableLinkedListReverseListIterator(0);
+    }
+
     private class NodableLinkedListReverseListIterator extends NodableLinkedListListIterator {
 
         private NodableLinkedListReverseListIterator(int index) {
@@ -3643,6 +3731,27 @@ public class NodableLinkedList<E>
         }
 
     } // NodableLinkedListReverseListIterator
+
+    /**
+     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator} over
+     * the elements in this list.
+     *
+     * <p>
+     * The {@code Spliterator} reports {@link Spliterator#SIZED} and
+     * {@link Spliterator#ORDERED}. Overriding implementations should document the
+     * reporting of additional characteristic values.
+     *
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
+     * reports {@link Spliterator#SUBSIZED} and implements {@code trySplit} to
+     * permit limited parallelism..
+     *
+     * @return a {@code Spliterator} over the elements in this list
+     */
+    @Override
+    public Spliterator<E> spliterator() {
+        return new NodableLinkedListSpliterator();
+    }
 
     private class NodableLinkedListSpliterator implements Spliterator<E> {
 
@@ -3760,6 +3869,7 @@ public class NodableLinkedList<E>
             this.linkedSubNodes = new LinkedSubNodes(headSentinel, tailSentinel, parent, size);
         }
         
+        // used by ReversedSubList
         private SubList(LinkedSubNodes linkedSubNodes) {
             this.linkedSubNodes = new ReversedLinkedSubNodes(linkedSubNodes);
         }
@@ -5954,8 +6064,8 @@ public class NodableLinkedList<E>
                 } else {
                     node = getNode(index);
                 }
-                return new LinkedNodesListIterator(this, this.getSize(), index, node,
-                        this.getHeadSentinel(), knownTailSentinel());
+                return new LinkedNodesListIterator(this, this.getSize(), index, IndexType.ABSOLUTE,
+                        node, this.getHeadSentinel(), knownTailSentinel());
             }
             
             /**
@@ -6015,14 +6125,14 @@ public class NodableLinkedList<E>
             private LinkedNodesListIterator linkedSubNodesListIterator(Node<E> node) {
                 checkForModificationException();
                 if (node == null) {
-                    return new LinkedNodesListIterator(this, this.getSize(), 0L, getConfirmedTailSentinel(),
-                            this.getHeadSentinel(), getConfirmedTailSentinel());
+                    return new LinkedNodesListIterator(this, this.getSize(), 0L, IndexType.RELATIVE,
+                            getConfirmedTailSentinel(), this.getHeadSentinel(), getConfirmedTailSentinel());
                 }
                 if (!this.contains(node)) {
                     throw new IllegalArgumentException("specified node is not part of this sublist");
                 }
-                return new LinkedNodesListIterator(this, this.getSize(), 0L, node.linkNode(),
-                        this.getHeadSentinel(), knownTailSentinel());
+                return new LinkedNodesListIterator(this, this.getSize(), 0L, IndexType.RELATIVE,
+                        node.linkNode(), this.getHeadSentinel(), knownTailSentinel());
             }
             
             private LinkNode<E> knownTailSentinel() {
@@ -6535,71 +6645,6 @@ public class NodableLinkedList<E>
     } // ReversedLinkedNodes
 
     /**
-     * Merge Sort
-     * 
-     * @param <T>        the type of elements held in the specified list
-     * @param list       the internal linked list to be sorted
-     * @param comparator the Comparator used to compare list elements. A null value
-     *                   indicates that the elements' natural ordering should be
-     *                   used
-     */
-    private static <T> void mergeSort(
-                    NodableLinkedList<T>.InternalLinkedList list,
-                    Comparator<? super Node<T>> comparator) {
-        LinkNode<T> pNode, qNode, sortedNode, sortedLastNode;
-        int inSize, nMerges, pSize, qSize;
-        inSize = 1;
-        while (true) {
-            sortedLastNode = null;
-            nMerges = 0;
-            pNode = list.getFirstNode();
-            while (pNode != null) {
-                nMerges++;
-                qNode = pNode;
-                pSize = 0;
-                for (int i = 0; i < inSize; i++) {
-                    pSize++;
-                    qNode = list.getNodeAfter(qNode);
-                    if (qNode == null) break;
-                }
-                qSize = inSize;
-                while (pSize > 0 || (qSize > 0 && qNode != null)) {
-                    if (pSize == 0) {
-                        sortedNode = qNode;
-                        qNode = list.getNodeAfter(qNode);
-                        qSize--;
-                    } else if (qSize == 0 || qNode == null) {
-                        sortedNode = pNode;
-                        pNode = list.getNodeAfter(pNode);
-                        pSize--;
-                    } else if (((comparator == null)
-                                ? pNode.compareTo(qNode)
-                                : comparator.compare(pNode, qNode)) <= 0)
-                    {
-                        sortedNode = pNode;
-                        pNode = list.getNodeAfter(pNode);
-                        pSize--;
-                    } else {
-                        sortedNode = qNode;
-                        qNode = list.getNodeAfter(qNode);
-                        qSize--;
-                    }
-                    list.removeNode(sortedNode);
-                    if (sortedLastNode == null) {
-                        list.addNodeFirst(sortedNode);
-                    } else {
-                        list.addNodeAfter(sortedNode, sortedLastNode);  
-                    }
-                    sortedLastNode = sortedNode;
-                }
-                pNode = qNode;
-            }
-            if (nMerges <= 1) break;
-            inSize *= 2;
-        }
-    } // mergeSort
-
-    /**
      * Sublist node of a {@code NodableLinkedList.SubList}. A {@code SubListNode}
      * represents a {@code NodableLinkedList.LinkNode} that is associated with a
      * specific {@code SubList}. Any operation performed on a {@code SubListNode} is
@@ -6900,6 +6945,7 @@ public class NodableLinkedList<E>
          * {@code true} if this {@code SubListNode} is not the last node of a
          * {@code SubList}.
          * 
+         * <p>
          * If this {@code SubListNode} is reversed, this operation behaves like the
          * {@code hasPrevious()} method.
          * 
@@ -6921,7 +6967,7 @@ public class NodableLinkedList<E>
          * {@code true} if this {@code SubListNode} is not the first node of a
          * {@code SubList}.
          * 
-         * 
+         * <p>
          * If this {@code SubListNode} is reversed, this operation behaves like the
          * {@code hasNext()} method.
          * 
@@ -6966,6 +7012,7 @@ public class NodableLinkedList<E>
          * a {@code SubList}. if this {@code SubListNode} is the last or only node,
          * {@code null} is returned.
          * 
+         * <p>
          * If this is a reversed {@code SubListNode}, this operation behaves like the
          * {@code previous()} method, and the returned {@code SubListNode} will also be
          * reversed.
@@ -6991,6 +7038,7 @@ public class NodableLinkedList<E>
          * in a {@code SubList}. if this {@code SubListNode} is the first or only node,
          * {@code null} is returned.
          * 
+         * <p>
          * If this is a reversed {@code SubListNode}, this operation behaves like the
          * {@code next()} method, and the returned {@code SubListNode} will also be
          * reversed.
@@ -7025,9 +7073,9 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Replaces this {@code SubListNode}, in a {@code SubList}, with the specified
-         * node. This {@code SubListNode} must belong to a {@code SubList}, and the
-         * specified node must not belong to a list.
+         * Replaces this {@code SubListNode} with the specified node. This
+         * {@code SubListNode} must belong to a {@code SubList}, and the specified node
+         * must not belong to a list.
          * 
          * <p>
          * If the specified node is a {@code SubListNode}, after this operation is
@@ -7677,6 +7725,7 @@ public class NodableLinkedList<E>
          * {@code LinkNode} in a list. In other words, returns {@code true} if this
          * {@code LinkNode} is not the last node of a list.
          * 
+         * <p>
          * If this {@code LinkNode} is reversed, this operation behaves like the
          * {@code hasPrevious()} method.
          * 
@@ -7697,6 +7746,7 @@ public class NodableLinkedList<E>
          * {@code LinkNode} in a list. In other words, returns {@code true} if this
          * {@code LinkNode} is not the first node of a list.
          * 
+         * <p>
          * If this {@code LinkNode} is reversed, this operation behaves like the
          * {@code hasNext()} method.
          * 
@@ -7741,6 +7791,7 @@ public class NodableLinkedList<E>
          * list. if this {@code LinkNode} is the last or only {@code LinkNode},
          * {@code null} is returned.
          * 
+         * <p>
          * If this is a reversed {@code LinkNode}, this operation behaves like the
          * {@code previous()} method, and the returned {@code LinkNode} will also be
          * reversed.
@@ -7764,6 +7815,7 @@ public class NodableLinkedList<E>
          * list. if this {@code LinkNode} is the first or only {@code LinkNode},
          * {@code null} is returned.
          * 
+         * <p>
          * If this is a reversed {@code LinkNode}, this operation behaves like the
          * {@code next()} method, and the returned {@code LinkNode} will also be
          * reversed.
@@ -7796,9 +7848,9 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Replaces this {@code LinkNode}, in a list, with the specified node. This
-         * {@code LinkNode} must belong to a list, and the specified node must not
-         * already belong to a list.
+         * Replaces this {@code LinkNode} with the specified node. This {@code LinkNode}
+         * must belong to a list, and the specified node must not already belong to a
+         * list.
          * 
          * @param node {@code Node} to replace this {@code LinkNode}
          * @throws IllegalStateException    if this {@code LinkNode} is not linked
@@ -8184,7 +8236,7 @@ public class NodableLinkedList<E>
      * <p>
      * In general, all operations, except {@code index()} and {@code subListNode()},
      * perform in constant time. This does not necessarily apply to
-     * {@code SubListNodes} (see the description for {@code SubListNodes}).
+     * {@code SubListNodes} (see the description for {@code SubListNode}).
      * 
      * @author James Pfeifer
      * @param <E> the type of element held in this {@code Node}
@@ -8285,6 +8337,7 @@ public class NodableLinkedList<E>
          * effectively inserted into the specified {@code SubListNode's} associated
          * {@code SubList}.
          * 
+         * <p>
          * If this {@code Node} is reversed, this operation behaves like the
          * {@code addBefore(Node)} method.
          * 
@@ -8306,6 +8359,7 @@ public class NodableLinkedList<E>
          * effectively inserted into the specified {@code SubListNode's} associated
          * {@code SubList}.
          * 
+         * <p>
          * If this {@code Node} is reversed, this operation behaves like the
          * {@code addAfter(Node)} method.
          * 
@@ -8326,6 +8380,7 @@ public class NodableLinkedList<E>
          * If this {@code Node} is a {@code SubListNode}, it is verified that it is
          * still contained by its associated {@code SubList}.
          * 
+         * <p>
          * If this {@code Node} is reversed, this operation behaves like the
          * {@code hasPrevious()} method.
          * 
@@ -8344,6 +8399,7 @@ public class NodableLinkedList<E>
          * If this {@code Node} is a {@code SubListNode}, it is verified that it is
          * still contained by its associated {@code SubList}.
          * 
+         * <p>
          * If this {@code Node} is reversed, this operation behaves like the
          * {@code hasNext()} method.
          * 
@@ -8374,6 +8430,7 @@ public class NodableLinkedList<E>
          * Returns the {@code Node} which comes after this {@code Node} in a list. if
          * this {@code Node} is the last or only {@code Node}, {@code null} is returned.
          * 
+         * <p>
          * If this is a reversed {@code Node}, this operation behaves like the
          * {@code previous()} method, and the returned {@code Node} will also be
          * reversed.
@@ -8389,6 +8446,7 @@ public class NodableLinkedList<E>
          * this {@code Node} is the first or only {@code Node}, {@code null} is
          * returned.
          * 
+         * <p>
          * If this is a reversed {@code Node}, this operation behaves like the
          * {@code next()} method, and the returned {@code Node} will also be reversed.
          * 
@@ -8406,9 +8464,8 @@ public class NodableLinkedList<E>
         public void remove();
 
         /**
-         * Replaces this {@code Node}, in a list, with the specified node. This
-         * {@code Node} must belong to a list, and the specified node must not already
-         * belong to a list.
+         * Replaces this {@code Node} with the specified node. This {@code Node} must
+         * belong to a list, and the specified node must not already belong to a list.
          * 
          * <p>
          * If both this {@code Node} and the specified node are {@code SubListNodes},
