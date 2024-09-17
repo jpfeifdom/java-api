@@ -171,7 +171,7 @@ import java.util.function.Function;
  *             q = p;
  *             psize = 0;
  *             for (int i = 0; i < insize; i++) {
- *                 psize++; // determine the size of the p list
+ *                 psize++; // determine the exact size of the p list
  *                 q = q.next(); // traverse the list
  *                 if (q == null) break; // quit if the end of the list has been reached
  *             }
@@ -1532,7 +1532,215 @@ public class NodableLinkedList<E>
         }
         if (array.length > size()) array[size()] = null;
         return array;
-    }	
+    }
+
+    /**
+     * Returns a {@code ListIterator} of the elements in this list (in proper
+     * sequence), starting at the specified position in this list. Obeys the general
+     * contract of {@code List.listIterator(int)}.
+     * 
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+     * this method behaves differently when the list's
+     * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+     *
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator's} own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
+     * 
+     * <p>
+     * Instead of using a {@code ListIterator}, consider iterating over the
+     * list via {@code Nodes}. For example:
+     * <pre>
+     * {@code
+     *     // list is a NodableLinkedList<Integer>
+     *     Node<Integer> linkNode = list.linkedNodes().get(index); // or list.getFirstNode();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     * }
+     * </pre>
+     *
+     * @param index index of the first element to be returned from the
+     *              {@code ListIterator} (by a call to {@code next})
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified position in this list
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *                                   {@code (index < 0 || index > longSize())}
+     * @see List#listIterator(int)
+     */
+    @Override
+    public ListIterator<E> listIterator(int index) {
+        if (index < 0 || index > longSize()) {
+            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+        }
+        final LinkedNodes linkedNodes = linkedNodes();
+        return new ElementListIterator(linkedNodes, index, IndexType.ABSOLUTE, linkedNodes.getNode(index));
+    }
+
+    /**
+     * Returns a {@code ListIterator} of the elements in this list (in proper
+     * sequence), starting at the specified node in this list. if the specified node
+     * is {@code null}, the {@code ListIterator} will be positioned right after
+     * the last {@code Node} in this list.
+     * 
+     * <p>
+     * <strong>Implementation Note:</strong> The index returned by the returned
+     * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
+     * relative to the specified node which has an index of zero. Nodes which come
+     * before the specified node in this list, will have a negative index; nodes
+     * that come after will have a positive index. Method {@code nextIndex} returns
+     * {@code longSize()} if at the end of the list, and method
+     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
+     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
+     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
+     * respectively.
+     *
+     * <p>
+     * The {@code ListIterator} is <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * Iterator is created, in any way except through the {@code ListIterator's} own
+     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
+     * 
+     * <p>
+     * Instead of using a {@code ListIterator}, consider iterating over the
+     * list via {@code Nodes}. For example:
+     * <pre>
+     * {@code
+     *     // list is a NodableLinkedList<Integer>
+     *     // make sure node is a forward traversing LinkNode
+     *     Node<Integer> linkNode = (node == null) ? null : list.linkedNodes().forwardLinkNode(node);
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     * }
+     * </pre>
+     *
+     * @param node node of the first element to be returned from the
+     *             {@code ListIterator} (by a call to {@code next})
+     * @return a ListIterator of the elements in this list (in proper sequence),
+     *         starting at the specified node in this list
+     * @throws IllegalArgumentException if node is not linked to this list
+     */
+    public ListIterator<E> listIterator(Node<E> node) {
+        if (node != null && !linkedNodes.contains(node)) {
+            throw new IllegalArgumentException("Specified node is not linked to this list");
+        }
+        final LinkedNodes linkedNodes = linkedNodes();
+        return new ElementListIterator(linkedNodes, 0L, IndexType.RELATIVE,
+                (node == null) ? linkedNodes.getTailSentinel() : node.linkNode());
+    }
+
+    /**
+     * Returns an iterator over the elements in this list in reverse sequential
+     * order. The elements will be returned in order from last (tail) to first
+     * (head).
+     * 
+     * <p>
+     * Instead of using a descending {@code Iterator}, consider iterating over the
+     * list via {@code nodes}. For example:
+     * <pre>
+     * {@code
+     *     Node<Integer> linkNode = getLastNode();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.previous();
+     *     }
+     *     
+     *     or use a reversed {@code LinkNode}:
+     *     
+     *     Node<Integer> linkNode = getLastNode();
+     *     if (linkNode != null) linkNode = linkNode.reversed();
+     *     while (linkNode != null) {
+     *         System.out.println(linkNode.element());
+     *         linkNode = linkNode.next();
+     *     }
+     *     
+     * }
+     * </pre>
+     *
+     * @return an iterator over the elements in this list in reverse order
+     */
+    @Override
+    public Iterator<E> descendingIterator() {
+        final LinkNode<E> node = isEmpty() ? linkedNodes().getHeadSentinel() : getLastNode();
+        return new ElementReverseListIterator(this.linkedNodes(), 0L, IndexType.ABSOLUTE, node);
+    }
+
+    /**
+     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator} over
+     * the elements in this list.
+     *
+     * <p>
+     * The {@code Spliterator} reports {@link Spliterator#SIZED} and
+     * {@link Spliterator#ORDERED}. Overriding implementations should document the
+     * reporting of additional characteristic values.
+     *
+     * <p>
+     * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
+     * reports {@link Spliterator#SUBSIZED} and implements {@code trySplit} to
+     * permit limited parallelism..
+     *
+     * @return a {@code Spliterator} over the elements in this list
+     */
+    @Override
+    public Spliterator<E> spliterator() {
+        return new ElementListSpliterator(linkedNodes);
+    }
+    
+    private static class Reversed<E> extends NodableLinkedList<E> implements java.io.Externalizable {
+        
+        private NodableLinkedList<E> nodableLinkedList;
+        
+        private Reversed(NodableLinkedList<E> nodableLinkedList) {
+            super(nodableLinkedList.linkedNodes());
+            this.nodableLinkedList = nodableLinkedList;
+        }
+        
+        @Override
+        int modCount() {
+            return nodableLinkedList.modCount();
+        }
+        
+        @Override
+        public LinkNode<E> getFirstNode() {
+            final LinkNode<E> linkNode = linkedNodes().getFirstNode();
+            return (linkNode == null) ? null : linkNode.reversed();
+        }
+        
+        @Override
+        public LinkNode<E> getLastNode() {
+            final LinkNode<E> linkNode = linkedNodes().getLastNode();
+            return (linkNode == null) ? null : linkNode.reversed();
+        }        
+        
+        @Override
+        public NodableLinkedList<E> reversed() {
+            return this.nodableLinkedList;
+        }
+        
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            throw new java.io.InvalidObjectException("not serializable");
+        }
+
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            throw new java.io.InvalidObjectException("not serializable");
+        }
+        
+    } // Reversed    
     
     /**
      * Common linked list view of LinkedNodes and SubLinkedNodes.
@@ -1541,7 +1749,7 @@ public class NodableLinkedList<E>
      */
     abstract class InternalLinkedList extends AbstractSequentialList<Node<E>> {
         
-        abstract public long longSize();
+        abstract long getSize();
         
         abstract void addNodeFirst(LinkNode<E> linkNode);
         
@@ -1618,7 +1826,7 @@ public class NodableLinkedList<E>
          * @param linkNode the LinkNode whose next LinkNode is returned
          * @return the LinkNode that comes after the specified LinkNode
          */
-        abstract LinkNode<E> getNodeAfterFromListWithKnownTailSentinel(LinkNode<E> linknode);
+        abstract LinkNode<E> getNodeAfterFromListWithKnownTailSentinel(LinkNode<E> linkNode);
         
         abstract LinkNode<E> getNodeBefore(LinkNode<E> linkNode);
         
@@ -1722,7 +1930,6 @@ public class NodableLinkedList<E>
          *
          * @return the number of nodes in this list.
          */
-        @Override
         public long longSize() {
             return size;
         }
@@ -1735,6 +1942,11 @@ public class NodableLinkedList<E>
         @Override
         public boolean isEmpty() {
             return longSize() == 0L;
+        }
+        
+        @Override
+        long getSize() {
+            return size;
         }
         
         @Override
@@ -1832,7 +2044,7 @@ public class NodableLinkedList<E>
         
         @Override
         LinkNode<E> getMyLinkedNodesTailSentinel() {
-            return headSentinel;
+            return tailSentinel;
         }
         
         @Override
@@ -1885,7 +2097,8 @@ public class NodableLinkedList<E>
         }
         
         private LinkNode<E> getNode(long index) {
-            //assert index >= 0L && index < longSize() : "index=" + index + ", size=" + longSize();
+            //assert index >= 0L && index <= longSize() : "index=" + index + ", size=" + longSize();
+            if (index == longSize()) return getTailSentinel();
             LinkNode<E> node;
             long nodeIndex;
             final long lastIndex = longSize() - 1L;
@@ -1951,26 +2164,6 @@ public class NodableLinkedList<E>
                 throw new IllegalArgumentException("Specified node is not linked to this list");
             }
             return node.linkNode();
-        }
-        
-        /**
-         * Returns and possibly reverses the specified {@code Node's} backing
-         * {@code LinkNode} to match the reverse direction of this list. In other words,
-         * returns a {@code LinkNode} which can be used to traverse this list from the
-         * specified node to the list's first node when making successive calls to the
-         * {@code LinkNode.next()} method.
-         * 
-         * @param node the {@code Node} whose backing {@code LinkNode} is returned and
-         *             possibly reversed to match the reverse direction of this list
-         * @return a {@code LinkNode} which can be used to traverse this list in a
-         *         reverse direction
-         * @throws IllegalArgumentException if node is not linked to this list
-         */
-        public LinkNode<E> reverseLinkNode(Node<E> node) {
-            if (!this.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
-            }
-            return node.linkNode().reversed();
         }
         
         /**
@@ -2094,7 +2287,7 @@ public class NodableLinkedList<E>
             if (index < 0 || index > longSize()) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
-            if (index == longSize()) addAll(collection);
+            if (index == longSize()) return addAll(collection);
             final long initialSize = longSize();
             final LinkNode<E> targetNode = getNode(index);
             for (Node<E> node: collection) {
@@ -2992,20 +3185,7 @@ public class NodableLinkedList<E>
             if (index < 0 || index > longSize()) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
-            return linkedNodesListIterator(index);
-        }
-
-        private LinkedNodesListIterator linkedNodesListIterator(long index) {
-            //assert index >= 0 && index <= size : "index out of range; index=" + index + ", size=" + size;
-            LinkNode<E> node;
-            if (index == longSize()) {
-                index = longSize();
-                node = getTailSentinel();
-            } else {
-                node = getNode(index);
-            }
-            return new LinkedNodesListIterator(this, longSize(), index, IndexType.ABSOLUTE,
-                    node, this.getHeadSentinel(), this.getTailSentinel());
+            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
         }
 
         /**
@@ -3042,7 +3222,7 @@ public class NodableLinkedList<E>
          * {@code
          *     // list is a NodableLinkedList<Integer>.LinkedNodes
          *     // make sure node is a forward traversing LinkNode
-         *     Node<Integer> linkNode = list.forwardLinkNode(node);
+         *     Node<Integer> linkNode = (node == null) ? null : list.forwardLinkNode(node);
          *     while (linkNode != null) {
          *         System.out.println(linkNode.element());
          *         linkNode = linkNode.next();
@@ -3060,13 +3240,8 @@ public class NodableLinkedList<E>
             if (node != null && !this.contains(node)) {
                 throw new IllegalArgumentException("Specified node is not linked to this list");
             }
-            return linkedNodesListIterator(node);
-        }
-        
-        private LinkedNodesListIterator linkedNodesListIterator(Node<E> node) {
-            return new LinkedNodesListIterator(this, longSize(), 0L, IndexType.RELATIVE,
-                    (node == null) ? this.getTailSentinel() : node.linkNode(),
-                    this.getHeadSentinel(), this.getTailSentinel());
+            return new LinkNodeListIterator(this, 0L, IndexType.RELATIVE,
+                    (node == null) ? this.getTailSentinel() : node.linkNode());
         }
 
         /**
@@ -3101,12 +3276,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public Iterator<Node<E>> descendingIterator() {
-            return linkedNodesReverseListIterator(0); 
-        }
-        
-        private LinkedNodesReverseListIterator linkedNodesReverseListIterator(long index) {
-            return new LinkedNodesReverseListIterator(this, longSize(), index, getNode(longSize() - index - 1),
-                    this.getTailSentinel(), this.getHeadSentinel());
+            final LinkNode<E> node = isEmpty() ? getHeadSentinel() : getLastNode();
+            return new LinkNodeReverseListIterator(this, 0L, IndexType.ABSOLUTE, node); 
         }
 
         /**
@@ -3127,674 +3298,199 @@ public class NodableLinkedList<E>
          */
         @Override
         public Spliterator<Node<E>> spliterator() {
-            return linkedNodesSpliterator();
-        }
-        
-        private LinkedNodesSpliterator linkedNodesSpliterator() {
-            return new LinkedNodesSpliterator(this);
+            return new NodeSpliterator(this);
         }
 
     } // LinkedNodes
-
-    /*
-     * LinkedNodes ListIterator that all other ListIterators utilize.
-     */
-    enum IndexType { ABSOLUTE, RELATIVE}
-    private class LinkedNodesListIterator implements ListIterator<Node<E>> {
-        
-        private final InternalLinkedList list; // LinkedNodes or LinkedSubNodes
-        private final LinkNode<E> headSentinel;
-        private final LinkNode<E> tailSentinel;
-        private long size; // can be < 0 which indicates size is unknown
-
-        private long cursorIndex;
-        private IndexType indexType;
-        private LinkNode<E> cursorNode;
-        private LinkNode<E> targetNode;
-        private int expectedModCount = modCount();
-        
-        /**
-         * Constructs a ListIterator of the LinkedNodes.
-         * 
-         * The headSentinel and tailSentinel are used to define a sublist of the
-         * LinkedNodes to be iterated over. The specified size (if known) is the size of
-         * this defined sublist.
-         * 
-         * For sublists, there is no guarantee that the tailSentinel comes after the
-         * headSentinel in the list. If it doesn't, this ListIterator will iterate all
-         * the way through the list to the end, at which time, it will throw an
-         * IllegalStateException indicating the end of the list was reached
-         * unexpectedly. The specified node is guaranteed to come after the headSentinel
-         * and before the tailSentinel unless the tailSentinel comes before the
-         * headSentinel in the list.
-         * 
-         * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index is indexed from the
-         * the beginning of the list. A RELATIVE index is relative to the starting node
-         * where the starting node has an index of zero, all nodes that come before the
-         * starting node have a negative index, and all nodes that come after the
-         * starting code have a positive index.
-         * 
-         * @param list         LinkedNodes or LinkedSubNodes to iterate over
-         * @param size         list size which may be < 0 indicating size is unknown
-         * @param index        the index of the starting node
-         * @param indexType    ABSOLUTE or RELATIVE.
-         * @param node         the starting node; the first node to be returned by a
-         *                     call to next()
-         * @param headSentinel the head sentinel of the (sub)list to be iterated over
-         * @param tailSentinel the tail sentinel of the (sub)list to be iterated over
-         */
-        private LinkedNodesListIterator(InternalLinkedList list, long size, long index, IndexType indexType,
-                LinkNode<E> node, LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
-            // assert index >= 0 && index <= size :
-            //     "index out of range; index=" + index + ", size=" + size;
-            // assert node != null && node.linkedNodes == LinkedNodes.this :
-            //     "Specified node is null or is not linked to this list";
-            // assert headSentinel != null && headSentinel.linkedNodes == LinkedNodes.this :
-            //     "head sentinel is null or is not linked to this list";
-            // assert tailSentinel != null && tailSentinel.linkedNodes == LinkedNodes.this :
-            //     "tail sentinel is null or is not linked to this list";
-            this.list = list;
-            this.size = size;
-            this.headSentinel = headSentinel;
-            this.tailSentinel = tailSentinel;
-            this.indexType = indexType;
-            cursorIndex = index - 1L;
-            this.cursorNode = list.getNodeBeforeOrHeadSentinel(node);
-            targetNode = null;
-        }
-        
-        InternalLinkedList list() {
-            return this.list;
-        }
-        
-        private void checkForModificationException() {
-            if (modCount() != expectedModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
-        
-        private LinkNode<E> targetNode() {
-            checkForModificationException();
-            if (targetNode == null) {
-                throw new IllegalStateException(
-                        "Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
-            }
-            return targetNode;
-        }
-        
-        void addNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-            list.addNodeAfter(node, afterThisNode);
-        }
-        
-        LinkNode<E> getNodeAfter(LinkNode<E> node) {
-            final LinkNode<E> nextNode = list.getNodeAfterFromListWithKnownTailSentinel(node);
-            if (nextNode == tailSentinel) return null;
-            if (nextNode == list.getMyLinkedNodesTailSentinel()) {
-                throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list");
-            }
-            return nextNode;
-        }
-        
-        LinkNode<E> getNodeBeforeOrHeadSentinel(LinkNode<E> node) {
-            return list.getNodeBeforeOrHeadSentinel(node);
-        }
-        
-        void removeNode(LinkNode<E> node) {
-            list.removeNode(node);
-        }
-        
-        void replaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
-            list.replaceNode(node, replacementNode);
-        }
-
-        @Override
-        public boolean hasNext() {
-            checkForModificationException();
-            if (size >= 0 && cursorIndex >= (size - 1L)) {
-                return false;
-            }
-            final LinkNode<E> cursorNodeNext = getNodeAfter(cursorNode);
-            return (cursorNodeNext != null && cursorNodeNext != tailSentinel);
-        }
-
-        @Override
-        public boolean hasPrevious() {
-            checkForModificationException();
-            return (cursorNode != headSentinel);
-        }
-
-        @Override
-        public LinkNode<E> next() {
-            checkForModificationException();
-            targetNode = null;
-            if (!hasNext()) throw new NoSuchElementException();
-            cursorNode = getNodeAfter(cursorNode);
-            cursorIndex++;
-            targetNode = cursorNode;
-            return targetNode;
-        }
-
-        @Override
-        public LinkNode<E> previous() {
-            checkForModificationException();
-            targetNode = null;
-            if (!hasPrevious()) throw new NoSuchElementException();
-            targetNode = cursorNode;
-            cursorNode = getNodeBeforeOrHeadSentinel(cursorNode);
-            cursorIndex--;
-            return targetNode;
-        }       
-
-        @Override
-        public int nextIndex() {
-            checkForModificationException();
-            if (indexType == IndexType.RELATIVE) {
-                if (!hasNext()) return (longSize() >= Integer.MAX_VALUE)
-                                       ? Integer.MAX_VALUE
-                                       : (int)longSize();
-                if (cursorIndex+1 > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-                if (cursorIndex+1 < Integer.MIN_VALUE) return Integer.MIN_VALUE;
-            } else {
-                // absolute index
-                if (!hasNext()) return (longSize() > Integer.MAX_VALUE)
-                                       ? -1
-                                       : (int)longSize();
-                if (cursorIndex+1 > Integer.MAX_VALUE) return -1;
-            }
-            return (int)(cursorIndex+1);
-        }
-
-        @Override
-        public int previousIndex() {
-            checkForModificationException();
-            if (indexType == IndexType.RELATIVE) {
-                if (!hasPrevious()) return (longSize() <= Integer.MIN_VALUE)
-                                           ? Integer.MIN_VALUE
-                                           : -(int)longSize();
-                if (cursorIndex > Integer.MAX_VALUE) return Integer.MAX_VALUE;
-                if (cursorIndex < Integer.MIN_VALUE) return Integer.MIN_VALUE;
-            } else {
-                // absolute index
-                if (!hasPrevious()) return -1;
-                if (cursorIndex > Integer.MAX_VALUE) return -1;
-            }
-            return (int)cursorIndex;
-        }
-
-        @Override
-        public void add(Node<E> node) {
-            checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or already an element of a list");
-            }
-            addNodeAfter(node.linkNode(), cursorNode);
-            cursorIndex++;
-            cursorNode = node.linkNode();
-            targetNode = null;
-            expectedModCount = modCount();
-            if (size >= 0) size++;
-        }
-
-        @Override
-        public void remove() {
-            checkForModificationException();
-            if (targetNode == null) {
-                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
-            }
-            if (cursorNode == targetNode) {
-                cursorIndex--;
-                cursorNode = getNodeBeforeOrHeadSentinel(cursorNode);
-            }
-            removeNode(targetNode);
-            targetNode = null;
-            expectedModCount = modCount();
-            if (size >= 0) size--;
-        }
-
-        @Override
-        public void set(Node<E> node) {
-            checkForModificationException();
-            if (targetNode == null) {
-                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
-            }
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified Node is null or already an element of a list");
-            }
-            if (cursorNode == targetNode) cursorNode = node.linkNode();
-            replaceNode(targetNode, node.linkNode());
-            targetNode = node.linkNode();
-            expectedModCount = modCount();
-        }
-
-        @Override
-        public void forEachRemaining(Consumer<? super Node<E>> action) {
-            checkForModificationException();
-            if (action == null) throw new NullPointerException();
-            while (hasNext()) {
-                action.accept(getNodeAfter(cursorNode));
-                cursorNode = getNodeAfter(cursorNode);
-                cursorIndex++;
-                targetNode = cursorNode;
-            }
-            checkForModificationException();
-        }
-
-    } // LinkedNodesListIterator
     
-    private class LinkedNodesReverseListIterator extends LinkedNodesListIterator {
-         
-        private LinkedNodesReverseListIterator(InternalLinkedList list, long size, long index,
-                LinkNode<E> node, LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
-            super(list, size, index, IndexType.ABSOLUTE, node, headSentinel, tailSentinel);
+    private class ReversedLinkedNodes extends LinkedNodes {
+        
+        private LinkedNodes linkedNodes;
+        
+        private ReversedLinkedNodes(LinkedNodes linkedNodes) {
+            this.linkedNodes = linkedNodes;
         }
         
-        private LinkedNodesReverseListIterator(InternalLinkedList list, long size, LinkNode<E> node,
-                LinkNode<E> headSentinel, LinkNode<E> tailSentinel) {
-            super(list, size, 0L, IndexType.RELATIVE, node, headSentinel, tailSentinel);
+        //protected int modCount inherited from class java.util.AbstractList
+        @Override
+        int modCount() {
+            return linkedNodes.modCount();
         }
+        
+        private void updateModCount() {
+            NodableLinkedList.this.modCount = this.modCount = modCount(); // try to keep all modCounts in sync
+        }
+        
+        @Override
+        public long longSize() {
+            updateModCount();
+            return linkedNodes.longSize();
+        }
+        
+        @Override
+        long getSize() {
+            updateModCount();
+            return linkedNodes.getSize();
+        }        
         
         @Override
         void addNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-            list().addNodeBefore(node, afterThisNode);
-        }            
+            linkedNodes.addNodeBefore(node, afterThisNode);
+            updateModCount();
+        }
+    
+        @Override
+        void addNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
+            linkedNodes.addNodeAfter(node, beforeThisNode);
+            updateModCount();
+        }
+    
+        @Override
+        void removeNode(LinkNode<E> node) {
+            linkedNodes.removeNode(node);
+            updateModCount();
+        }
+    
+        @Override
+        void replaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
+            linkedNodes.replaceNode(node, replacementNode);
+            updateModCount();
+        }
+    
+        @Override
+        boolean hasNodeAfter(LinkNode<E> node) {
+            updateModCount();
+            return linkedNodes.hasNodeBefore(node);           
+        }
+    
+        @Override
+        boolean hasNodeBefore(LinkNode<E> node) {
+            updateModCount();
+            return linkedNodes.hasNodeAfter(node);           
+        }
         
         @Override
+        LinkNode<E> getHeadSentinel() {
+            updateModCount();
+            return linkedNodes.getTailSentinel();
+        }
+        
+        @Override
+        LinkNode<E> getTailSentinel() {
+            updateModCount();
+            return linkedNodes.getHeadSentinel();
+        }
+        
+        @Override
+        LinkNode<E> getMyLinkedNodesHeadSentinel() {
+            updateModCount();
+            return linkedNodes.getMyLinkedNodesTailSentinel();
+        }
+        
+        @Override
+        LinkNode<E> getMyLinkedNodesTailSentinel() {
+            updateModCount();
+            return linkedNodes.getMyLinkedNodesHeadSentinel();
+        }
+        
+        @Override
+        LinkNode<E> getFirstNode() {
+            updateModCount();
+            return linkedNodes.getLastNode();
+        }
+        
+        @Override
+        LinkNode<E> getLastNode() {
+            updateModCount();
+            return linkedNodes.getFirstNode();
+        }        
+    
+        @Override
         LinkNode<E> getNodeAfter(LinkNode<E> node) {
-            return list().getNodeBefore(node);
+            updateModCount();
+            return linkedNodes.getNodeBefore(node);
+        }
+    
+        @Override
+        LinkNode<E> getNodeAfterOrTailSentinel(LinkNode<E> node) {
+            updateModCount();
+            return linkedNodes.getNodeBeforeOrHeadSentinel(node);
+        }
+        
+        @Override
+        LinkNode<E> getNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
+            updateModCount();
+            return linkedNodes.getNodeBeforeOrHeadSentinel(node);
+        }
+    
+        @Override
+        LinkNode<E> getNodeBefore(LinkNode<E> node) {
+            updateModCount();
+            return linkedNodes.getNodeAfter(node);
         }
         
         @Override
         LinkNode<E> getNodeBeforeOrHeadSentinel(LinkNode<E> node) {
-            return list().getNodeAfterOrTailSentinel(node);
+            updateModCount();
+            return linkedNodes.getNodeAfterOrTailSentinel(node);
         }
         
-    } // LinkedNodesReverseListIterator
-
-    private class LinkedNodesSpliterator implements Spliterator<Node<E>> {
-
-        private static final int BATCH_INCREMENT = 1 << 10;
-        private static final int MAX_BATCH_SIZE  = 1 << 25;
-        
-        private InternalLinkedList list;
-
-        private LinkNode<E> cursor;
-        private long remainingSize = -1L;
-        private int batchSize = 0;
-        private int expectedModCount;
-
-        private LinkedNodesSpliterator(InternalLinkedList list) {
-            this.list = list;
-            this.cursor = list.getHeadSentinel();
-        }
-
-        private void bind() {
-            this.remainingSize = list.longSize();
-            this.expectedModCount = modCount();
-        }
-        
-        private int batchSize() {
-            return batchSize;
-        }
-        
-        private void checkForModificationException() {
-            if (modCount() != expectedModCount) {
-                throw new ConcurrentModificationException();
-            }
-        }
-
         @Override
-        public int characteristics() {
-            return  Spliterator.NONNULL |
-                    Spliterator.ORDERED |
-                    Spliterator.SIZED   |
-                    Spliterator.SUBSIZED;
+        boolean contains(Node<?> node) {
+             return (node != null && node.linkedNodes() == linkedNodes) ? true : false;
         }
-
+        
         @Override
-        public long estimateSize() {
-            if (remainingSize < 0L) bind();
-            return remainingSize;
+        public LinkNode<E> forwardLinkNode(Node<E> node) {
+            return linkedNodes.forwardLinkNode(node).reversed();
         }
-
+        
         @Override
-        public boolean tryAdvance(Consumer<? super Node<E>> action) {
-            if (remainingSize < 0L) bind();
-            checkForModificationException();
-            if (action == null) throw new NullPointerException();
-            if (list.getNodeAfter(cursor) == null || remainingSize < 1L) return false;
-            remainingSize--;
-            cursor = list.getNodeAfter(cursor);
-            action.accept(cursor);
-            checkForModificationException();
+        public boolean isReversed() {
             return true;
-        }
-
+        }        
+        
         @Override
-        public void forEachRemaining(Consumer<? super Node<E>> action) {
-            if (remainingSize < 0L) bind();
-            checkForModificationException();
-            if (action == null) throw new NullPointerException();
-            LinkNode<E> node = cursor;
-            while (list.getNodeAfter(node) != null && remainingSize-- > 0L) {
-                node = list.getNodeAfter(node);
-                action.accept(node);                    
-            }
-            cursor = node;
-            checkForModificationException();
-        }
-
-        @Override
-        public Spliterator<Node<E>> trySplit() {
-            final Object[] array = trySplit( (node) -> { return node; } );
-            return (array == null)
-                   ? null
-                   : Spliterators.spliterator(array, 0, batchSize,
-                         Spliterator.ORDERED | Spliterator.NONNULL);
-        }
-
-        private Object[] trySplit(Function<Node<E>, Object> action) {
-            if (remainingSize < 0L) bind();
-            checkForModificationException();
-            if (remainingSize <= 1L) return null;
-            int arraySize = batchSize + BATCH_INCREMENT;
-            if (arraySize > remainingSize) arraySize = (int)remainingSize;
-            if (arraySize > MAX_BATCH_SIZE) arraySize = MAX_BATCH_SIZE;
-            Object[] array = new Object[arraySize];
-            int index = 0;
-            LinkNode<E> node = cursor;
-            while (index < arraySize && list.getNodeAfter(node) != null) {
-                node = list.getNodeAfter(node);
-                array[index++] = action.apply(node);                    
-            }               
-            cursor = node;
-            batchSize = index;
-            remainingSize -= batchSize;
-            return array;
-        }            
-
-    } // LinkedNodesSpliterator
-
-    /**
-     * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified position in this list. Obeys the general
-     * contract of {@code List.listIterator(int)}.
-     * 
-     * <p>
-     * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-     * this method behaves differently when the list's
-     * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-     * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-     *
-     * <p>
-     * The {@code ListIterator} is <i>fail-fast</i>: if the
-     * {@code NodableLinkedList} is structurally modified at any time after the
-     * Iterator is created, in any way except through the {@code ListIterator's} own
-     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than risking
-     * arbitrary, non-deterministic behavior at an undetermined time in the future.
-     * 
-     * <p>
-     * Instead of using a {@code ListIterator}, consider iterating over the
-     * list via {@code Nodes}. For example:
-     * <pre>
-     * {@code
-     *     // list is a NodableLinkedList<Integer>
-     *     Node<Integer> linkNode = list.linkedNodes().get(index); // or list.getFirstNode();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     * }
-     * </pre>
-     *
-     * @param index index of the first element to be returned from the
-     *              {@code ListIterator} (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper sequence),
-     *         starting at the specified position in this list
-     * @throws IndexOutOfBoundsException if the index is out of range
-     *                                   {@code (index < 0 || index > longSize())}
-     * @see List#listIterator(int)
-     */
-    @Override
-    public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > longSize()) {
-            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-        }
-        return new NodableLinkedListListIterator(index);
-    }
-
-    /**
-     * Returns a {@code ListIterator} of the elements in this list (in proper
-     * sequence), starting at the specified node in this list. if the specified node
-     * is {@code null}, the {@code ListIterator} will be positioned right after
-     * the last {@code Node} in this list.
-     * 
-     * <p>
-     * <strong>Implementation Note:</strong> The index returned by the returned
-     * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
-     * relative to the specified node which has an index of zero. Nodes which come
-     * before the specified node in this list, will have a negative index; nodes
-     * that come after will have a positive index. Method {@code nextIndex} returns
-     * {@code longSize()} if at the end of the list, and method
-     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
-     * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
-     * respectively.
-     *
-     * <p>
-     * The {@code ListIterator} is <i>fail-fast</i>: if the
-     * {@code NodableLinkedList} is structurally modified at any time after the
-     * Iterator is created, in any way except through the {@code ListIterator's} own
-     * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-     * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-     * modification, the iterator fails quickly and cleanly, rather than risking
-     * arbitrary, non-deterministic behavior at an undetermined time in the future.
-     * 
-     * <p>
-     * Instead of using a {@code ListIterator}, consider iterating over the
-     * list via {@code Nodes}. For example:
-     * <pre>
-     * {@code
-     *     // list is a NodableLinkedList<Integer>
-     *     // make sure node is a forward traversing LinkNode
-     *     Node<Integer> linkNode = list.linkedNodes().forwardLinkNode(node);
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     * }
-     * </pre>
-     *
-     * @param node node of the first element to be returned from the
-     *             {@code ListIterator} (by a call to {@code next})
-     * @return a ListIterator of the elements in this list (in proper sequence),
-     *         starting at the specified node in this list
-     * @throws IllegalArgumentException if node is not linked to this list
-     */
-    public ListIterator<E> listIterator(Node<E> node) {
-        if (node != null && !linkedNodes.contains(node)) {
-            throw new IllegalArgumentException("Specified node is not linked to this list");
-        }
-        return new NodableLinkedListListIterator(node);
-    }
-
-    private class NodableLinkedListListIterator implements ListIterator<E> {
-
-        private final LinkedNodesListIterator listIterator;
-
-        private NodableLinkedListListIterator(int index) {
-            listIterator = linkedNodes.linkedNodesListIterator(index);
-        }
-
-        private NodableLinkedListListIterator(Node<E> node) {
-            listIterator = linkedNodes.linkedNodesListIterator(node);
+        public LinkedNodes reversed() {
+            updateModCount();
+            return this.linkedNodes;
         }
         
-        private NodableLinkedListListIterator(LinkedNodesListIterator listIterator) {
-            this.listIterator = listIterator;
-        }        
-
         @Override
-        public boolean hasNext() {
-            return listIterator.hasNext();
+        public LinkNode<E> element() {
+            return super.element().reversed();
         }
-
+        
         @Override
-        public boolean hasPrevious() {
-            return listIterator.hasPrevious();
+        public LinkNode<E> get(int index) {
+            updateModCount();
+            return super.get(index).reversed();
+            
         }
-
+        
         @Override
-        public E next() {
-            return listIterator.next().element();
+        public LinkNode<E> getFirst() {
+            return super.getFirst().reversed();
         }
-
+        
         @Override
-        public E previous() {
-            return listIterator.previous().element();
-        }		
-
-        @Override
-        public int nextIndex() {
-            return listIterator.nextIndex();
+        public LinkNode<E> getLast() {
+            return super.getLast().reversed();
         }
-
+        
         @Override
-        public int previousIndex() {
-            return listIterator.previousIndex();
+        public LinkNode<E> peekFirst() {
+            final LinkNode<E> linkNode = super.peekFirst();
+            return (linkNode == null) ? null : linkNode.reversed();
         }
-
+        
         @Override
-        public void add(E element) {
-            listIterator.add(node(element));
+        public LinkNode<E> peekLast() {
+            final LinkNode<E> linkNode = super.peekLast();
+            return (linkNode == null) ? null : linkNode.reversed();
         }
-
-        @Override
-        public void remove() {
-            listIterator.remove();
-        }
-
-        @Override
-        public void set(E element) {
-            listIterator.targetNode().set(element);
-        }
-
-        @Override
-        public void forEachRemaining(Consumer<? super E> action) {
-            listIterator.forEachRemaining((node) -> {
-                action.accept(node.element());
-            });
-        }		
-
-    } // NodableLinkedListListIterator
-
-    /**
-     * Returns an iterator over the elements in this list in reverse sequential
-     * order. The elements will be returned in order from last (tail) to first
-     * (head).
-     * 
-     * <p>
-     * Instead of using a descending {@code Iterator}, consider iterating over the
-     * list via {@code nodes}. For example:
-     * <pre>
-     * {@code
-     *     Node<Integer> linkNode = getLastNode();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.previous();
-     *     }
-     *     
-     *     or use a reversed {@code LinkNode}:
-     *     
-     *     Node<Integer> linkNode = getLastNode();
-     *     if (linkNode != null) linkNode = linkNode.reversed();
-     *     while (linkNode != null) {
-     *         System.out.println(linkNode.element());
-     *         linkNode = linkNode.next();
-     *     }
-     *     
-     * }
-     * </pre>
-     *
-     * @return an iterator over the elements in this list in reverse order
-     */
-    @Override
-    public Iterator<E> descendingIterator() {
-        return new NodableLinkedListReverseListIterator(0);
-    }
-
-    private class NodableLinkedListReverseListIterator extends NodableLinkedListListIterator {
-
-        private NodableLinkedListReverseListIterator(int index) {
-            super(linkedNodes.linkedNodesReverseListIterator(index));
-        }
-
-    } // NodableLinkedListReverseListIterator
-
-    /**
-     * Creates a <i>late-binding</i> and <i>fail-fast</i> {@code Spliterator} over
-     * the elements in this list.
-     *
-     * <p>
-     * The {@code Spliterator} reports {@link Spliterator#SIZED} and
-     * {@link Spliterator#ORDERED}. Overriding implementations should document the
-     * reporting of additional characteristic values.
-     *
-     * <p>
-     * <strong>Implementation Note:</strong> The {@code Spliterator} additionally
-     * reports {@link Spliterator#SUBSIZED} and implements {@code trySplit} to
-     * permit limited parallelism..
-     *
-     * @return a {@code Spliterator} over the elements in this list
-     */
-    @Override
-    public Spliterator<E> spliterator() {
-        return new NodableLinkedListSpliterator();
-    }
-
-    private class NodableLinkedListSpliterator implements Spliterator<E> {
-
-        private final LinkedNodesSpliterator spliterator = linkedNodes.linkedNodesSpliterator();
-
-        @Override
-        public int characteristics() {
-            return  Spliterator.ORDERED |
-                    Spliterator.SIZED   | 
-                    Spliterator.SUBSIZED;
-        }
-
-        @Override
-        public long estimateSize() {
-            return spliterator.estimateSize();
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super E> action) {
-            return spliterator.tryAdvance((node) -> {
-                action.accept(node.element());
-            });
-        }
-
-        @Override
-        public void forEachRemaining(Consumer<? super E> action) {
-            spliterator.forEachRemaining((node) -> {
-                action.accept(node.element());
-            });
-        }
-
-        @Override
-        public Spliterator<E> trySplit() {
-            final Object[] array = spliterator.trySplit((node) -> {
-                return node.element();
-            });
-            return (array == null)
-                   ? null
-                   : Spliterators.spliterator(array, 0, spliterator.batchSize(),
-                           Spliterator.ORDERED);
-        }
-
-    } // NodableLinkedListSpliterator
+        
+    } // ReversedLinkedNodes
 
     /**
      * Sublist of a {@code NodableLinkedList}. Implements all optional {@code List}
@@ -4498,8 +4194,10 @@ public class NodableLinkedList<E>
          */
         @Override
         public ListIterator<E> listIterator(int index) {
+            checkForModificationException();
             if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            return new SubListIterator(index);
+            final NodableLinkedList<E>.SubList.LinkedSubNodes linkedSubNodes = linkedSubNodes();
+            return new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.getNode(index));
         }
         
         /**
@@ -4509,17 +4207,10 @@ public class NodableLinkedList<E>
          * positioned right after the last {@code Node} in this {@code SubList}.
          * 
          * <p>
-         * <strong>Implementation Note:</strong> The index returned by the returned
-         * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
-         * relative to the specified node which has an index of zero. Nodes which come
-         * before the specified node in this {@code SubList}, will have a negative
-         * index; nodes that come after will have a positive index. Method
-         * {@code nextIndex} returns {@code longSize()} if at the end of the
-         * {@code SubList}, and method {@code previousIndex} returns {@code -longSize()}
-         * if at the beginning of the {@code SubList}. if
-         * {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
-         * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
-         * respectively.
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
          *
          * <p>
          * The {@code ListIterator} is <i>fail-fast</i>: if the
@@ -4533,6 +4224,7 @@ public class NodableLinkedList<E>
          * <p>
          * Instead of using a {@code ListIterator}, consider iterating over the
          * {@code SubList} via {@code SubListNodes}. For example:
+         * 
          * <pre>
          * {@code
          *     // sublist is a NodableLinkedList<Integer>.SubList
@@ -4552,10 +4244,16 @@ public class NodableLinkedList<E>
          *                                  {@code SubList}
          */
         public ListIterator<E> listIterator(Node<E> node) {
-            if (node != null && !linkedNodes.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
+            checkForModificationException();
+            final NodableLinkedList<E>.SubList.LinkedSubNodes linkedSubNodes = linkedSubNodes();
+            if (node == null) {
+                return new ElementListIterator(linkedSubNodes,
+                        longSize(), IndexType.ABSOLUTE,
+                        linkedSubNodes.getConfirmedTailSentinel());
             }
-            return new SubListIterator(node);
+            final long index = linkedSubNodes.getIndex(node);
+            if (index < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
+            return new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, node.linkNode());
         }
         
         /**
@@ -4637,8 +4335,8 @@ public class NodableLinkedList<E>
                 SubList.this.modCount = this.modCount = NodableLinkedList.this.modCount(); //keep all modCounts in sync
             }
             
-            private void updateModCounts() {
-                if (parent() != null) parent().updateModCounts();
+            private void updateParentModCount() {
+                if (parent() != null) parent().updateParentModCount();
                 updateModCount();
             }            
             
@@ -4779,7 +4477,7 @@ public class NodableLinkedList<E>
                 //assert this.contains(beforeThisNode) :
                 //    "Before Node is not an element of this sublist";
                 if (parent() == null) linkedNodes.addNodeBefore(node, beforeThisNode);
-                else parent.addNodeBefore(node, beforeThisNode);
+                else parent().addNodeBefore(node, beforeThisNode);
                 updateSizeAndModCount(1L);
             }
             
@@ -4787,7 +4485,7 @@ public class NodableLinkedList<E>
             void removeNode(LinkNode<E> node) {
                 //assert this.contains(node) : "Node is not an element of this sublist";
                 if (parent() == null) linkedNodes.removeNode(node);
-                else parent.removeNode(node);
+                else parent().removeNode(node);
                 updateSizeAndModCount(-1L);                
             }
             
@@ -4962,6 +4660,10 @@ public class NodableLinkedList<E>
              *                               sublist's last node most likely comes before
              *                               the sublists's first node in the list
              */
+            private long getIndex(Node<?> node) {
+                if (node.isSubListNode() && node.subList() != this.nodableLinkedListSubList()) return -1;
+                return getIndex(node.linkNode());
+            }
             private long getIndex(LinkNode<?> node) {
                 if (!linkedNodes.contains(node)) return -1;
                 long cursorIndex = 0L;
@@ -5072,6 +4774,27 @@ public class NodableLinkedList<E>
                     }
                 }
             }
+            
+            /**
+             * Returns and possibly reverses the specified {@code Node's} backing
+             * {@code LinkNode} to match the forward direction of this sublist. In other
+             * words, returns a {@code LinkNode} which can be used to essentially traverse
+             * this sublist from the specified node to the sublist's last node when making
+             * successive calls to the {@code LinkNode.next()} method.
+             * 
+             * @param node the {@code Node} whose backing {@code LinkNode} is returned and
+             *             possibly reversed to match the forward direction of this sublist
+             * @return a {@code LinkNode} which can be used to essentially traverse this
+             *         sublist in a forward direction
+             * @throws IllegalArgumentException if node is not linked to this sublist
+             */
+            public LinkNode<E> forwardLinkNode(Node<E> node) {
+                if (!this.contains(node)) {
+                    throw new IllegalArgumentException("Specified node is not linked to this list");
+                }
+                if (parent() == null) return linkedNodes.forwardLinkNode(node);
+                return parent().forwardLinkNode(node);
+            }
 
             /**
              * Returns the index of the specified object ({@code Node}) in this sublist, or
@@ -5170,6 +4893,28 @@ public class NodableLinkedList<E>
                     throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
                 }
                 return new SubListNode<E>(node, this.nodableLinkedListSubList());
+            }
+
+            /**
+             * Returns the first {@code Node} in this list.
+             *
+             * @return the first {@code SubListNode} in this list
+             * @throws NoSuchElementException if this list is empty
+             */
+            public SubListNode<E> getFirst() {
+                if (isEmpty()) throw new NoSuchElementException("List is empty");
+                return new SubListNode<E>(getFirstNode(), this.nodableLinkedListSubList());
+            }
+
+            /**
+             * Returns the last {@code Node} in this list.
+             *
+             * @return the last {@code SubListNode} in this list
+             * @throws NoSuchElementException if this list is empty
+             */
+            public SubListNode<E> getLast() {
+                if (isEmpty()) throw new NoSuchElementException("List is empty");
+                return new SubListNode<E>(getLastNode(), this.nodableLinkedListSubList());
             }            
             
             /**
@@ -5506,6 +5251,7 @@ public class NodableLinkedList<E>
                     if (sublistnode.subList() != this.nodableLinkedListSubList()) {
                         return false;
                     }
+                    if (sublistnode.isExpectedModCount()) return true;
                     node = sublistnode.linkNode();
                 } else {
                     return false;
@@ -5787,7 +5533,10 @@ public class NodableLinkedList<E>
                 if (longSize() < 2L) return;
                 if (longSize() > Integer.MAX_VALUE-8) { mergeSort(comparator); return; }
                 @SuppressWarnings("unchecked")
-                final LinkNode<E>[] sortedNodes = this.toArray(new LinkNode[0]);
+                final LinkNode<E>[] sortedNodes = new LinkNode[size()]; 
+                final ListIterator<Node<E>> listIterator = linkNodeListIterator(0);
+                //        new LinkNodeListIterator(this, 0L, IndexType.ABSOLUTE, getNode(0L));
+                for (int index = 0; listIterator.hasNext(); sortedNodes[index++] = (LinkNode<E>)listIterator.next());
                 Arrays.sort(sortedNodes, comparator);
                 LinkNode<E> node = getFirstNode();
                 for (LinkNode<E> sortedNode: sortedNodes) {
@@ -5795,7 +5544,7 @@ public class NodableLinkedList<E>
                     node = getNodeAfter(sortedNode); // node = node.next() (effectively)
                                                      // sortedNode has replaced node's position in the list
                 }
-                updateModCounts();
+                updateParentModCount();
             }
             
             /**
@@ -5833,13 +5582,14 @@ public class NodableLinkedList<E>
             public void mergeSort(Comparator<? super Node<E>> comparator) {
                 checkForModificationException();
                 NodableLinkedList.mergeSort(this, comparator);
-                updateModCounts();
+                updateParentModCount();
             }
             
             /**
-             * Returns a {@code ListIterator} of the {@code Nodes} in this sublist (in
-             * proper sequence), starting at the specified position in this sublist. Obeys
-             * the general contract of {@code List.listIterator(int)}.
+             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+             * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
+             * specified position in this sublist. Obeys the general contract of
+             * {@code List.listIterator(int)}.
              * 
              * <p>
              * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
@@ -5857,13 +5607,14 @@ public class NodableLinkedList<E>
              * arbitrary, non-deterministic behavior at an undetermined time in the future.
              * 
              * <p>
-             * Instead of using a {@code ListIterator}, consider iterating over the
-             * sublist via {@code SubListNodes}. For example:
+             * Instead of using a {@code ListIterator}, consider iterating over the sublist
+             * via {@code SubListNodes}. For example:
+             * 
              * <pre>
              * {@code
              *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
              *     Node<Integer> subListNode = sublist.get(index);
-             *     //                       or sublist.nodableLinkedListSubList().getFirstNode();
+             *     // or sublist.nodableLinkedListSubList().getFirstNode();
              *     while (subListNode != null) {
              *         System.out.println(subListNode.element());
              *         subListNode = subListNode.next();
@@ -5873,49 +5624,33 @@ public class NodableLinkedList<E>
              *
              * @param index index of the first {@code Node} to be returned from the
              *              {@code ListIterator} (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} in this sublist (in proper
-             *         sequence), starting at the specified position in this sublist
+             * @return a ListIterator of the {@code Nodes} (specifically
+             *         {@code SubListNodes}) in this sublist (in proper sequence), starting
+             *         at the specified position in this sublist
              * @throws IndexOutOfBoundsException if the index is out of range
              *                                   {@code (index < 0 || index > longSize())}
              * @see List#listIterator(int)
              */
             @Override
             public ListIterator<Node<E>> listIterator(int index) {
-                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-                return linkedSubNodesListIterator(index);
-            }
-            
-            private LinkedNodesListIterator linkedSubNodesListIterator(long index) {
                 checkForModificationException();
-                LinkNode<E> node;
-                if (index < 0L) {
-                    index = longSize();
-                    node = tailSentinel();
-                } else {
-                    node = getNode(index);
-                }
-                return new LinkedNodesListIterator(this, this.getSize(), index, IndexType.ABSOLUTE,
-                        node, this.getHeadSentinel(), knownTailSentinel());
+                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+                return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
             }
             
             /**
-             * Returns a {@code ListIterator} of the {@code Nodes} in this sublist (in
-             * proper sequence), starting at the specified node in this sublist. if the
-             * specified node is {@code null}, the {@code ListIterator} will be positioned
-             * right after the last {@code Node} in this sublist.
+             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+             * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
+             * specified node in this sublist. if the specified node is {@code null}, the
+             * {@code ListIterator} will be positioned right after the last {@code Node} in
+             * this sublist.
              * 
              * <p>
-             * <strong>Implementation Note:</strong> The index returned by the returned
-             * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
-             * relative to the specified node which has an index of zero. Nodes which come
-             * before the specified node in this sublist, will have a negative index; nodes
-             * that come after will have a positive index. Method {@code nextIndex} returns
-             * {@code longSize()} if at the end of the sublist, and method
-             * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-             * sublist. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
-             * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
-             * respectively.
-             *
+             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+             * this method behaves differently when the sublist's
+             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+             * 
              * <p>
              * The {@code ListIterator} is <i>fail-fast</i>: if the
              * {@code NodableLinkedList} is structurally modified at any time after the
@@ -5924,10 +5659,10 @@ public class NodableLinkedList<E>
              * {@code ConcurrentModificationException}. Thus, in the face of concurrent
              * modification, the iterator fails quickly and cleanly, rather than risking
              * arbitrary, non-deterministic behavior at an undetermined time in the future.
-             * 
              * <p>
-             * Instead of using a {@code ListIterator}, consider iterating over the
-             * sublist via {@code SubListNodes}. For example:
+             * Instead of using a {@code ListIterator}, consider iterating over the sublist
+             * via {@code SubListNodes}. For example:
+             * 
              * <pre>
              * {@code
              *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
@@ -5941,109 +5676,132 @@ public class NodableLinkedList<E>
              *
              * @param node first {@code Node} to be returned from the {@code ListIterator}
              *             (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} in this sublist (in proper
-             *         sequence), starting at the specified node in the sublist
+             * @return a ListIterator of the {@code Nodes} (specifically
+             *         {@code SubListNodes}) in this sublist (in proper sequence), starting
+             *         at the specified node in the sublist
              * @throws IllegalArgumentException if node is not linked to this sublist
              */
             public ListIterator<Node<E>> listIterator(Node<E> node) {
-                if (node != null && !linkedNodes.contains(node)) {
-                    throw new IllegalArgumentException("Specified node is not linked to this list");
-                }
-                return linkedSubNodesListIterator(node);
-            }            
-            
-            private LinkedNodesListIterator linkedSubNodesListIterator(Node<E> node) {
                 checkForModificationException();
                 if (node == null) {
-                    return new LinkedNodesListIterator(this, this.getSize(), 0L, IndexType.RELATIVE,
-                            getConfirmedTailSentinel(), this.getHeadSentinel(), getConfirmedTailSentinel());
+                    return new SubListNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
                 }
-                if (!this.contains(node)) {
+                final long index = getIndex(node);
+                if (index < 0) {
                     throw new IllegalArgumentException("specified node is not part of this sublist");
                 }
-                return new LinkedNodesListIterator(this, this.getSize(), 0L, IndexType.RELATIVE,
-                        node.linkNode(), this.getHeadSentinel(), knownTailSentinel());
+                return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
             }
             
-            private LinkNode<E> knownTailSentinel() {
-                LinkedSubNodes sublist = this;
-                do {
-                    if (sublist.getTailSentinel() != null) return sublist.getTailSentinel();
-                    sublist = sublist.parent();
-                } while (sublist != null);
-                return getMyLinkedNodesTailSentinel();
+            /**
+             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+             * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
+             * specified position in this sublist. Obeys the general contract of
+             * {@code List.listIterator(int)}.
+             * 
+             * <p>
+             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+             * this method behaves differently when the sublist's
+             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+             *
+             * <p>
+             * The {@code ListIterator} is <i>fail-fast</i>: if the
+             * {@code NodableLinkedList} is structurally modified at any time after the
+             * Iterator is created, in any way except through the {@code ListIterator's} own
+             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+             * modification, the iterator fails quickly and cleanly, rather than risking
+             * arbitrary, non-deterministic behavior at an undetermined time in the future.
+             * 
+             * <p>
+             * Instead of using a {@code ListIterator}, consider iterating over the sublist
+             * via {@code SubListNodes}. For example:
+             * 
+             * <pre>
+             * {@code
+             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
+             *     Node<Integer> subListNode = sublist.get(index);
+             *     // or sublist.nodableLinkedListSubList().getFirstNode();
+             *     while (subListNode != null) {
+             *         System.out.println(subListNode.element());
+             *         subListNode = subListNode.next();
+             *     }
+             * }
+             * </pre>
+             *
+             * @param index index of the first {@code Node} to be returned from the
+             *              {@code ListIterator} (by a call to {@code next})
+             * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
+             *         in this sublist (in proper sequence), starting at the specified
+             *         position in this sublist
+             * @throws IndexOutOfBoundsException if the index is out of range
+             *                                   {@code (index < 0 || index > longSize())}
+             * @see List#listIterator(int)
+             */
+            public ListIterator<Node<E>> linkNodeListIterator(int index) {
+                checkForModificationException();
+                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+                return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
             }
+            
+            /**
+             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+             * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
+             * specified node in this sublist. if the specified node is {@code null}, the
+             * {@code ListIterator} will be positioned right after the last {@code Node} in
+             * this sublist.
+             * 
+             * <p>
+             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+             * this method behaves differently when the sublist's
+             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+             * 
+             *
+             * <p>
+             * The {@code ListIterator} is <i>fail-fast</i>: if the
+             * {@code NodableLinkedList} is structurally modified at any time after the
+             * Iterator is created, in any way except through the {@code ListIterator's} own
+             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+             * modification, the iterator fails quickly and cleanly, rather than risking
+             * arbitrary, non-deterministic behavior at an undetermined time in the future.
+             * <p>
+             * Instead of using a {@code ListIterator}, consider iterating over the sublist
+             * via {@code SubListNodes}. For example:
+             * 
+             * <pre>
+             * {@code
+             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
+             *     Node<Integer> subListNode = node.subListNode(sublist.nodableLinkedListSubList());
+             *     while (subListNode != null) {
+             *         System.out.println(subListNode.element());
+             *         subListNode = subListNode.next();
+             *     }
+             * }
+             * </pre>
+             *
+             * @param node first {@code Node} to be returned from the {@code ListIterator}
+             *             (by a call to {@code next})
+             * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
+             *         in this sublist (in proper sequence), starting at the specified node
+             *         in the sublist
+             * @throws IllegalArgumentException if node is not linked to this sublist
+             */
+            public ListIterator<Node<E>> linkNodeListIterator(Node<E> node) {
+                checkForModificationException();
+                if (node == null) {
+                    return new LinkNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
+                }
+                final long index = getIndex(node);
+                if (index < 0) {
+                    throw new IllegalArgumentException("specified node is not part of this sublist");
+                }
+                return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
+            }            
             
         } // LinkedSubNodes
-
-        private class SubListIterator implements ListIterator<E> {
-            
-            private final LinkedNodesListIterator listIterator;
-            
-            private SubListIterator(long index) {
-                listIterator = linkedSubNodes.linkedSubNodesListIterator(index);
-            }
-            
-            private SubListIterator(Node<E> node) {
-                listIterator = linkedSubNodes.linkedSubNodesListIterator(node);
-            }
-            
-            @Override
-            public boolean hasNext() {
-                return listIterator.hasNext();
-            }
-
-            @Override
-            public boolean hasPrevious() {
-                return listIterator.hasPrevious();
-            }
-
-            @Override
-            public E next() {
-                return listIterator.next().element();
-            }
-
-            @Override
-            public E previous() {
-                return listIterator.previous().element();
-            }       
-
-            @Override
-            public int nextIndex() {
-                return listIterator.nextIndex();
-            }
-
-            @Override
-            public int previousIndex() {
-                return listIterator.previousIndex();
-            }
-
-            @Override
-            public void add(E element) {
-                listIterator.add(node(element));
-            }
-
-            @Override
-            public void remove() {
-                listIterator.remove();
-            }
-
-            @Override
-            public void set(E element) {
-                listIterator.targetNode().set(element);
-            }
-
-            @Override
-            public void forEachRemaining(Consumer<? super E> action) {
-                checkForModificationException();
-                if (action == null) throw new NullPointerException();
-                while (hasNext()) {
-                    action.accept(next());
-                }
-                checkForModificationException();
-            }
-            
-        } // SubListIterator
         
         private class ReversedLinkedSubNodes extends LinkedSubNodes {
             
@@ -6215,6 +5973,11 @@ public class NodableLinkedList<E>
             }
             
             @Override
+            public LinkNode<E> forwardLinkNode(Node<E> node) {
+                return linkedSubNodes.forwardLinkNode(node).reversed();
+            }
+            
+            @Override
             public boolean isReversed() {
                 return !linkedSubNodes.isReversed();
             }
@@ -6244,235 +6007,564 @@ public class NodableLinkedList<E>
         }
         
     } // ReversedSubList
-    
-    private static class Reversed<E> extends NodableLinkedList<E> implements java.io.Externalizable {
+
+    /*
+     * ListIterator index type.
+     */
+    enum IndexType { ABSOLUTE, RELATIVE}
+
+    /*
+     * ListIterator that all other ListIterators utilize.
+     */    
+    private class NodeListIterator implements ListIterator<Node<E>> {
         
-        private NodableLinkedList<E> nodableLinkedList;
+        private final InternalLinkedList list; // LinkedNodes or LinkedSubNodes
+
+        private long cursorIndex;
+        private final IndexType indexType;
+        private LinkNode<E> cursorNode;
+        private LinkNode<E> targetNode;
+        private int expectedModCount = modCount();
         
-        private Reversed(NodableLinkedList<E> nodableLinkedList) {
-            super(nodableLinkedList.linkedNodes());
-            this.nodableLinkedList = nodableLinkedList;
+        /**
+         * Constructs a ListIterator of the LinkedNodes.
+         * 
+         * For sublists, there is no guarantee that the tailSentinel comes after the
+         * headSentinel in the list. If it doesn't, this ListIterator will iterate all
+         * the way to the list, at which time, it will throw an IllegalStateException
+         * indicating the end of the list was reached unexpectedly. The specified node
+         * is guaranteed to come after the headSentinel and before the tailSentinel,
+         * assuming the tailSentinel comes before the headSentinel.
+         * 
+         * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index is indexed from the
+         * the beginning of the list. A RELATIVE index is relative to the starting node
+         * where the starting node has an index of zero, all nodes that come before the
+         * starting node have a negative index, and all nodes that come after the
+         * starting code have a positive index.
+         * 
+         * @param list      LinkedNodes or LinkedSubNodes to iterate over
+         * @param index     the index of the starting node
+         * @param indexType ABSOLUTE or RELATIVE.
+         * @param node      the starting node; the first node to be returned by a call
+         *                  to next()
+         */
+        private NodeListIterator(InternalLinkedList list,
+                long index, IndexType indexType,
+                LinkNode<E> node) {
+            this.list = list;
+            this.indexType = indexType;
+            this.cursorIndex = index - 1L;
+            this.cursorNode = list.getNodeBeforeOrHeadSentinel(node);
+            this.targetNode = null;
         }
         
-        @Override
-        int modCount() {
-            return nodableLinkedList.modCount();
+        InternalLinkedList list() {
+            return this.list;
         }
         
-        @Override
-        public LinkNode<E> getFirstNode() {
-            final LinkNode<E> linkNode = linkedNodes().getFirstNode();
-            return (linkNode == null) ? null : linkNode.reversed();
+        private void checkForModificationException() {
+            if (modCount() != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
         }
         
-        @Override
-        public LinkNode<E> getLastNode() {
-            final LinkNode<E> linkNode = linkedNodes().getLastNode();
-            return (linkNode == null) ? null : linkNode.reversed();
-        }        
-        
-        @Override
-        public NodableLinkedList<E> reversed() {
-            return this.nodableLinkedList;
+        private LinkNode<E> targetNode() {
+            checkForModificationException();
+            if (targetNode == null) {
+                throw new IllegalStateException(
+                        "Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+            }
+            return targetNode;
         }
         
-        @Override
-        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-            throw new java.io.InvalidObjectException("not serializable");
+        LinkNode<E> headSentinel() {
+            return list.getHeadSentinel();
+        }
+        
+        LinkNode<E> tailSentinel() {
+            return list.getTailSentinel();
+        }
+        
+        void addNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
+            list.addNodeAfter(node, afterThisNode);
+        }
+        
+        LinkNode<E> getNodeAfter(LinkNode<E> node) {
+            final LinkNode<E> nextNode = list.getNodeAfterFromListWithKnownTailSentinel(node);
+            if (nextNode == tailSentinel()) return null;
+            if (nextNode == list.getMyLinkedNodesTailSentinel()) {
+                throw new IllegalStateException("End of list reached unexpectedly; the sublist's last node most likely comes before the sublists's first node in the list");
+            }
+            return nextNode;
+        }
+        
+        LinkNode<E> getNodeBeforeOrHeadSentinel(LinkNode<E> node) {
+            return list.getNodeBeforeOrHeadSentinel(node);
+        }
+        
+        void removeNode(LinkNode<E> node) {
+            list.removeNode(node);
+        }
+        
+        void replaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
+            list.replaceNode(node, replacementNode);
         }
 
         @Override
-        public void writeExternal(ObjectOutput out) throws IOException {
-            throw new java.io.InvalidObjectException("not serializable");
+        public boolean hasNext() {
+            checkForModificationException();
+            final long size = list.getSize();
+            if (size >= 0 && cursorIndex >= (size - 1L)) {
+                return false;
+            }
+            final LinkNode<E> cursorNodeNext = getNodeAfter(cursorNode);
+            return (cursorNodeNext != null && cursorNodeNext != tailSentinel());
         }
-        
-    } // Reversed
-        
-    private class ReversedLinkedNodes extends LinkedNodes {
-        
-        private LinkedNodes linkedNodes;
-        
-        private ReversedLinkedNodes(LinkedNodes linkedNodes) {
-            this.linkedNodes = linkedNodes;
-        }
-        
-        //protected int modCount inherited from class java.util.AbstractList
+
         @Override
-        int modCount() {
-            return linkedNodes.modCount();
+        public boolean hasPrevious() {
+            checkForModificationException();
+            return (cursorNode != headSentinel());
         }
+
+        @Override
+        public Node<E> next() {
+            checkForModificationException();
+            targetNode = null;
+            if (!hasNext()) throw new NoSuchElementException();
+            cursorNode = getNodeAfter(cursorNode);
+            cursorIndex++;
+            targetNode = cursorNode;
+            return targetNode;
+        }
+
+        @Override
+        public Node<E> previous() {
+            checkForModificationException();
+            targetNode = null;
+            if (!hasPrevious()) throw new NoSuchElementException();
+            targetNode = cursorNode;
+            cursorNode = getNodeBeforeOrHeadSentinel(cursorNode);
+            cursorIndex--;
+            return targetNode;
+        }       
+
+        @Override
+        public int nextIndex() {
+            checkForModificationException();
+            if (indexType == IndexType.RELATIVE) {
+                if (!hasNext()) return (longSize() >= Integer.MAX_VALUE)
+                                       ? Integer.MAX_VALUE
+                                       : (int)longSize();
+                if (cursorIndex+1 > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+                if (cursorIndex+1 < Integer.MIN_VALUE) return Integer.MIN_VALUE;
+            } else {
+                // absolute index
+                if (!hasNext()) return (longSize() > Integer.MAX_VALUE)
+                                       ? -1
+                                       : (int)longSize();
+                if (cursorIndex+1 > Integer.MAX_VALUE) return -1;
+            }
+            return (int)(cursorIndex+1);
+        }
+
+        @Override
+        public int previousIndex() {
+            checkForModificationException();
+            if (indexType == IndexType.RELATIVE) {
+                if (!hasPrevious()) return (longSize() <= Integer.MIN_VALUE)
+                                           ? Integer.MIN_VALUE
+                                           : -(int)longSize();
+                if (cursorIndex > Integer.MAX_VALUE) return Integer.MAX_VALUE;
+                if (cursorIndex < Integer.MIN_VALUE) return Integer.MIN_VALUE;
+            } else {
+                // absolute index
+                if (!hasPrevious()) return -1;
+                if (cursorIndex > Integer.MAX_VALUE) return -1;
+            }
+            return (int)cursorIndex;
+        }
+
+        @Override
+        public void add(Node<E> node) {
+            checkForModificationException();
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Specified node is null or already an element of a list");
+            }
+            addNodeAfter(node.linkNode(), cursorNode);
+            cursorIndex++;
+            cursorNode = node.linkNode();
+            targetNode = null;
+            expectedModCount = modCount();
+        }
+
+        @Override
+        public void remove() {
+            checkForModificationException();
+            if (targetNode == null) {
+                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+            }
+            if (cursorNode == targetNode) {
+                cursorIndex--;
+                cursorNode = getNodeBeforeOrHeadSentinel(cursorNode);
+            }
+            removeNode(targetNode);
+            targetNode = null;
+            expectedModCount = modCount();
+        }
+
+        @Override
+        public void set(Node<E> node) {
+            checkForModificationException();
+            if (targetNode == null) {
+                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+            }
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Specified Node is null or already an element of a list");
+            }
+            if (cursorNode == targetNode) cursorNode = node.linkNode();
+            replaceNode(targetNode, node.linkNode());
+            targetNode = node.linkNode();
+            expectedModCount = modCount();
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super Node<E>> action) {
+            checkForModificationException();
+            if (action == null) throw new NullPointerException();
+            while (hasNext()) {
+                action.accept(getNodeAfter(cursorNode));
+                cursorNode = getNodeAfter(cursorNode);
+                cursorIndex++;
+                targetNode = cursorNode;
+            }
+            checkForModificationException();
+        }
+
+    } // NodeListIterator
+    
+    private class NodeReverseListIterator extends NodeListIterator {
         
-        private void updateModCount() {
-            NodableLinkedList.this.modCount = this.modCount = modCount(); // try to keep all modCounts in sync
+        private NodeReverseListIterator(InternalLinkedList list,
+                long index, IndexType indexType,
+                LinkNode<E> node) {
+            super(list, index, indexType, node);
         }
         
         @Override
-        public long longSize() {
-            updateModCount();
-            return linkedNodes.longSize();
-        }            
+        LinkNode<E> headSentinel() {
+            return super.tailSentinel();
+        }
+        
+        @Override
+        LinkNode<E> tailSentinel() {
+            return super.headSentinel();
+        }        
         
         @Override
         void addNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-            linkedNodes.addNodeBefore(node, afterThisNode);
-            updateModCount();
-        }
-    
-        @Override
-        void addNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
-            linkedNodes.addNodeAfter(node, beforeThisNode);
-            updateModCount();
-        }
-    
-        @Override
-        void removeNode(LinkNode<E> node) {
-            linkedNodes.removeNode(node);
-            updateModCount();
-        }
-    
-        @Override
-        void replaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
-            linkedNodes.replaceNode(node, replacementNode);
-            updateModCount();
-        }
-    
-        @Override
-        boolean hasNodeAfter(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.hasNodeBefore(node);           
-        }
-    
-        @Override
-        boolean hasNodeBefore(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.hasNodeAfter(node);           
-        }
+            list().addNodeBefore(node, afterThisNode);
+        }            
         
-        @Override
-        LinkNode<E> getHeadSentinel() {
-            updateModCount();
-            return linkedNodes.getTailSentinel();
-        }
-        
-        @Override
-        LinkNode<E> getTailSentinel() {
-            updateModCount();
-            return linkedNodes.getHeadSentinel();
-        }
-        
-        @Override
-        LinkNode<E> getMyLinkedNodesHeadSentinel() {
-            return linkedNodes.getMyLinkedNodesTailSentinel();
-        }
-        
-        @Override
-        LinkNode<E> getMyLinkedNodesTailSentinel() {
-            return linkedNodes.getMyLinkedNodesHeadSentinel();
-        }
-        
-        @Override
-        LinkNode<E> getFirstNode() {
-            updateModCount();
-            return linkedNodes.getLastNode();
-        }
-        
-        @Override
-        LinkNode<E> getLastNode() {
-            updateModCount();
-            return linkedNodes.getFirstNode();
-        }        
-    
         @Override
         LinkNode<E> getNodeAfter(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.getNodeBefore(node);
-        }
-    
-        @Override
-        LinkNode<E> getNodeAfterOrTailSentinel(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.getNodeBeforeOrHeadSentinel(node);
-        }
-        
-        @Override
-        LinkNode<E> getNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.getNodeBeforeOrHeadSentinel(node);
-        }
-    
-        @Override
-        LinkNode<E> getNodeBefore(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.getNodeAfter(node);
+            return list().getNodeBefore(node);
         }
         
         @Override
         LinkNode<E> getNodeBeforeOrHeadSentinel(LinkNode<E> node) {
-            updateModCount();
-            return linkedNodes.getNodeAfterOrTailSentinel(node);
+            return list().getNodeAfterOrTailSentinel(node);
+        }
+        
+    } // NodeReverseListIterator
+
+    private class ElementListIterator implements ListIterator<E> {
+
+        private final NodeListIterator listIterator;
+        
+        private ElementListIterator(InternalLinkedList list,
+                long index, IndexType indexType,
+                LinkNode<E> node) {
+            listIterator = new NodeListIterator(list, index, indexType, node);
+        }
+        
+        // used by ElementReverseListIterator
+        private ElementListIterator(NodeListIterator listIterator) {
+            this.listIterator = listIterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return listIterator.hasNext();
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return listIterator.hasPrevious();
+        }
+
+        @Override
+        public E next() {
+            return listIterator.next().element();
+        }
+
+        @Override
+        public E previous() {
+            return listIterator.previous().element();
+        }       
+
+        @Override
+        public int nextIndex() {
+            return listIterator.nextIndex();
+        }
+
+        @Override
+        public int previousIndex() {
+            return listIterator.previousIndex();
+        }
+
+        @Override
+        public void add(E element) {
+            listIterator.add(node(element));
+        }
+
+        @Override
+        public void remove() {
+            listIterator.remove();
+        }
+
+        @Override
+        public void set(E element) {
+            listIterator.targetNode().set(element);
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super E> action) {
+            listIterator.forEachRemaining((node) -> {
+                action.accept(node.element());
+            });
+        }       
+
+    } // ElementListIterator
+    
+    private class ElementReverseListIterator extends ElementListIterator {
+
+        private ElementReverseListIterator(InternalLinkedList list, long index, IndexType indexType, LinkNode<E> node) {
+            super(new NodeReverseListIterator(list, index, indexType, node));
+        }
+
+    } // ElementReverseListIterator   
+    
+    private class LinkNodeListIterator extends NodeListIterator {
+        
+        private LinkNodeListIterator(InternalLinkedList list,
+                long index, IndexType indexType, LinkNode<E> node) {
+            super(list, index, indexType, node);
         }
         
         @Override
-        boolean contains(Node<?> node) {
-             return (node != null && node.linkedNodes() == linkedNodes) ? true : false;
+        public LinkNode<E> next() {
+            return (LinkNode<E>)super.next();
         }
         
         @Override
-        public LinkNode<E> forwardLinkNode(Node<E> node) {
-            return linkedNodes.reverseLinkNode(node);
-        }
-        
-        @Override
-        public LinkNode<E> reverseLinkNode(Node<E> node) {
-            return linkedNodes.forwardLinkNode(node);
-        }
-        
-        @Override
-        public boolean isReversed() {
-            return true;
+        public LinkNode<E> previous() {
+            return (LinkNode<E>)super.previous();
         }        
         
-        @Override
-        public LinkedNodes reversed() {
-            updateModCount();
-            return this.linkedNodes;
+    } // LinkNodeListIterator
+    
+    private class LinkNodeReverseListIterator extends NodeReverseListIterator {
+        
+        private LinkNodeReverseListIterator(InternalLinkedList list,
+                long index, IndexType indexType, LinkNode<E> node) {
+            super(list, index, indexType, node);
         }
         
         @Override
-        public LinkNode<E> element() {
-            return super.element().reversed();
+        public LinkNode<E> next() {
+            return (LinkNode<E>)super.next();
         }
         
         @Override
-        public LinkNode<E> get(int index) {
-            updateModCount();
-            return super.get(index).reversed();
-            
+        public LinkNode<E> previous() {
+            return (LinkNode<E>)super.previous();
+        }        
+        
+    } // LinkNodeReverseListIterator
+    
+    private class SubListNodeListIterator extends NodeListIterator {
+        
+        final NodableLinkedList<E>.SubList sublist;
+        
+        private SubListNodeListIterator(NodableLinkedList<E>.SubList.LinkedSubNodes list,
+                long index, IndexType indexType, LinkNode<E> node) {
+            super(list, index, indexType, node);
+            this.sublist = list.nodableLinkedListSubList();
         }
         
         @Override
-        public LinkNode<E> getFirst() {
-            return super.getFirst().reversed();
+        public SubListNode<E> next() {
+            return new SubListNode<E>((LinkNode<E>)super.next(), sublist);
         }
         
         @Override
-        public LinkNode<E> getLast() {
-            return super.getLast().reversed();
+        public SubListNode<E> previous() {
+            return new SubListNode<E>((LinkNode<E>)super.previous(), sublist);
+        }        
+        
+    } // SubListNodeListIterator    
+
+    private class NodeSpliterator implements Spliterator<Node<E>> {
+
+        private static final int BATCH_INCREMENT = 1 << 10;
+        private static final int MAX_BATCH_SIZE  = 1 << 25;
+        
+        private InternalLinkedList list;
+
+        private LinkNode<E> cursor;
+        private long remainingSize = -1L;
+        private int batchSize = 0;
+        private int expectedModCount;
+
+        private NodeSpliterator(InternalLinkedList list) {
+            this.list = list;
+            this.cursor = list.getHeadSentinel();
+        }
+
+        private void bind() {
+            this.remainingSize = list.getSize();
+            this.expectedModCount = modCount();
         }
         
+        private int batchSize() {
+            return batchSize;
+        }
+        
+        private void checkForModificationException() {
+            if (modCount() != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+        }
+
         @Override
-        public LinkNode<E> peekFirst() {
-            final LinkNode<E> linkNode = super.peekFirst();
-            return (linkNode == null) ? null : linkNode.reversed();
+        public int characteristics() {
+            return  Spliterator.NONNULL |
+                    Spliterator.ORDERED |
+                    Spliterator.SIZED   |
+                    Spliterator.SUBSIZED;
         }
-        
+
         @Override
-        public LinkNode<E> peekLast() {
-            final LinkNode<E> linkNode = super.peekLast();
-            return (linkNode == null) ? null : linkNode.reversed();
+        public long estimateSize() {
+            if (remainingSize < 0L) bind();
+            return remainingSize;
         }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Node<E>> action) {
+            if (remainingSize < 0L) bind();
+            checkForModificationException();
+            if (action == null) throw new NullPointerException();
+            if (list.getNodeAfter(cursor) == null || remainingSize < 1L) return false;
+            remainingSize--;
+            cursor = list.getNodeAfter(cursor);
+            action.accept(cursor);
+            checkForModificationException();
+            return true;
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super Node<E>> action) {
+            if (remainingSize < 0L) bind();
+            checkForModificationException();
+            if (action == null) throw new NullPointerException();
+            LinkNode<E> node = cursor;
+            while (list.getNodeAfter(node) != null && remainingSize-- > 0L) {
+                node = list.getNodeAfter(node);
+                action.accept(node);                    
+            }
+            cursor = node;
+            checkForModificationException();
+        }
+
+        @Override
+        public Spliterator<Node<E>> trySplit() {
+            final Object[] array = trySplit( (node) -> { return node; } );
+            return (array == null)
+                   ? null
+                   : Spliterators.spliterator(array, 0, batchSize,
+                         Spliterator.ORDERED | Spliterator.NONNULL);
+        }
+
+        private Object[] trySplit(Function<Node<E>, Object> action) {
+            if (remainingSize < 0L) bind();
+            checkForModificationException();
+            if (remainingSize <= 1L) return null;
+            int arraySize = batchSize + BATCH_INCREMENT;
+            if (arraySize > remainingSize) arraySize = (int)remainingSize;
+            if (arraySize > MAX_BATCH_SIZE) arraySize = MAX_BATCH_SIZE;
+            Object[] array = new Object[arraySize];
+            int index = 0;
+            LinkNode<E> node = cursor;
+            while (index < arraySize && list.getNodeAfter(node) != null) {
+                node = list.getNodeAfter(node);
+                array[index++] = action.apply(node);                    
+            }               
+            cursor = node;
+            batchSize = index;
+            remainingSize -= batchSize;
+            return array;
+        }            
+
+    } // LinkedNodesSpliterator
+
+    private class ElementListSpliterator implements Spliterator<E> {
+
+        private final NodeSpliterator spliterator;
         
-    } // ReversedLinkedNodes
+        private ElementListSpliterator(InternalLinkedList list) {
+            this.spliterator = new NodeSpliterator(list);
+        }
+
+        @Override
+        public int characteristics() {
+            return  Spliterator.ORDERED |
+                    Spliterator.SIZED   | 
+                    Spliterator.SUBSIZED;
+        }
+
+        @Override
+        public long estimateSize() {
+            return spliterator.estimateSize();
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super E> action) {
+            return spliterator.tryAdvance((node) -> {
+                action.accept(node.element());
+            });
+        }
+
+        @Override
+        public void forEachRemaining(Consumer<? super E> action) {
+            spliterator.forEachRemaining((node) -> {
+                action.accept(node.element());
+            });
+        }
+
+        @Override
+        public Spliterator<E> trySplit() {
+            final Object[] array = spliterator.trySplit((node) -> {
+                return node.element();
+            });
+            return (array == null)
+                   ? null
+                   : Spliterators.spliterator(array, 0, spliterator.batchSize(),
+                           Spliterator.ORDERED);
+        }
+
+    } // NodableLinkedListSpliterator    
 
     /**
      * Sublist node of a {@code NodableLinkedList.SubList}. A {@code SubListNode}
@@ -6533,10 +6625,12 @@ public class NodableLinkedList<E>
             this.expectedModCount = subList().nodableLinkedList().modCount();
         }
         
+        private boolean isExpectedModCount() {
+            return expectedModCount == subList().nodableLinkedList().modCount();
+        }
+        
         boolean isStillNodeOfSubList() {
-            if (expectedModCount == subList().nodableLinkedList().modCount() && isLinked()) {
-                return true;
-            }
+            if (isExpectedModCount() && isLinked()) return true;
             if (!subList().linkedSubNodes().contains(linkNode())) return false;
             updateExpectedModCount();
             return true;
@@ -7061,8 +7155,7 @@ public class NodableLinkedList<E>
          * {@code SubListNode} are unpredictable if this {@code SubListNode} is not a
          * node of the specified sublist. This method is provided to avoid the cost of
          * verifying that a {@code SubListNode} is a node of the specified subList when
-         * it's certain that it is. For example, nodes returned by a sublist's iterator
-         * don't need to be verified. Note, just like any {@code SubListNode}, if the
+         * it's certain that it is. Note, just like any {@code SubListNode}, if the
          * {@code NodableLinkedList} is subsequently modified, the returned
          * {@code SubListNode}, will have to be reverified.
          * 
@@ -7178,6 +7271,7 @@ public class NodableLinkedList<E>
            subListNode.updateExpectedModCount();
        }
        
+       @Override
        boolean isStillNodeOfSubList() {
            return subListNode.isStillNodeOfSubList();
        }
@@ -7848,10 +7942,9 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns an unverified {@code SubListNode}, backed by this
-         * {@code LinkNode}, for the specified subList. The returned {@code SubListNode}
-         * is backed by this {@code LinkNode} which must be a node of the specified
-         * subList, or unlinked.
+         * Returns an unverified {@code SubListNode}, backed by this {@code LinkNode},
+         * for the specified subList. The returned {@code SubListNode} is backed by this
+         * {@code LinkNode} which must be a node of the specified subList, or unlinked.
          * 
          * <p>
          * <b>Use with CAUTION:</b> This {@code LinkNode}, if linked, is not verified
@@ -7859,14 +7952,13 @@ public class NodableLinkedList<E>
          * {@code SubListNode} are unpredictable if this {@code LinkNode} is not a node
          * of the specified sublist. This method is provided to avoid the cost of
          * verifying that a {@code LinkNode} is a node of the specified subList when
-         * it's certain that it is. For example, nodes returned by a sublist's iterator
-         * don't need to be verified. Note, just like any {@code SubListNode}, if the
+         * it's certain that it is. Note, just like any {@code SubListNode}, if the
          * {@code NodableLinkedList} is subsequently modified, the returned
          * {@code SubListNode}, will have to be reverified.
          * 
          * @param subList {@code SubList} believed to contain this {@code LinkNode}
-         * @return an unverified {@code SubListNode}, backed by this
-         *         {@code LinkNode}, for the specified subList
+         * @return an unverified {@code SubListNode}, backed by this {@code LinkNode},
+         *         for the specified subList
          * @throws IllegalArgumentException if the specified subList is {@code null}
          */
         @Override
@@ -8399,8 +8491,7 @@ public class NodableLinkedList<E>
          * {@code SubListNode} are unpredictable if this {@code Node} is not a node of
          * the specified sublist. This method is provided to avoid the cost of verifying
          * that a {@code Node} is a node of the specified subList when it's certain that
-         * it is. For example, nodes returned by a sublist's iterator don't need to be
-         * verified. Note, just like any {@code SubListNode}, if the
+         * it is. Note, just like any {@code SubListNode}, if the
          * {@code NodableLinkedList} is subsequently modified, the returned
          * {@code SubListNode}, will have to be reverified.
          * 
