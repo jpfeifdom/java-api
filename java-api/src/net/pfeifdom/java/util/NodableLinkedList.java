@@ -4371,7 +4371,7 @@ public class NodableLinkedList<E>
          * Doubly-linked sublist of nodes which back a
          * {@code NodableLinkedList.SubList}. Implements all optional {@code List}
          * interface operations. The elements are of type
-         * {@code NodableLinkedList.LinkNode}, and are never {@code null}.
+         * {@code NodableLinkedList.LinkSubNode}, and are never {@code null}.
          * 
          * A {@code LinkedSubNodes} sublist represents a range of {@code LinkNodes} of a
          * {@code NodableLinkedList.LinkedNodes} list. If a {@code Node} is added to or
@@ -5125,27 +5125,27 @@ public class NodableLinkedList<E>
                 return new SubListNode<E>(node, this.nodableLinkedListSubList());
             }
 
-            /**
-             * Returns the first {@code Node} in this list.
-             *
-             * @return the first {@code SubListNode} in this list
-             * @throws NoSuchElementException if this list is empty
-             */
-            public SubListNode<E> getFirst() {
-                if (isEmpty()) throw new NoSuchElementException("List is empty");
-                return new SubListNode<E>(iGetFirstNode(), this.nodableLinkedListSubList());
-            }
-
-            /**
-             * Returns the last {@code Node} in this list.
-             *
-             * @return the last {@code SubListNode} in this list
-             * @throws NoSuchElementException if this list is empty
-             */
-            public SubListNode<E> getLast() {
-                if (isEmpty()) throw new NoSuchElementException("List is empty");
-                return new SubListNode<E>(iGetLastNode(), this.nodableLinkedListSubList());
-            }            
+//            /**
+//             * Returns the first {@code Node} in this list.
+//             *
+//             * @return the first {@code SubListNode} in this list
+//             * @throws NoSuchElementException if this list is empty
+//             */
+//            public SubListNode<E> getFirst() {
+//                if (isEmpty()) throw new NoSuchElementException("List is empty");
+//                return new SubListNode<E>(iGetFirstNode(), this.nodableLinkedListSubList());
+//            }
+//
+//            /**
+//             * Returns the last {@code Node} in this list.
+//             *
+//             * @return the last {@code SubListNode} in this list
+//             * @throws NoSuchElementException if this list is empty
+//             */
+//            public SubListNode<E> getLast() {
+//                if (isEmpty()) throw new NoSuchElementException("List is empty");
+//                return new SubListNode<E>(iGetLastNode(), this.nodableLinkedListSubList());
+//            }            
             
             /**
              * Inserts the specified node at the specified position in this sublist. Shifts
@@ -7374,62 +7374,6 @@ public class NodableLinkedList<E>
         }
 
         /**
-         * Returns a new unverified {@code SubListNode}, backed by this
-         * {@code SubListNode's} {@code LinkNode}, for the specified subList. The
-         * {@code LinkNode} which backs the returned {@code SubListNode}, must be a node
-         * of the specified subList, or unlinked.
-         * 
-         * <p>
-         * <b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is not verified
-         * that it is a node of the specified subList. The results of using the returned
-         * {@code SubListNode} are unpredictable if this {@code SubListNode} is not a
-         * node of the specified sublist. This method is provided to avoid the cost of
-         * verifying that a {@code SubListNode} is a node of the specified subList when
-         * it's certain that it is. Note, just like any {@code SubListNode}, if the
-         * {@code NodableLinkedList} is subsequently modified, the returned
-         * {@code SubListNode}, will have to be reverified.
-         * 
-         * @param subList {@code SubList} containing this {@code SubListNode's}
-         *                {@code LinkNode}
-         * @return a new unverified {@code SubListNode}, backed by this
-         *         {@code SubListNode's} {@code LinkNode}, for the specified subList
-         * @throws IllegalArgumentException if the specified subList is {@code null}
-         */
-        @Override
-        public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList) {
-            if (subList == null) {
-                throw new IllegalArgumentException("Specified SubList is null");
-            }
-            subList.checkForModificationException();
-            return new SubListNode<E>(this.linkNode(), subList());
-        }        
-        
-        /**
-         * Returns (and marks) this {@code SubListNode} as a {@code SubListNode} which
-         * has just been verified that it is still a node of its associated
-         * {@code SubList}.
-         * 
-         * <p>
-         * <b>Use with CAUTION:</b> This {@code SubListNode}, if linked, is not verified
-         * that it is still a node of its associated {@code SubList}. The results of
-         * using this {@code SubListNode} are unpredictable if this {@code SubListNode}
-         * is not a node of its associated {@code SubList}. This method is provided to
-         * avoid the performance cost of verifying a {@code SubListNode} is still a node
-         * of its associated {@code SubList} when it's certain that it still is. Note,
-         * just like any {@code SubListNode}, if the {@code NodableLinkedList} is
-         * subsequently modified, this {@code SubListNode}, will once again have to be
-         * verified.
-         * 
-         * @return this {@code SubListNode} marked as verified that it is still a node
-         *         of its associated {@code SubList}
-         */
-        public SubListNode<E> unverified() {
-            subList().checkForModificationException();
-            updateExpectedModCount();
-            return this;
-        }        
-
-        /**
          * Compares this {@code SubListNode} with the specified object ({@code Node})
          * for equality. Returns {@code true} if and only if the specified object is a
          * {@code Node}, and both pairs of elements in the two nodes are <i>equal</i>.
@@ -8170,33 +8114,6 @@ public class NodableLinkedList<E>
             }
             return new SubListNode<E>(this, subList);
         }
-
-        /**
-         * Returns an unverified {@code SubListNode}, backed by this {@code LinkNode},
-         * for the specified subList. The returned {@code SubListNode} is backed by this
-         * {@code LinkNode} which must be a node of the specified subList, or unlinked.
-         * 
-         * <p>
-         * <b>Use with CAUTION:</b> This {@code LinkNode}, if linked, is not verified
-         * that it is a node of the specified subList. The results of using the returned
-         * {@code SubListNode} are unpredictable if this {@code LinkNode} is not a node
-         * of the specified sublist. This method is provided to avoid the cost of
-         * verifying that a {@code LinkNode} is a node of the specified subList when
-         * it's certain that it is. Note, just like any {@code SubListNode}, if the
-         * {@code NodableLinkedList} is subsequently modified, the returned
-         * {@code SubListNode}, will have to be reverified.
-         * 
-         * @param subList {@code SubList} believed to contain this {@code LinkNode}
-         * @return an unverified {@code SubListNode}, backed by this {@code LinkNode},
-         *         for the specified subList
-         * @throws IllegalArgumentException if the specified subList is {@code null}
-         */
-        @Override
-        public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList) {
-            if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
-            subList.checkForModificationException();
-            return new SubListNode<E>(this, subList);
-        }     
         
         /**
          * Compares this {@code LinkNode} with the specified object ({@code Node}) for
@@ -8708,29 +8625,6 @@ public class NodableLinkedList<E>
          *                                  specified subList
          */
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList);
-
-        /**
-         * Returns an unverified {@code SubListNode}, backed by this {@code Node's}
-         * {@code LinkNode}, for the specified subList. The {@code LinkNode} which backs
-         * the returned {@code SubListNode}, must be a node of the specified subList, or
-         * unlinked.
-         * 
-         * <p>
-         * <b>Use with CAUTION:</b> This {@code Node}, if linked, is not verified that
-         * it is a node of the specified subList. The results of using the returned
-         * {@code SubListNode} are unpredictable if this {@code Node} is not a node of
-         * the specified sublist. This method is provided to avoid the cost of verifying
-         * that a {@code Node} is a node of the specified subList when it's certain that
-         * it is. Note, just like any {@code SubListNode}, if the
-         * {@code NodableLinkedList} is subsequently modified, the returned
-         * {@code SubListNode}, will have to be reverified.
-         * 
-         * @param subList {@code SubList} believed to contain this {@code Node}
-         * @return an unverified {@code SubListNode}, backed by this {@code Node's}
-         *         {@code LinkNode}, for the specified subList
-         * @throws IllegalArgumentException if the specified subList is {@code null}
-         */
-        public SubListNode<E> unverifiedSubListNode(NodableLinkedList<E>.SubList subList);        
         
     } // Node
 
