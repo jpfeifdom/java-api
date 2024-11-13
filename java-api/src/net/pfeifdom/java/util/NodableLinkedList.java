@@ -378,7 +378,7 @@ public class NodableLinkedList<E>
         stream.defaultWriteObject();
         stream.writeLong(longSize());
         for (LinkNode<E> node = getFirstNode(); node != null;
-                node = linkedNodes.iGetNodeAfter(node)) {
+                node = linkedNodes().iGetNodeAfter(node)) {
             stream.writeObject(node.element());
         }
     }
@@ -422,7 +422,7 @@ public class NodableLinkedList<E>
      * @return the list of nodes which back this {@code NodableLinkedList}
      */
     public LinkedNodes linkedNodes() {
-        return linkedNodes;
+        return this.linkedNodes;
     }
 
     /**
@@ -457,7 +457,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public int size() {
-        return linkedNodes.size();
+        return linkedNodes().size();
     }
 
     /**
@@ -466,7 +466,7 @@ public class NodableLinkedList<E>
      * @return the number of elements in this list
      */
     public long longSize() {
-        return linkedNodes.longSize();
+        return linkedNodes().longSize();
     }
     
     /**
@@ -476,7 +476,7 @@ public class NodableLinkedList<E>
      */        
     @Override
     public boolean isEmpty() {
-        return linkedNodes.isEmpty();
+        return linkedNodes().isEmpty();
     }    
 
     /**
@@ -500,7 +500,7 @@ public class NodableLinkedList<E>
      *                                  a list
      */
     public void addNodeFirst(Node<E> node) {
-        linkedNodes.addNodeFirst(node);
+        linkedNodes().addNodeFirst(node);
     }
 
     /**
@@ -513,7 +513,7 @@ public class NodableLinkedList<E>
      *                                  a list
      */
     public void addNodeLast(Node<E> node) {
-        linkedNodes.addNodeLast(node);
+        linkedNodes().addNodeLast(node);
     }
     
     /**
@@ -524,7 +524,7 @@ public class NodableLinkedList<E>
      * @return the first node of this list, or {@code null} if this list is empty
      */
     public LinkNode<E> getFirstNode() {
-        return linkedNodes.iGetFirstNode();
+        return linkedNodes().iGetFirstNode();
     }
 
     /**
@@ -535,7 +535,7 @@ public class NodableLinkedList<E>
      * @return the last node of this list, or {@code null} if this list is empty
      */
     public LinkNode<E> getLastNode() {
-        return linkedNodes.iGetLastNode();
+        return linkedNodes().iGetLastNode();
     }
 
     /**
@@ -547,7 +547,7 @@ public class NodableLinkedList<E>
      *         list is empty
      */
     public LinkNode<E> removeFirstNode() {
-        return linkedNodes.removeFirstNode();
+        return linkedNodes().removeFirstNode();
     }
 
     /**
@@ -559,7 +559,7 @@ public class NodableLinkedList<E>
      *         list is empty
      */
     public LinkNode<E> removeLastNode() {
-        return linkedNodes.removeLastNode();
+        return linkedNodes().removeLastNode();
     }
 
     /**
@@ -567,7 +567,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public void clear() {
-        linkedNodes.clear();
+        linkedNodes().clear();
     }
 
     /**
@@ -584,11 +584,11 @@ public class NodableLinkedList<E>
     public boolean contains(Object object) {
         LinkNode<E> node = getFirstNode();
         if (object == null) {
-            for (; node != null; node = linkedNodes.iGetNodeAfter(node)) {
+            for (; node != null; node = linkedNodes().iGetNodeAfter(node)) {
                 if (node.element() == null) return true;          
             }
         } else {
-            for (; node != null; node = linkedNodes.iGetNodeAfter(node)) {
+            for (; node != null; node = linkedNodes().iGetNodeAfter(node)) {
                 if (object.equals(node.element())) return true;           
             }
         }
@@ -612,13 +612,13 @@ public class NodableLinkedList<E>
         long index = 0;
         LinkNode<E> node = getFirstNode();
         if (object == null) {
-            for (; node != null; index++, node = linkedNodes.iGetNodeAfter(node)) {
+            for (; node != null; index++, node = linkedNodes().iGetNodeAfter(node)) {
                 if (node.element() == null) {
                     return (index > Integer.MAX_VALUE) ? -1 : (int)index;			
                 }
             }
         } else {
-            for (; node != null; index++, node = linkedNodes.iGetNodeAfter(node)) {
+            for (; node != null; index++, node = linkedNodes().iGetNodeAfter(node)) {
                 if (object.equals(node.element())) {
                     return (index > Integer.MAX_VALUE) ? -1 : (int)index;			
                 }
@@ -644,13 +644,13 @@ public class NodableLinkedList<E>
         long index = longSize() - 1L;
         LinkNode<E> node = getLastNode();
         if (object == null) {
-            for (; node != null; index--, node = linkedNodes.iGetNodeBefore(node)) {
+            for (; node != null; index--, node = linkedNodes().iGetNodeBefore(node)) {
                 if (node.element() == null) {
                     return (index > Integer.MAX_VALUE) ? -1 : (int)index;			
                 }
             }
         } else {
-            for (; node != null; index--, node = linkedNodes.iGetNodeBefore(node)) {
+            for (; node != null; index--, node = linkedNodes().iGetNodeBefore(node)) {
                 if (object.equals(node.element())) {
                     return (index > Integer.MAX_VALUE) ? -1 : (int)index;			
                 }
@@ -710,9 +710,9 @@ public class NodableLinkedList<E>
         }
         if (index == longSize()) return addAll(collection);
         final long initialSize = longSize();
-        final LinkNode<E> targetNode = linkedNodes.getNode(index);
+        final LinkNode<E> targetNode = linkedNodes().getNode(index);
         for (E element: collection) {
-            linkedNodes.iAddNodeBefore(node(element), targetNode);
+            linkedNodes().iAddNodeBefore(node(element), targetNode);
         }
         return longSize() != initialSize;
     }
@@ -741,13 +741,13 @@ public class NodableLinkedList<E>
      */
     public boolean addAll(Node<E> node, Collection<? extends E> collection) {
         if (node == null) return addAll(collection);
-        if (!linkedNodes.contains(node)) {
+        if (!linkedNodes().contains(node)) {
             throw new IllegalArgumentException("Specified node is not linked to this list");
         }
         final LinkNode<E> linkNode = node.linkNode();
         final long initialSize = longSize();
         for (E element: collection) {
-            linkedNodes.iAddNodeBefore(node(element), linkNode);
+            linkedNodes().iAddNodeBefore(node(element), linkNode);
         }
         return longSize() != initialSize;
     }
@@ -776,7 +776,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public void add(int index, E element) {
-        linkedNodes.add(index, node(element));
+        linkedNodes().add(index, node(element));
     }	
 
     /**
@@ -786,7 +786,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public void addFirst(E element) {
-        linkedNodes.addFirst(node(element));
+        linkedNodes().addFirst(node(element));
     }
 
     /**
@@ -796,7 +796,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public void addLast(E element) {
-        linkedNodes.addLast(node(element));
+        linkedNodes().addLast(node(element));
     }
 
     /**
@@ -820,7 +820,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E get(int index) {
-        return linkedNodes.get(index).element();
+        return linkedNodes().get(index).element();
     }	
 
     /**
@@ -831,7 +831,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E getFirst() {
-        return linkedNodes.getFirst().element();
+        return linkedNodes().getFirst().element();
     }
 
     /**
@@ -842,7 +842,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E getLast() {
-        return linkedNodes.getLast().element();
+        return linkedNodes().getLast().element();
     }
     
     /**
@@ -853,7 +853,7 @@ public class NodableLinkedList<E>
      *         {@code NodableLinkedList}
      */
     public boolean isReversed() {
-        return linkedNodes.isReversed();
+        return linkedNodes().isReversed();
     }
 
     /**
@@ -1006,7 +1006,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E remove(int index) {
-        return linkedNodes.remove(index).element();
+        return linkedNodes().remove(index).element();
     }	
 
     /**
@@ -1017,7 +1017,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E removeFirst() {
-        return linkedNodes.removeFirst().element();
+        return linkedNodes().removeFirst().element();
     }
 
     /**
@@ -1028,7 +1028,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E removeLast() {
-        return linkedNodes.removeLast().element();
+        return linkedNodes().removeLast().element();
     }
 
     /**
@@ -1063,17 +1063,17 @@ public class NodableLinkedList<E>
     public boolean removeFirstOccurrence(Object object) {
         if (object == null) {
             for (LinkNode<E> node = getFirstNode(); node != null;
-                    node = linkedNodes.iGetNodeAfter(node)) {
+                    node = linkedNodes().iGetNodeAfter(node)) {
                 if (node.element() == null) {
-                    linkedNodes.iRemoveNode(node);
+                    linkedNodes().iRemoveNode(node);
                     return true;
                 }
             }
         } else {
             for (LinkNode<E> node = getFirstNode(); node != null;
-                    node = linkedNodes.iGetNodeAfter(node)) {
+                    node = linkedNodes().iGetNodeAfter(node)) {
                 if (object.equals(node.element())) {
-                    linkedNodes.iRemoveNode(node);
+                    linkedNodes().iRemoveNode(node);
                     return true;
                 }
             }
@@ -1094,17 +1094,17 @@ public class NodableLinkedList<E>
     public boolean removeLastOccurrence(Object object) {
         if (object == null) {
             for (LinkNode<E> node = getLastNode(); node != null;
-                    node = linkedNodes.iGetNodeBefore(node)) {
+                    node = linkedNodes().iGetNodeBefore(node)) {
                 if (node.element() == null) {
-                    linkedNodes.iRemoveNode(node);
+                    linkedNodes().iRemoveNode(node);
                     return true;
                 }
             }
         } else {
             for (LinkNode<E> node = getLastNode(); node != null;
-                    node = linkedNodes.iGetNodeBefore(node)) {
+                    node = linkedNodes().iGetNodeBefore(node)) {
                 if (object.equals(node.element())) {
-                    linkedNodes.iRemoveNode(node);
+                    linkedNodes().iRemoveNode(node);
                     return true;
                 }
             }
@@ -1144,7 +1144,7 @@ public class NodableLinkedList<E>
         if (index < 0 || index >= longSize()) {
             throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
         }
-        final Node<E> node = linkedNodes.getNode(index);
+        final Node<E> node = linkedNodes().getNode(index);
         final E originalElement = node.element();
         node.set(element);
         return originalElement;
@@ -1201,9 +1201,9 @@ public class NodableLinkedList<E>
     @Override
     public void sort(Comparator<? super E> comparator) {
         if (comparator == null) {
-            linkedNodes.sort(null);
+            linkedNodes().sort(null);
         } else {
-            linkedNodes.sort((node1, node2) -> {
+            linkedNodes().sort((node1, node2) -> {
                 return comparator.compare(node1.element(), node2.element());
             });
         }
@@ -1239,9 +1239,9 @@ public class NodableLinkedList<E>
      */
     public void mergeSort(Comparator<? super E> comparator) {
         if (comparator == null) {
-            linkedNodes.mergeSort(null);
+            linkedNodes().mergeSort(null);
         } else {
-            linkedNodes.mergeSort((node1, node2) -> {
+            linkedNodes().mergeSort((node1, node2) -> {
                 return comparator.compare(node1.element(), node2.element());
             });
         }
@@ -1352,7 +1352,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public SubList subList(int fromIndex, int toIndex) {
-        return linkedNodes.newSubList(fromIndex, toIndex);
+        return linkedNodes().newSubList(fromIndex, toIndex);
     }
     
     /**
@@ -1408,7 +1408,7 @@ public class NodableLinkedList<E>
      *                                  the firstNode in this list.
      */
     public SubList subList(Node<E> firstNode, Node<E> lastNode) {
-        return linkedNodes.newSubList(firstNode, lastNode);
+        return linkedNodes().newSubList(firstNode, lastNode);
     }    
 
     /**
@@ -1433,7 +1433,7 @@ public class NodableLinkedList<E>
         final Object[] elements = new Object[size()];
         int index = 0;
         for (LinkNode<E> node = getFirstNode(); node != null;
-                node = linkedNodes.iGetNodeAfter(node)) {
+                node = linkedNodes().iGetNodeAfter(node)) {
             elements[index++] = node.element();
         }
         return elements;
@@ -1489,7 +1489,7 @@ public class NodableLinkedList<E>
         int index = 0;
         Object[] elements = array;
         for (LinkNode<E> node = getFirstNode(); node != null;
-                node = linkedNodes.iGetNodeAfter(node)) {
+                node = linkedNodes().iGetNodeAfter(node)) {
             elements[index++] = node.element();			
         }
         if (array.length > size()) array[size()] = null;
@@ -1547,17 +1547,18 @@ public class NodableLinkedList<E>
     /**
      * Returns a {@code ListIterator} of the elements in this list (in proper
      * sequence), starting at the specified node in this list. if the specified node
-     * is {@code null}, the {@code ListIterator} will be positioned right after
-     * the last {@code Node} in this list.
+     * is {@code null}, the {@code ListIterator} will be positioned right after the
+     * last {@code Node} in this list.
      * <p>
      * <strong>Implementation Note:</strong> The index returned by the returned
      * {@code ListIterator's} methods {@code nextIndex} and {@code previousIndex} is
      * relative to the specified node which has an index of zero. Nodes which come
      * before the specified node in this list, will have a negative index; nodes
      * that come after will have a positive index. Method {@code nextIndex} returns
-     * {@code longSize()} if at the end of the list, and method
-     * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-     * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
+     * {@code longSize()} if the {@code ListIterator} is positioned at the end of
+     * the list, and method {@code previousIndex} returns {@code -longSize()} if the
+     * {@code ListIterator} is positioned at the beginning of the list. if
+     * {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
      * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
      * respectively.
      * <p>
@@ -1569,8 +1570,9 @@ public class NodableLinkedList<E>
      * modification, the iterator fails quickly and cleanly, rather than risking
      * arbitrary, non-deterministic behavior at an undetermined time in the future.
      * <p>
-     * Instead of using a {@code ListIterator}, consider iterating over the
-     * list via {@code Nodes}. For example:
+     * Instead of using a {@code ListIterator}, consider iterating over the list via
+     * {@code Nodes}. For example:
+     * 
      * <pre>
      * {@code
      *     // list is a NodableLinkedList<Integer>
@@ -1590,7 +1592,7 @@ public class NodableLinkedList<E>
      * @throws IllegalArgumentException if node is not linked to this list
      */
     public ListIterator<E> listIterator(Node<E> node) {
-        if (node != null && !linkedNodes.contains(node)) {
+        if (node != null && !linkedNodes().contains(node)) {
             throw new IllegalArgumentException("Specified node is not linked to this list");
         }
         final LinkedNodes linkedNodes = linkedNodes();
@@ -1649,7 +1651,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public Spliterator<E> spliterator() {
-        return new ElementSpliterator(linkedNodes);
+        return new ElementSpliterator(linkedNodes());
     }
     
     private static class Reversed<E> extends NodableLinkedList<E> implements java.io.Externalizable {
@@ -3199,9 +3201,10 @@ public class NodableLinkedList<E>
          * relative to the specified node which has an index of zero. Nodes which come
          * before the specified node in this list, will have a negative index; nodes
          * that come after will have a positive index. Method {@code nextIndex} returns
-         * {@code longSize()} if at the end of the list, and method
-         * {@code previousIndex} returns {@code -longSize()} if at the beginning of the
-         * list. if {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
+         * {@code longSize()} if the {@code ListIterator} is positioned at the end of
+         * the list, and method {@code previousIndex} returns {@code -longSize()} if the
+         * {@code ListIterator} is positioned at the beginning of the list. if
+         * {@code index < Integer.MIN_VALUE or index > Integer.MAX_VALUE},
          * {@code Integer.MIN_VALUE} or {@code Integer.MAX_VALUE} is returned
          * respectively.
          * <p>
@@ -3213,8 +3216,9 @@ public class NodableLinkedList<E>
          * modification, the iterator fails quickly and cleanly, rather than risking
          * arbitrary, non-deterministic behavior at an undetermined time in the future.
          * <p>
-         * Instead of using a {@code ListIterator}, consider iterating over the
-         * list via {@code Nodes}. For example:
+         * Instead of using a {@code ListIterator}, consider iterating over the list via
+         * {@code Nodes}. For example:
+         * 
          * <pre>
          * {@code
          *     // list is a NodableLinkedList<Integer>.LinkedNodes
@@ -3299,7 +3303,7 @@ public class NodableLinkedList<E>
     
     private class ReversedLinkedNodes extends LinkedNodes {
         
-        private LinkedNodes linkedNodes;
+        private final LinkedNodes linkedNodes;
         
         private ReversedLinkedNodes(LinkedNodes linkedNodes) {
             this.linkedNodes = linkedNodes;
@@ -3613,7 +3617,7 @@ public class NodableLinkedList<E>
          * Inserts the specified node at the beginning of this {@code SubList}.
          * <p>
          * If the specified node is a {@code SubListNode}, after this operation is
-         * completed, it will be marked that it is contained by this {@code SubList}.
+         * completed, it will be associated this {@code SubList}.
          *
          * @param node the {@code Node} to be inserted at the beginning of this
          *             {@code SubList}
@@ -3637,7 +3641,7 @@ public class NodableLinkedList<E>
          * Appends the specified node to the end of this {@code SubList}.
          * <p>
          * If the specified node is a {@code SubListNode}, after this operation is
-         * completed, it will be marked that it is contained by this {@code SubList}.
+         * completed, it will be associated with this {@code SubList}.
          *
          * @param node {@code Node} to be appended to the end of this {@code SubList}
          * @throws IllegalArgumentException if node is {@code null} or already a node of
@@ -4474,7 +4478,7 @@ public class NodableLinkedList<E>
              */
             @Override
             LinkNode<E> iGetMyLinkedNodesHeadSentinel() {
-                if (parent() == null) return linkedNodes.iGetHeadSentinel();
+                if (parent() == null) return linkedNodes().iGetHeadSentinel();
                 return parent().iGetMyLinkedNodesHeadSentinel();
             }
             
@@ -4487,7 +4491,7 @@ public class NodableLinkedList<E>
              */
             @Override
             LinkNode<E> iGetMyLinkedNodesTailSentinel() {
-                if (parent() == null) return linkedNodes.iGetTailSentinel();
+                if (parent() == null) return linkedNodes().iGetTailSentinel();
                 return parent().iGetMyLinkedNodesTailSentinel();
             }
             
@@ -4538,7 +4542,7 @@ public class NodableLinkedList<E>
                 //    "Node is null or already an element of a list";
                 //assert this.contains(afterThisNode) :
                 //    "Before Node is not an element of this sublist";
-                if (parent() == null) linkedNodes.iAddNodeAfter(node, afterThisNode);
+                if (parent() == null) linkedNodes().iAddNodeAfter(node, afterThisNode);
                 else parent().iAddNodeAfter(node, afterThisNode);
                 updateSizeAndModCount(1L);
             }
@@ -4549,7 +4553,7 @@ public class NodableLinkedList<E>
                 //    "Node is null or already an element of a list";
                 //assert this.contains(beforeThisNode) :
                 //    "Before Node is not an element of this sublist";
-                if (parent() == null) linkedNodes.iAddNodeBefore(node, beforeThisNode);
+                if (parent() == null) linkedNodes().iAddNodeBefore(node, beforeThisNode);
                 else parent().iAddNodeBefore(node, beforeThisNode);
                 updateSizeAndModCount(1L);
             }
@@ -4557,7 +4561,7 @@ public class NodableLinkedList<E>
             @Override
             void iRemoveNode(LinkNode<E> node) {
                 //assert this.contains(node) : "Node is not an element of this sublist";
-                if (parent() == null) linkedNodes.iRemoveNode(node);
+                if (parent() == null) linkedNodes().iRemoveNode(node);
                 else parent().iRemoveNode(node);
                 updateSizeAndModCount(-1L);                
             }
@@ -4567,7 +4571,7 @@ public class NodableLinkedList<E>
                 //assert this.contains(node) : "Node is not an element of this sublist";
                 //assert replacementNode != null && !replacementNode.isLinked() :
                 //    "Replacement Node is null or is already an element of a list";
-                if (parent() == null) linkedNodes.iReplaceNode(node, replacementNode);
+                if (parent() == null) linkedNodes().iReplaceNode(node, replacementNode);
                 else parent().iReplaceNode(node, replacementNode);
                 updateSizeAndModCount(0L);
             }
@@ -4576,7 +4580,7 @@ public class NodableLinkedList<E>
             boolean iHasNodeAfter(LinkNode<E> node) {
                 //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
                 LinkNode<?> nextNode;
-                if (parent() == null) nextNode = linkedNodes.iGetNodeAfterOrTailSentinel(node);
+                if (parent() == null) nextNode = linkedNodes().iGetNodeAfterOrTailSentinel(node);
                 else nextNode = parent().iGetNodeAfterOrTailSentinel(node);
                 if (nextNode == tailSentinel()) return false;
                 if (nextNode == iGetMyLinkedNodesTailSentinel()) {
@@ -4589,7 +4593,7 @@ public class NodableLinkedList<E>
             @Override
             boolean iHasNodeBefore(LinkNode<E> node) {
                 //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
-                if (parent() == null) return (linkedNodes.iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true;
+                if (parent() == null) return (linkedNodes().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true;
                 return (parent().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true; 
             }
             
@@ -4607,7 +4611,7 @@ public class NodableLinkedList<E>
             LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
                 //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
                 if (!iHasNodeAfter(node)) return null;
-                if (parent() == null) return linkedNodes.iGetNodeAfter(node);
+                if (parent() == null) return linkedNodes().iGetNodeAfter(node);
                 return parent().iGetNodeAfter(node);
             }
             
@@ -4615,7 +4619,7 @@ public class NodableLinkedList<E>
             LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
                 //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
                 if (!iHasNodeAfter(node)) return tailSentinel();
-                if (parent() == null) return linkedNodes.iGetNodeAfter(node);
+                if (parent() == null) return linkedNodes().iGetNodeAfter(node);
                 return parent().iGetNodeAfter(node);
             }
             
@@ -4628,14 +4632,14 @@ public class NodableLinkedList<E>
                     }
                 linkedSubNodes = linkedSubNodes.parent();
                 } while (linkedSubNodes != null);
-                return linkedNodes.iGetNodeAfterOrTailSentinel(node);
+                return linkedNodes().iGetNodeAfterOrTailSentinel(node);
             }
             
             @Override
             LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
                 //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
                 if (!iHasNodeBefore(node)) return null;
-                if (parent() == null) return linkedNodes.iGetNodeBefore(node);
+                if (parent() == null) return linkedNodes().iGetNodeBefore(node);
                 return parent().iGetNodeBefore(node);
             }
             
@@ -4643,7 +4647,7 @@ public class NodableLinkedList<E>
             LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
                 //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
                 if (!iHasNodeBefore(node)) return iGetHeadSentinel();
-                if (parent() == null) return linkedNodes.iGetNodeBefore(node);
+                if (parent() == null) return linkedNodes().iGetNodeBefore(node);
                 return parent().iGetNodeBefore(node);
             }
             
@@ -4738,7 +4742,7 @@ public class NodableLinkedList<E>
                 return getIndex(node.linkNode());
             }
             private long getIndex(LinkNode<?> node) {
-                if (!linkedNodes.contains(node)) return -1;
+                if (!linkedNodes().contains(node)) return -1;
                 long cursorIndex = 0L;
                 LinkNode<E> cursorNode;
                 if (sizeIsKnown() && tailSentinelIsKnown()) {
@@ -4843,7 +4847,7 @@ public class NodableLinkedList<E>
              * Inserts the specified node at the beginning of this sublist.
              * <p>
              * If the specified node is a {@code SubListNode}, after this operation is
-             * completed, it will be marked that it is contained by this sublist.
+             * completed, it will be associated with this sublist.
              *
              * @param node the {@code Node} to be inserted at the beginning of this
              *             sublist
@@ -4867,7 +4871,7 @@ public class NodableLinkedList<E>
              * Appends the specified node to the end of this sublist.
              * <p>
              * If the specified node is a {@code SubListNode}, after this operation is
-             * completed, it will be marked that it is contained by this sublist.
+             * completed, it will be associated with this sublist.
              *
              * @param node {@code Node} to be appended to the end of this sublist
              * @throws IllegalArgumentException if node is {@code null} or already a node of
@@ -4997,7 +5001,7 @@ public class NodableLinkedList<E>
                 if (!this.contains(node)) {
                     throw new IllegalArgumentException("Specified node is not linked to this list");
                 }
-                if (parent() == null) return linkedNodes.forwardLinkNode(node);
+                if (parent() == null) return linkedNodes().forwardLinkNode(node);
                 return parent().forwardLinkNode(node);
             }
 
@@ -5105,7 +5109,7 @@ public class NodableLinkedList<E>
              * {@code Nodes} to the right (adds one to their indices).
              * <p>
              * If the specified node is a {@code SubListNode}, after this operation is completed,
-             * it will be marked that it is contained by this sublist.
+             * it will be associated with this sublist.
              *
              * @param index position where the specified node is to be inserted
              * @param node  {@code Node} to be inserted
@@ -5193,7 +5197,7 @@ public class NodableLinkedList<E>
              *         {@code NodableLinkedList}
              */
             public boolean isReversed() {
-                if (parent() == null) return linkedNodes.isReversed();
+                if (parent() == null) return linkedNodes().isReversed();
                 return parent().isReversed();
             }            
             
@@ -5252,7 +5256,7 @@ public class NodableLinkedList<E>
              * collection's iterator.
              * <p>
              * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will be marked that they are contained by this sublist.
+             * collection will be associated with this sublist.
              * <p>
              * The behavior of this operation is undefined if the specified collection is
              * modified while the operation is in progress. (Note that this will occur if
@@ -5302,7 +5306,7 @@ public class NodableLinkedList<E>
              * {@code addAll(Collection)}.
              * <p>
              * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will be marked that they are contained by this sublist.
+             * collection will associated with this sublist.
              * <p>
              * The behavior of this operation is undefined if the specified collection is
              * modified while the operation is in progress. (Note that this will occur if
@@ -5360,7 +5364,7 @@ public class NodableLinkedList<E>
              * {@code addAll(Collection)}.
              * <p>
              * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will be marked that they are contained by this sublist.
+             * collection will be associated with this sublist.
              * <p>
              * The behavior of this operation is undefined if the specified collection is
              * modified while the operation is in progress. (Note that this will occur if
@@ -5436,23 +5440,23 @@ public class NodableLinkedList<E>
 
             private boolean contains(LinkNode<?> node) {
                 if (sizeIsKnown() && tailSentinelIsKnown() &&
-                        (linkedNodes.longSize() - this.longSize() < this.longSize() / 2)) {
+                        (linkedNodes().longSize() - this.longSize() < this.longSize() / 2)) {
                     // The portion of the list not occupied by the sublist is less than
                     // 1/2 the size of the sublist, therefore, it might be faster
                     // to search the portion of the list not occupied by the sublist
                     // instead of searching the sublist itself
-                    if (!linkedNodes.contains(node)) return false;
-                    LinkNode<E> linkNode = linkedNodes.iGetHeadSentinel();
+                    if (!linkedNodes().contains(node)) return false;
+                    LinkNode<E> linkNode = linkedNodes().iGetHeadSentinel();
                     while (linkNode != null) {
                         if (node == linkNode) return false;
                         if (linkNode == this.iGetHeadSentinel() || linkNode == this.iGetTailSentinel()) {
                             if (linkNode == this.iGetHeadSentinel())
                                  linkNode = this.iGetTailSentinel();
                             else linkNode = this.iGetHeadSentinel();
-                            if (linkNode == linkedNodes.iGetTailSentinel()) break;
+                            if (linkNode == linkedNodes().iGetTailSentinel()) break;
                             if (node == linkNode) return false;
                         }
-                    linkNode = linkedNodes.iGetNodeAfter(linkNode);
+                    linkNode = linkedNodes().iGetNodeAfter(linkNode);
                     }
                     return true;
                 }
@@ -5587,10 +5591,10 @@ public class NodableLinkedList<E>
                     return new SubList(firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), SubList.this, 0L);
                 }
                 // both firstNode and LastNode are specified
-                if (!linkedNodes.contains(firstNode)) {
+                if (!linkedNodes().contains(firstNode)) {
                     throw new IllegalArgumentException("Specified first node is not linked to this list");
                 }
-                if (!linkedNodes.contains(lastNode)) {
+                if (!linkedNodes().contains(lastNode)) {
                     throw new IllegalArgumentException("Specified last node is not linked to this list");
                 }
                 LinkNode<E> node;
@@ -6195,7 +6199,7 @@ public class NodableLinkedList<E>
     
     private class ReversedSubList extends SubList {
         
-        private SubList sublist;
+        private final SubList sublist;
         
         private ReversedSubList(SubList sublist) {
             super(sublist.linkedSubNodes());
@@ -6596,7 +6600,7 @@ public class NodableLinkedList<E>
     
     private class SubListNodeListIterator extends NodeListIterator {
         
-        final NodableLinkedList<E>.SubList sublist;
+        private final NodableLinkedList<E>.SubList sublist;
         
         private SubListNodeListIterator(NodableLinkedList<E>.SubList.LinkedSubNodes list,
                 long index, IndexType indexType, LinkNode<E> node) {
@@ -6621,7 +6625,7 @@ public class NodableLinkedList<E>
         private static final int BATCH_INCREMENT = 1 << 10;
         private static final int MAX_BATCH_SIZE  = 1 << 25;
         
-        private InternalLinkedList list;
+        private final InternalLinkedList list;
 
         private LinkNode<E> cursor;
         private long remainingSize = -1L;
@@ -6768,7 +6772,7 @@ public class NodableLinkedList<E>
     } // NodableLinkedListSpliterator    
 
     /**
-     * Sublist node of a {@code NodableLinkedList.SubList}. A {@code SubListNode}
+     * Sublist node of a {@link NodableLinkedList.SubList}. A {@code SubListNode}
      * represents a {@code NodableLinkedList.LinkNode} that is associated with a
      * specific {@code SubList}. Any operation performed on a {@code SubListNode} is
      * performed on its associated {@code SubList}. A {@code SubListNode} can be
@@ -6918,12 +6922,15 @@ public class NodableLinkedList<E>
          * <p>
          * To acquire a {@code LinkNode} which matches the forward direction of this
          * {@code SubListNode's} associated sublist, use:
+         * 
          * <pre>
-         *     {@code NodableLinkedList.LinkNode linkNode = subList().isReversed() ? linkNode().reversed() : linkNode();}
+         * {@code
+         *     NodableLinkedList.LinkNode linkNode = subList().linkedSubNodes().forwardLinkNode(linkNode());
+         * }
          * </pre>
          * 
          * @return the {@code NodableLinkedList.LinkNode} which backs this
-         * {@code SubListNode}
+         *         {@code SubListNode}
          */
         @Override
         public LinkNode<E> linkNode() {
@@ -6934,7 +6941,7 @@ public class NodableLinkedList<E>
          * Returns the {@code LinkedNodes} list this {@code SubListNode} belongs to, or
          * {@code null} if not linked.
          * 
-         * @return the {@code LinkedNodes} list this {@code SubListrNode} belongs to, or
+         * @return the {@code LinkedNodes} list this {@code SubListNode} belongs to, or
          *         {@code null} if not linked
          */
         @Override
@@ -6991,8 +6998,8 @@ public class NodableLinkedList<E>
          * {@code SubListNode} is effectively inserted into the specified
          * {@code SubListNode's} associated {@code SubList}.
          * <p>
-         * If this {@code SubListNode} is reversed, this operation behaves like the
-         * {@code addBefore(Node)} method.
+         * If this {@code SubListNode} is reversed, this operation effectively behaves
+         * like the {@code addBefore(Node)} method.
          * 
          * @param node the {@code Node} this {@code SubListNode} is to be inserted after
          * 
@@ -7032,8 +7039,8 @@ public class NodableLinkedList<E>
          * {@code SubListNode} is effectively inserted into the specified
          * {@code SubListNode's} associated {@code SubList}.
          * <p>
-         * If this {@code SubListNode} is reversed, this operation behaves like the
-         * {@code addAfter(Node)} method.
+         * If this {@code SubListNode} is reversed, this operation effectively behaves
+         * like the {@code addAfter(Node)} method.
          * 
          * @param node the {@code Node} this {@code SubListNode} is to be inserted
          *             before
@@ -7069,8 +7076,8 @@ public class NodableLinkedList<E>
          * {@code true} if this {@code SubListNode} is not the last node of a
          * {@code SubList}.
          * <p>
-         * If this {@code SubListNode} is reversed, this operation behaves like the
-         * {@code hasPrevious()} method.
+         * If this {@code SubListNode} is reversed, this operation effectively behaves
+         * like the {@code hasPrevious()} method.
          * 
          * @return {@code true} if there exists a node which comes after this
          *         {@code SubListNode}
@@ -7090,8 +7097,8 @@ public class NodableLinkedList<E>
          * {@code true} if this {@code SubListNode} is not the first node of a
          * {@code SubList}.
          * <p>
-         * If this {@code SubListNode} is reversed, this operation behaves like the
-         * {@code hasNext()} method.
+         * If this {@code SubListNode} is reversed, this operation effectively behaves
+         * like the {@code hasNext()} method.
          * 
          * @return {@code true} if there exists a node which comes before this
          *         {@code SubListNode}
@@ -7132,9 +7139,9 @@ public class NodableLinkedList<E>
          * a {@code SubList}. if this {@code SubListNode} is the last or only node,
          * {@code null} is returned.
          * <p>
-         * If this is a reversed {@code SubListNode}, this operation behaves like the
-         * {@code previous()} method, and the returned {@code SubListNode} will also be
-         * reversed.
+         * If this is a reversed {@code SubListNode}, this operation effectively behaves
+         * like the {@code previous()} method, and the returned {@code SubListNode} will
+         * also be reversed.
          * 
          * @return the {@code SubListNode} which comes after this {@code SubListNode} in
          *         a {@code SubList}, or {@code null} if this {@code SubListNode} is the
@@ -7157,9 +7164,9 @@ public class NodableLinkedList<E>
          * in a {@code SubList}. if this {@code SubListNode} is the first or only node,
          * {@code null} is returned.
          * <p>
-         * If this is a reversed {@code SubListNode}, this operation behaves like the
-         * {@code next()} method, and the returned {@code SubListNode} will also be
-         * reversed.
+         * If this is a reversed {@code SubListNode}, this operation effectively behaves
+         * like the {@code next()} method, and the returned {@code SubListNode} will
+         * also be reversed.
          * 
          * @return the {@code SubListNode} which comes before this {@code SubListNode}
          *         in a {@code SubList}, or {@code null} if this {@code SubListNode} is
@@ -7196,8 +7203,8 @@ public class NodableLinkedList<E>
          * must not belong to a list.
          * <p>
          * If the specified node is a {@code SubListNode}, after this operation is
-         * completed, The specified {@code SubListNode} will be marked that it is
-         * contained by its new associated {@code SubList}.
+         * completed, The specified {@code SubListNode} will be associated with this
+         * {@code SubListNode's} {@code SubList}.
          * 
          * @param node {@code Node} to replace this {@code SubListNode}
          * @throws IllegalStateException    if this {@code SubListNode} is no longer a
@@ -7251,10 +7258,9 @@ public class NodableLinkedList<E>
          * If the specified node is a {@code SubListNode}, it is verified that it is
          * still contained by its associated {@code SubList}. Also, after this operation
          * is completed, both this {@code SubListNode} and the specified
-         * {@code SubListNode} will be marked that they are contained by their possibly
-         * new associated {@code SubLists}. If the specified node is a {@code LinkNode},
-         * it is effectively inserted into this {@code SubListNode's} associated
-         * {@code SubList}.
+         * {@code SubListNode} will be associated with the other's {@code SubList}. If
+         * the specified node is a {@code LinkNode}, it is effectively inserted into
+         * this {@code SubListNode's} associated {@code SubList}.
          * <p>
          * <strong>Synchronization consideration:</strong> This operation can
          * potentially operate on two different lists. if synchronization is required,
@@ -7463,10 +7469,10 @@ public class NodableLinkedList<E>
    } // ReverseSubListNode    
 
    /**
-    * Node of a {@code NodableLinkedList.LinkedNodes} list. Contains references to
+    * Node of a {@link NodableLinkedList.LinkedNodes} list. Contains references to
     * the previous and next {@code LinkNodes} in a doubly-linked list, and contains
     * an element which can be {@code null}. Does not belong to any particular
-    * {@code NodableLinkedList} until the {@code LinkNode} is inserted/added. Once
+    * {@link NodableLinkedList} until the {@code LinkNode} is inserted/added. Once
     * inserted, the {@code LinkNode} remains linked to a {@code NodableLinkedList}
     * until removed. A {@code LinkNode} can belong to different lists, just not at
     * the same time.
@@ -7648,9 +7654,11 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns this {@code LinkNode}
+         * Returns this {@code LinkNode} or the backing {@code LinkNode} if this is a
+         * reversed {@code LinkNode}.
          * 
-         * @return this {@code LinkNode}
+         * @return this {@code LinkNode} or the backing {@code LinkNode} if this is a
+         *         reversed {@code LinkNode}
          */
         @Override
         public LinkNode<E> linkNode() {
@@ -7706,8 +7714,8 @@ public class NodableLinkedList<E>
          * {@code LinkNode} is effectively inserted into the specified
          * {@code SubListNode's} associated {@code SubList}.
          * <p>
-         * If this {@code LinkNode} is reversed, this operation behaves like the
-         * {@code addBefore(Node)} method.
+         * If this {@code LinkNode} is reversed, this operation effectively behaves like
+         * the {@code addBefore(Node)} method.
          * 
          * @param node the {@code Node} this {@code LinkNode} is to be inserted after
          * @throws IllegalStateException    if this {@code LinkNode} is already a node
@@ -7745,8 +7753,8 @@ public class NodableLinkedList<E>
          * {@code LinkNode} is effectively inserted into the specified
          * {@code SubListNode's} associated {@code SubList}.
          * <p>
-         * If this {@code LinkNode} is reversed, this operation behaves like the
-         * {@code addAfter(Node)} method.
+         * If this {@code LinkNode} is reversed, this operation effectively behaves like
+         * the {@code addAfter(Node)} method.
          * 
          * @param node the {@code Node} this {@code LinkNode} is to be inserted before
          * @throws IllegalStateException    if this {@code LinkNode} is already a node
@@ -7778,8 +7786,8 @@ public class NodableLinkedList<E>
          * {@code LinkNode} in a list. In other words, returns {@code true} if this
          * {@code LinkNode} is not the last node of a list.
          * <p>
-         * If this {@code LinkNode} is reversed, this operation behaves like the
-         * {@code hasPrevious()} method.
+         * If this {@code LinkNode} is reversed, this operation effectively behaves like
+         * the {@code hasPrevious()} method.
          * 
          * @return {@code true} if there exists a {@code Node} which comes after this
          *         {@code LinkNode}
@@ -7798,8 +7806,8 @@ public class NodableLinkedList<E>
          * {@code LinkNode} in a list. In other words, returns {@code true} if this
          * {@code LinkNode} is not the first node of a list.
          * <p>
-         * If this {@code LinkNode} is reversed, this operation behaves like the
-         * {@code hasNext()} method.
+         * If this {@code LinkNode} is reversed, this operation effectively behaves like
+         * the {@code hasNext()} method.
          * 
          * @return {@code true} if there exists a {@code Node} which comes before this
          *         {@code LinkNode}
@@ -7840,9 +7848,9 @@ public class NodableLinkedList<E>
          * list. if this {@code LinkNode} is the last or only {@code LinkNode},
          * {@code null} is returned.
          * <p>
-         * If this is a reversed {@code LinkNode}, this operation behaves like the
-         * {@code previous()} method, and the returned {@code LinkNode} will also be
-         * reversed.
+         * If this is a reversed {@code LinkNode}, this operation effectively behaves
+         * like the {@code previous()} method, and the returned {@code LinkNode} will
+         * also be reversed.
          * 
          * @return the {@code LinkNode} which comes after this {@code LinkNode} in a
          *         list, or {@code null} if this {@code LinkNode} is the last or only
@@ -7863,9 +7871,9 @@ public class NodableLinkedList<E>
          * list. if this {@code LinkNode} is the first or only {@code LinkNode},
          * {@code null} is returned.
          * <p>
-         * If this is a reversed {@code LinkNode}, this operation behaves like the
-         * {@code next()} method, and the returned {@code LinkNode} will also be
-         * reversed.
+         * If this is a reversed {@code LinkNode}, this operation effectively behaves
+         * like the {@code next()} method, and the returned {@code LinkNode} will also
+         * be reversed.
          * 
          * @return the {@code LinkNode} which comes before this {@code LinkNode} in a
          *         list, or {@code null} if this {@code LinkNode} is the first or only
@@ -8231,14 +8239,14 @@ public class NodableLinkedList<E>
     } // ReverseLinkNode
 
     /**
-     * Node of a {@code NodableLinkedList}.
+     * Node of a {@link NodableLinkedList}.
      * <p>
-     * There are two types of {@code Nodes}: One is a {@code LinkNode} which
+     * There are two types of {@code Nodes}: One is a {@link LinkNode} which
      * contains an element and references to the previous and next nodes in a
-     * doubly-linked list, and the other is a {@code SubListNode} which represents a
-     * {@code LinkNode} that is associated with a {@code SubList}. {@code Nodes} can
-     * also be reversed. Reversing a {@code Node} affects all order-sensitive
-     * operations ({@code next()}, {@code previous()}, etc.).
+     * doubly-linked list, and the other is a {@link SubListNode} which represents a
+     * {@code LinkNode} that is associated with a {@link NodableLinkedList.SubList}.
+     * {@code Nodes} can also be reversed. Reversing a {@code Node} affects all
+     * order-sensitive operations ({@code next()}, {@code previous()}, etc.).
      * <p>
      * A {@code Node} does not belong to any particular list until the {@code Node}
      * is inserted/added. Once inserted, the {@code Node} remains linked to the list
@@ -8347,7 +8355,7 @@ public class NodableLinkedList<E>
          * effectively inserted into the specified {@code SubListNode's} associated
          * {@code SubList}.
          * <p>
-         * If this {@code Node} is reversed, this operation behaves like the
+         * If this {@code Node} is reversed, this operation effectively behaves like the
          * {@code addBefore(Node)} method.
          * 
          * @param node the {@code Node} this {@code Node} is to be inserted after
@@ -8367,7 +8375,7 @@ public class NodableLinkedList<E>
          * effectively inserted into the specified {@code SubListNode's} associated
          * {@code SubList}.
          * <p>
-         * If this {@code Node} is reversed, this operation behaves like the
+         * If this {@code Node} is reversed, this operation effectively behaves like the
          * {@code addAfter(Node)} method.
          * 
          * @param node the {@code Node} this {@code Node} is to be inserted before
@@ -8386,7 +8394,7 @@ public class NodableLinkedList<E>
          * If this {@code Node} is a {@code SubListNode}, it is verified that it is
          * still contained by its associated {@code SubList}.
          * <p>
-         * If this {@code Node} is reversed, this operation behaves like the
+         * If this {@code Node} is reversed, this operation effectively behaves like the
          * {@code hasPrevious()} method.
          * 
          * @return {@code true} if there exists a {@code Node} which comes after this
@@ -8403,7 +8411,7 @@ public class NodableLinkedList<E>
          * If this {@code Node} is a {@code SubListNode}, it is verified that it is
          * still contained by its associated {@code SubList}.
          * <p>
-         * If this {@code Node} is reversed, this operation behaves like the
+         * If this {@code Node} is reversed, this operation effectively behaves like the
          * {@code hasNext()} method.
          * 
          * @return {@code true} if there exists a {@code Node} which comes before this
@@ -8431,8 +8439,8 @@ public class NodableLinkedList<E>
          * Returns the {@code Node} which comes after this {@code Node} in a list. if
          * this {@code Node} is the last or only {@code Node}, {@code null} is returned.
          * <p>
-         * If this is a reversed {@code Node}, this operation behaves like the
-         * {@code previous()} method, and the returned {@code Node} will also be
+         * If this is a reversed {@code Node}, this operation effectively behaves like
+         * the {@code previous()} method, and the returned {@code Node} will also be
          * reversed.
          * 
          * @return the {@code Node} which comes after this {@code Node} in a list, or
@@ -8446,8 +8454,9 @@ public class NodableLinkedList<E>
          * this {@code Node} is the first or only {@code Node}, {@code null} is
          * returned.
          * <p>
-         * If this is a reversed {@code Node}, this operation behaves like the
-         * {@code next()} method, and the returned {@code Node} will also be reversed.
+         * If this is a reversed {@code Node}, this operation effectively behaves like
+         * the {@code next()} method, and the returned {@code Node} will also be
+         * reversed.
          * 
          * @return the {@code Node} which comes before this {@code Node} in a list, or
          *         {@code null} if this {@code Node} is the first or only {@code Node}
@@ -8468,7 +8477,7 @@ public class NodableLinkedList<E>
          * <p>
          * If both this {@code Node} and the specified node are {@code SubListNodes},
          * after this operation is completed, the specified {@code SubListNode} will be
-         * marked that it is contained by its new associated {@code SubList}.
+         * associated with this {@code Node's} {@code SubList}.
          * 
          * @param node {@code Node} to replace this {@code Node}
          * @throws IllegalStateException    if this {@code Node} does not belong to a
@@ -8498,10 +8507,7 @@ public class NodableLinkedList<E>
          * still contained by its associated {@code SubList}. If either this
          * {@code Node} or the specified node are {@code SubListNodes}, the other
          * {@code Node} is effectively inserted into the {@code SubListNode's}
-         * associated {@code SubList}. If both this {@code Node} and the specified node
-         * are {@code SubListNodes}, after this operation is completed, both will be
-         * marked that they are contained by their possibly new associated
-         * {@code SubLists}.
+         * associated {@code SubList}.
          * <p>
          * <strong>Synchronization consideration:</strong> This operation can
          * potentially operate on two different lists. if synchronization is required,
@@ -8542,6 +8548,46 @@ public class NodableLinkedList<E>
          *                                  specified subList
          */
         public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList);
+        
+        /**
+         * Compares this {@code Node} with the specified object ({@code Node}) for
+         * equality. Returns {@code true} if and only if the specified object is a
+         * {@code Node}, and both pairs of elements in the two nodes are <i>equal</i>.
+         * (Two elements {@code e1} and {@code e2} are <i>equal</i> if
+         * {@code (e1==null ? e2==null : e1.equals(e2))}.)
+         *
+         * @param object {@code Object} ({@code Node}) to be compared for equality with
+         *               this {@code Node}
+         * @return {@code true} if the specified object ({@code Node}) is equal to this
+         *         {@code Node}
+         */
+        @Override
+        public boolean equals(Object object);
+        
+        /**
+         * Compares this {@code Node} to the specified node for order. Returns a
+         * negative integer, zero, or a positive integer as this {@code Node's} element
+         * is less than, equal to, or greater than the specified node's element.
+         *
+         * @param node {@code Node} to be compared to this {@code Node}
+         * @return a negative integer, zero, or a positive integer as this
+         *         {@code Node's} element is less than, equal to, or greater than the
+         *         specified node's element
+         * @throws NullPointerException if the specified node is {@code null}
+         * @throws ClassCastException   if the nodes' element types prevent them from
+         *                              being compared
+         */
+        @Override
+        public int compareTo(Node<E> node);
+
+        /**
+         * Returns the hash code value of this {@code Node}. Has the same hash code as
+         * its backing {@code LinkNode}.
+         *
+         * @return the hash code value of this {@code Node}
+         */
+        @Override
+        public int hashCode();
         
     } // Node
 
