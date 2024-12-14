@@ -411,7 +411,7 @@ public class NodableLinkedList<E>
         }
     }
 
-    //protected int modCount inherited from class java.util.AbstractList
+    // protected int modCount inherited from class java.util.AbstractList
     int modCount() {
         return this.modCount;
     }
@@ -1353,7 +1353,7 @@ public class NodableLinkedList<E>
      *                                   fromIndex > toIndex})
      */
     @Override
-    public SubList subList(int fromIndex, int toIndex) {
+    public SubList<E> subList(int fromIndex, int toIndex) {
         return linkedNodes().newSubList(fromIndex, toIndex);
     }
     
@@ -1410,7 +1410,7 @@ public class NodableLinkedList<E>
      *                                  list or if the lastNode comes right before
      *                                  the firstNode in this list.
      */
-    public SubList subList(Node<E> firstNode, Node<E> lastNode) {
+    public SubList<E> subList(Node<E> firstNode, Node<E> lastNode) {
         return linkedNodes().newSubList(firstNode, lastNode);
     }    
 
@@ -1698,7 +1698,7 @@ public class NodableLinkedList<E>
             throw new java.io.InvalidObjectException("not serializable");
         }
         
-    } // Reversed    
+    } // Reversed
     
     /**
      * Common linked list view of LinkedNodes and SubLinkedNodes.
@@ -1804,7 +1804,7 @@ public class NodableLinkedList<E>
      * Doubly-linked list of nodes which back a {@code NodableLinkedList}.
      * Implements the {@code List} and {@code Deque} interfaces. The elements are of
      * type {@code NodableLinkedList.LinkNode<E>}, and are never {@code null}.
-     * Implements all optional {@code List} operations
+     * Implements all optional {@code List} operations.
      * <p>
      * All of the operations perform as could be expected for a doubly-linked list.
      * Operations that index into the list will traverse the list from the beginning
@@ -1842,7 +1842,7 @@ public class NodableLinkedList<E>
         private final LinkNode<E> tailSentinel = new LinkNode<>();
 
         private LinkedNodes() {
-            NodableLinkedList.this.modCount = modCount = 0;
+            NodableLinkedList.this.modCount = this.modCount = 0;
             size = 0L;
             headSentinel.linkedNodes = this;
             tailSentinel.linkedNodes = this;
@@ -1850,12 +1850,12 @@ public class NodableLinkedList<E>
             tailSentinel.previous = headSentinel;			
         }
 
-        //protected int modCount inherited from class java.util.AbstractList
+        // protected int modCount inherited from class java.util.AbstractList
         int modCount() {
             return this.modCount;
         }
         private void incrementModCount() {
-            NodableLinkedList.this.modCount = ++modCount; // keep both modCounts in sync
+            NodableLinkedList.this.modCount = ++this.modCount; // keep both modCounts in sync
         }
 
         /**
@@ -2961,11 +2961,11 @@ public class NodableLinkedList<E>
          *                                   fromIndex > toIndex})
          */        
         @Override
-        public SubList.LinkedSubNodes subList(int fromIndex, int toIndex) {
+        public LinkedSubNodes subList(int fromIndex, int toIndex) {
             return newSubList(fromIndex, toIndex).linkedSubNodes;
         }
         
-        private SubList newSubList(int fromIndex, int toIndex) {
+        private SubList<E> newSubList(int fromIndex, int toIndex) {
             if (fromIndex < 0) {
                 throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
             }
@@ -2977,13 +2977,14 @@ public class NodableLinkedList<E>
             }
             final long size = toIndex - fromIndex;
             if (fromIndex == longSize()) {
-                return new SubList(iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, size);
+                return new SubList<E>(nodableLinkedList(),
+                        iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, size);
             }
             final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : getNode(fromIndex-1);
             final LinkNode<E> tailSentinel = (size == 0L)
                                              ? iGetNodeAfterOrTailSentinel(headSentinel)
                                              : null; // tailSentinel is currently unknown
-            return new SubList(headSentinel, tailSentinel, null, size);
+            return new SubList<E>(nodableLinkedList(), headSentinel, tailSentinel, null, size);
         }
         
         /**
@@ -3039,26 +3040,29 @@ public class NodableLinkedList<E>
          *                                  list or if the lastNode comes right before
          *                                  the firstNode in this list.
          */
-        public SubList.LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
+        public LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
             return newSubList(firstNode, lastNode).linkedSubNodes;
         }
         
-        private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
+        private SubList<E> newSubList(Node<E> firstNode, Node<E> lastNode) {
             if (firstNode == null && lastNode == null) {
                 // both firstNode and lastNode are null
-                return new SubList(iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, 0L);
+                return new SubList<E>(nodableLinkedList(),
+                        iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, 0L);
             } else if (firstNode == null) {
                 // only the lastNode is specified
                 if (!contains(lastNode)) {
                     throw new IllegalArgumentException("Specified last node is not linked to this list");
                 }
-                return new SubList(iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), null, 0L);
+                return new SubList<E>(nodableLinkedList(),
+                        iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), null, 0L);
             } else if (lastNode == null) {
                 // only the firstNode is specified
                 if (!contains(firstNode)) {
                     throw new IllegalArgumentException("Specified first node is not linked to this list");
                 }
-                return new SubList(firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), null, 0L);
+                return new SubList<E>(nodableLinkedList(),
+                        firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), null, 0L);
             }
             // both firstNode and LastNode are specified 
             if (!this.contains(firstNode)) {
@@ -3070,7 +3074,8 @@ public class NodableLinkedList<E>
             if (iGetNodeAfter(lastNode.linkNode()) == firstNode.linkNode()) {
                 throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
             }
-            return new SubList(iGetNodeBeforeOrHeadSentinel(firstNode.linkNode()),
+            return new SubList<E>(nodableLinkedList(),
+                    iGetNodeBeforeOrHeadSentinel(firstNode.linkNode()),
                     iGetNodeAfterOrTailSentinel(lastNode.linkNode()), null, -1L);
         }
 
@@ -3320,12 +3325,12 @@ public class NodableLinkedList<E>
             this.linkedNodes = linkedNodes;
         }
         
-        //protected int modCount inherited from class java.util.AbstractList
         @Override
         int modCount() {
             return linkedNodes.modCount();
         }
         
+        // protected int modCount inherited from class java.util.AbstractList
         private void updateModCount() {
             NodableLinkedList.this.modCount = this.modCount = modCount(); // try to keep all modCounts in sync
         }
@@ -3524,38 +3529,41 @@ public class NodableLinkedList<E>
      * Just like a {@code NodableLinkedList}, there are two ways to visualize a
      * {@code NodableLinkedList.SubList}: one as a list of elements (the standard
      * view), and the other as a list of nodes. The latter view is implemented by
-     * the inner class {@code LinkedSubNodes}. A {@code SubList} is backed by one
-     * and only one {@code LinkedSubNodes} instance. Method
-     * {@link #linkedSubNodes()} returns the {@code LinkedSubNodes} object backing a
-     * {@code NodableLinkedList.SubList}.
+     * the inner class {@link NodableLinkedList.LinkedSubNodes}. A {@code SubList}
+     * is backed by one and only one {@code LinkedSubNodes} instance. Method
+     * {@link #linkedSubNodes()} returns the {@code LinkedSubNodes} object backing
+     * the {@code NodableLinkedList.SubList}.
      * <p>
      * <strong>Implementation Note:</strong> When a {@code SubList} is created,
      * normally either the last node is unknown (if created via subList(fromIndex,
      * toIndex)), or the size is unknown (if created via subList(firstNode,
-     * lastNode)). To determine the unknown size or unknown last node, it would be
-     * necessary to traverse the entire sublist from beginning to end. Therefore,
+     * lastNode)). To determine the unknown size or unknown last node, the entire
+     * sublist has to be traversed from the first node to the last node. Therefore,
      * this implementation delays making that determination until it's necessary (if
      * ever). This can have other performance implications. for instance, normally
      * for a doubly-linked list, you would expect operations that index into the
      * list will traverse the list from the beginning or the end, whichever is
-     * closer to the specified index. However, if the last node is unknown (or it's
-     * uncertain if the last node actually comes after the first node in the
-     * sublist), then this implementation has no choice but to traverse the sublist
-     * from the beginning, even if the index is closer to the end of the sublist.
-     * Performing an operation like {@code getLastNode()} forces this implementation
-     * to determine the size and last node if unknown.
+     * closer to the specified index. However, if either the size or the last node
+     * is unknown (or it's uncertain if the specified last node actually comes after
+     * the first node in the sublist), then this implementation has no choice but to
+     * traverse the sublist from the beginning, even if the index is closer to the
+     * end of the sublist. Performing an operation like {@code getLastNode()} forces
+     * this implementation to determine both the size and the last node. If the size
+     * and last node are already known, the {@code getLastNode()} operation will
+     * perform in constant time.
      * <p>
-     * If the {@code NodableLinkedList} that a {@code SubList} is part of is
-     * structurally modified in anyway except via operations on the {@code SubList}
-     * itself, the {@code SubList} is invalidated and any future operations on the
-     * {@code SubList} will throw a {@code ConcurrentModificationException}.
+     * If the {@code NodableLinkedList} which backs this {@code SubList}, is
+     * structurally modified after the {@code SubList} is created, except via
+     * operations on the {@code SubList} itself, a
+     * {@code ConcurrentModificationException} will be thrown for any future
+     * operations on the {@code SubList}.
      * <p>
      * The iterators returned by this class's {@code iterator} and
      * {@code listIterator} methods are <i>fail-fast</i>: if the
-     * {@code NodableLinkedList} is structurally modified at any time after the
-     * iterator is created, in any way except through the Iterator's own
-     * {@code remove} or {@code add} methods, the iterator will throw a {@code
-     * ConcurrentModificationException}. Thus, in the face of concurrent
+     * {@code NodableLinkedList} which backs this {@code SubList}, is structurally
+     * modified after the iterator is created, in any way except through the
+     * Iterator's own {@code remove} or {@code add} methods, the iterator will throw
+     * a {@code ConcurrentModificationException}. Thus, in the face of concurrent
      * modification, the iterator fails quickly and cleanly, rather than risking
      * arbitrary, non-deterministic behavior at an undetermined time in the future.
      * <p>
@@ -3570,25 +3578,34 @@ public class NodableLinkedList<E>
      * @author James Pfeifer
      *
      */
-    public class SubList extends AbstractSequentialList<E> implements List<E> {
+    public static class SubList<E> extends AbstractSequentialList<E> implements List<E> {
         
-        private final LinkedSubNodes linkedSubNodes;
+        private final NodableLinkedList<E> list;
+        private final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes;
         
-        private SubList(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
-                SubList parent, long size) {
-            this.linkedSubNodes = new LinkedSubNodes(headSentinel, tailSentinel, parent, size);
+        private SubList(NodableLinkedList<E> list,
+                LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
+                SubList<E> parent, long size) {
+            this.list = list;
+            this.linkedSubNodes = list.new LinkedSubNodes(headSentinel, tailSentinel, this, parent, size);
         }
         
         // used by ReversedSubList
-        private SubList(LinkedSubNodes linkedSubNodes) {
-            this.linkedSubNodes = new ReversedLinkedSubNodes(linkedSubNodes);
+        private SubList(SubList<E> sublist) {
+            this.list = sublist.nodableLinkedList();
+            this.linkedSubNodes = list.new ReversedLinkedSubNodes(this, sublist.linkedSubNodes());
         }
         
-        //protected int modCount inherited from class java.util.AbstractList
+        // protected int modCount inherited from class java.util.AbstractList
+        // modCount represents the expected modification count
         private void checkForModificationException() {
-            if (this.modCount != NodableLinkedList.this.modCount()) {
+            if (this.modCount != list.modCount()) {
                 throw new ConcurrentModificationException();
             }
+        }
+        
+        private void setModCount(int modCount) {
+            this.modCount = modCount;
         }
         
         /**
@@ -3597,7 +3614,7 @@ public class NodableLinkedList<E>
          * @return the {@code NodableLinkedList} which contains this {@code SubList}
          */
         public NodableLinkedList<E> nodableLinkedList() {
-            return NodableLinkedList.this;
+            return this.list;
         }
         
         /**
@@ -3605,7 +3622,7 @@ public class NodableLinkedList<E>
          * 
          * @return the sublist of nodes which back this {@code SubList}
          */
-        public LinkedSubNodes linkedSubNodes() {
+        public NodableLinkedList<E>.LinkedSubNodes linkedSubNodes() {
             return this.linkedSubNodes;
         }
 
@@ -3830,9 +3847,9 @@ public class NodableLinkedList<E>
          * @return a reverse-order view of this {@code SubList}
          */
         //@Override //not until JDK 21
-        public SubList reversed() {
+        public SubList<E> reversed() {
             linkedSubNodes.getConfirmedTailSentinel(); // make sure new reversed sublist's headSentinel is valid
-            return new ReversedSubList(this);
+            return new ReversedSubList<E>(this);
         }
         
         /**
@@ -4096,7 +4113,7 @@ public class NodableLinkedList<E>
          *                                   fromIndex > toIndex})
          */
         @Override
-        public SubList subList(int fromIndex, int toIndex) {
+        public SubList<E> subList(int fromIndex, int toIndex) {
             return linkedSubNodes.newSubList(fromIndex, toIndex);
         }
         
@@ -4149,7 +4166,7 @@ public class NodableLinkedList<E>
          *                                  {@code SubList} or if the lastNode comes
          *                                  before the firstNode in this {@code SubList}
          */
-        public SubList subList(Node<E> firstNode, Node<E> lastNode) {
+        public SubList<E> subList(Node<E> firstNode, Node<E> lastNode) {
             checkForModificationException();
             return linkedSubNodes.newSubList(firstNode, lastNode);
         }
@@ -4283,8 +4300,8 @@ public class NodableLinkedList<E>
         public ListIterator<E> listIterator(int index) {
             checkForModificationException();
             if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            final NodableLinkedList<E>.SubList.LinkedSubNodes linkedSubNodes = linkedSubNodes();
-            return new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.getNode(index));
+            final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes = linkedSubNodes();
+            return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.getNode(index));
         }
         
         /**
@@ -4329,1925 +4346,1949 @@ public class NodableLinkedList<E>
          */
         public ListIterator<E> listIterator(Node<E> node) {
             checkForModificationException();
-            final NodableLinkedList<E>.SubList.LinkedSubNodes linkedSubNodes = linkedSubNodes();
+            final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes = linkedSubNodes();
             if (node == null) {
-                return new ElementListIterator(linkedSubNodes,
+                return list.new ElementListIterator(linkedSubNodes,
                         longSize(), IndexType.ABSOLUTE,
                         linkedSubNodes.getConfirmedTailSentinel());
             }
             final long index = linkedSubNodes.getIndex(node);
             if (index < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
-            return new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, node.linkNode());
+            return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, node.linkNode());
         }
-        
-        /**
-         * Doubly-linked sublist of nodes which back a
-         * {@code NodableLinkedList.SubList}. Implements all optional {@code List}
-         * interface operations. The elements are of type
-         * {@code NodableLinkedList.LinkSubNode}, and are never {@code null}.
-         * 
-         * A {@code LinkedSubNodes} sublist represents a range of {@code LinkNodes} of a
-         * {@code NodableLinkedList.LinkedNodes} list. If a {@code Node} is added to or
-         * removed from a {@code LinkedSubNodes} sublist, the {@code Node's}
-         * {@code LinkNode} is respectively added to or removed from the backing
-         * {@code LinkedNodes} list.
-         * <p>
-         * The iterators returned by this class's {@code iterator} and
-         * {@code listIterator} methods are <i>fail-fast</i>: if the
-         * {@code NodableLinkedList} is structurally modified at any time after the
-         * iterator is created, in any way except through the Iterator's own
-         * {@code remove} or {@code add} methods, the iterator will throw a {@code
-         * ConcurrentModificationException}. Thus, in the face of concurrent
-         * modification, the iterator fails quickly and cleanly, rather than risking
-         * arbitrary, non-deterministic behavior at an undetermined time in the future.
-         * <p>
-         * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
-         * is, generally speaking, impossible to make any hard guarantees in the
-         * presence of unsynchronized concurrent modification. Fail-fast iterators throw
-         * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
-         * would be wrong to write a program that depended on this exception for its
-         * correctness: <i>the fail-fast behavior of iterators should be used only to
-         * detect bugs.</i>
-         * 
-         * @author James Pfeifer
-         *
-         */
-        public class LinkedSubNodes
-            extends InternalLinkedList
-            implements List<Node<E>> {
-            
-            private LinkNode<E> headSentinel;
-            private LinkNode<E> tailSentinel;
-            private final LinkedSubNodes parent;
-            private long size;
-            
-            private LinkedSubNodes() {
-                this.headSentinel = null;
-                this.tailSentinel = null;
-                this.parent = null;
-                this.size = 0L;
-            }
-            
-            private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
-                    SubList sublist, long size) {
-                // assert headSentinel != null : "headSentinel is null";
-                // assert tailSentinel != null : "tailSentinel is null";
-                // assert headSentinel.linkedNodes == linkedNodes :
-                //     "headSentinel not linked to this linkedList";
-                // assert tailSentinel.linkedNodes == linkedNodes :
-                //     "tailSentinel not linked to this linkedList";
-                // considerations:
-                // . the tailSentinel(null) and size(-1) may be unknown,
-                //   but never both at the same time
-                // . no guarantee that headSentinel comes before tailSentinel
-                //   in the parent list
-                this.headSentinel = headSentinel;
-                this.tailSentinel = tailSentinel;
-                this.parent = (sublist == null) ? null : sublist.linkedSubNodes();
-                this.size = size;
-                updateModCount();
-            }
-            
-            //protected int modCount inherited from class java.util.AbstractList
-            int modCount() {
-                return this.modCount;
-            }
-            
-            void updateModCount() {
-                SubList.this.modCount = this.modCount = NodableLinkedList.this.modCount(); //keep all modCounts in sync
-            }
-            
-            private void updateParentModCount() {
-                if (parent() != null) parent().updateParentModCount();
-                updateModCount();
-            }            
-            
-            private void updateSizeAndModCount(long sizeChange) {
-                if (sizeIsKnown()) setSize(iGetSize() + sizeChange);
-                updateModCount();
-            }
-            
-            private void checkForModificationException() {
-                if (this.modCount != NodableLinkedList.this.modCount()) {
-                    throw new ConcurrentModificationException();
-                }
-            }
-            
-            /**
-             * Returns the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
-             * object is backing.
-             * 
-             * @return the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
-             *         object is backing
-             */
-            public SubList nodableLinkedListSubList() {
-                return SubList.this;
-            }
-            
-            @Override
-            LinkNode<E> iGetHeadSentinel() {
-                return this.headSentinel;
-            }
-            
-            @Override
-            LinkNode<E> iGetTailSentinel() {
-                return this.tailSentinel;
-            }
-            
-            void setHeadSentinel(LinkNode<E> headSentinel) {
-                this.headSentinel = headSentinel;
-            }
-            
-            void setTailSentinel(LinkNode<E> tailSentinel) {
-                this.tailSentinel = tailSentinel;
-            }
-            
-            LinkedSubNodes parent () {
-                return this.parent;
-            }
-            
-            long iGetSize() {
-                return this.size;
-            }
-            
-            void setSize(long size) {
-                this.size = size;
-            }
-            
-            /**
-             * Returns the LinkedNodes' headSentinel from the perspective of this sublist. If
-             * this sublist is reversed in relation to the LinkedNodes' traversal direction,
-             * than the LinkeNodes' tailSentinel is returned.
-             * 
-             * @return the LinkedNodes' headSentinel from the perspective of this list
-             */
-            @Override
-            LinkNode<E> iGetMyLinkedNodesHeadSentinel() {
-                if (parent() == null) return linkedNodes().iGetHeadSentinel();
-                return parent().iGetMyLinkedNodesHeadSentinel();
-            }
-            
-            /**
-             * Returns the LinkedNodes' tailSentinel from the perspective of this sublist. If
-             * this sublist is reversed in relation to the LinkedNodes' traversal direction,
-             * than the LinkeNodes' headSentinel is returned.
-             * 
-             * @return the LinkedNodes' tailSentinel from the perspective of this list
-             */
-            @Override
-            LinkNode<E> iGetMyLinkedNodesTailSentinel() {
-                if (parent() == null) return linkedNodes().iGetTailSentinel();
-                return parent().iGetMyLinkedNodesTailSentinel();
-            }
-            
-            private boolean tailSentinelIsKnown() {
-                return this.iGetTailSentinel() != null;
-            }
-            
-            LinkNode<E> tailSentinel() {
-                if (!tailSentinelIsKnown()) { // tailSentinel unknown?
-                    //assert size >= 0 : "sublist size is unknown";
-                    long remaining = longSize();
-                    final LinkNode<E> linkedNodesTailSentinel = iGetMyLinkedNodesTailSentinel();
-                    LinkNode<E> tailSentinel = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
-                    while (remaining > 0 && tailSentinel != linkedNodesTailSentinel) {
-                        remaining--;
-                        tailSentinel = iGetNodeAfterFromListWithKnownTailSentinel(tailSentinel);
-                    }
-                    if (remaining > 0) {
-                        throw new IllegalStateException("End of list reached unexpectedly");
-                    }
-                    setTailSentinel(tailSentinel);
-                }
-                return iGetTailSentinel();
-            }
-            
-            LinkNode<E> getConfirmedTailSentinel() {
-                if (sizeIsKnown() & tailSentinelIsKnown()) return iGetTailSentinel();
-                return getNode(longSize());
-            }
-            
-            @Override
-            void iAddNodeFirst(LinkNode<E> node) {
-                //assert node != null && !node.isLinked() :
-                //    "Node is null or already an element of a list";
-                iAddNodeAfter(node, iGetHeadSentinel());
-            }
-            
-            @Override
-            void iAddNodeLast(LinkNode<E> node) {
-                //assert node != null && !node.isLinked() :
-                //    "Node is null or already an element of a list";
-                iAddNodeBefore(node, getConfirmedTailSentinel());
-            }
-
-            @Override
-            void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-                //assert node != null && !node.isLinked() :
-                //    "Node is null or already an element of a list";
-                //assert this.contains(afterThisNode) :
-                //    "Before Node is not an element of this sublist";
-                if (parent() == null) linkedNodes().iAddNodeAfter(node, afterThisNode);
-                else parent().iAddNodeAfter(node, afterThisNode);
-                updateSizeAndModCount(1L);
-            }
-
-            @Override
-            void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
-                //assert node != null && !node.isLinked() :
-                //    "Node is null or already an element of a list";
-                //assert this.contains(beforeThisNode) :
-                //    "Before Node is not an element of this sublist";
-                if (parent() == null) linkedNodes().iAddNodeBefore(node, beforeThisNode);
-                else parent().iAddNodeBefore(node, beforeThisNode);
-                updateSizeAndModCount(1L);
-            }
-            
-            @Override
-            void iRemoveNode(LinkNode<E> node) {
-                //assert this.contains(node) : "Node is not an element of this sublist";
-                if (parent() == null) linkedNodes().iRemoveNode(node);
-                else parent().iRemoveNode(node);
-                updateSizeAndModCount(-1L);                
-            }
-            
-            @Override
-            void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
-                //assert this.contains(node) : "Node is not an element of this sublist";
-                //assert replacementNode != null && !replacementNode.isLinked() :
-                //    "Replacement Node is null or is already an element of a list";
-                if (parent() == null) linkedNodes().iReplaceNode(node, replacementNode);
-                else parent().iReplaceNode(node, replacementNode);
-                updateSizeAndModCount(0L);
-            }
-
-            @Override
-            boolean iHasNodeAfter(LinkNode<E> node) {
-                //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
-                LinkNode<?> nextNode;
-                if (parent() == null) nextNode = linkedNodes().iGetNodeAfterOrTailSentinel(node);
-                else nextNode = parent().iGetNodeAfterOrTailSentinel(node);
-                if (nextNode == tailSentinel()) return false;
-                if (nextNode == iGetMyLinkedNodesTailSentinel()) {
-                    throw new IllegalStateException(
-                            "End of list reached unexpectedly; the sublists's last node most likely comes before the sublist's first node in the list");
-                }
-                return true;
-            }
-
-            @Override
-            boolean iHasNodeBefore(LinkNode<E> node) {
-                //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
-                if (parent() == null) return (linkedNodes().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true;
-                return (parent().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true; 
-            }
-            
-            @Override
-            LinkNode<E> iGetFirstNode() {
-                return iGetNodeAfter(iGetHeadSentinel());
-            }
-            
-            @Override
-            LinkNode<E> iGetLastNode() {
-                return iGetNodeBefore(getConfirmedTailSentinel());
-            }            
-            
-            @Override
-            LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
-                //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
-                if (!iHasNodeAfter(node)) return null;
-                if (parent() == null) return linkedNodes().iGetNodeAfter(node);
-                return parent().iGetNodeAfter(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
-                //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
-                if (!iHasNodeAfter(node)) return tailSentinel();
-                if (parent() == null) return linkedNodes().iGetNodeAfter(node);
-                return parent().iGetNodeAfter(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
-                LinkedSubNodes linkedSubNodes = this;
-                do {
-                    if (linkedSubNodes.tailSentinelIsKnown()) {
-                        return linkedSubNodes.iGetNodeAfterOrTailSentinel(node);
-                    }
-                linkedSubNodes = linkedSubNodes.parent();
-                } while (linkedSubNodes != null);
-                return linkedNodes().iGetNodeAfterOrTailSentinel(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
-                //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
-                if (!iHasNodeBefore(node)) return null;
-                if (parent() == null) return linkedNodes().iGetNodeBefore(node);
-                return parent().iGetNodeBefore(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
-                //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
-                if (!iHasNodeBefore(node)) return iGetHeadSentinel();
-                if (parent() == null) return linkedNodes().iGetNodeBefore(node);
-                return parent().iGetNodeBefore(node);
-            }
-            
-            private void swappedNodes(LinkNode<E> subSetNode, LinkNode<E> swappedNode) {
-                if (subSetNode.linkedNodes() == swappedNode.linkedNodes()) {
-                    // both nodes are nodes of the same list, therefore,
-                    // the head or tail sentinels may have been swapped
-                    if (swappedNode == iGetHeadSentinel()) setHeadSentinel(subSetNode);
-                    if (swappedNode == iGetTailSentinel()) setTailSentinel(subSetNode);
-                    if (parent() != null) parent().swappedNodes(subSetNode, swappedNode);
-                }
-                updateSizeAndModCount(0L);
-            }
-            
-            /**
-             * Returns the node at the specified position in this sublist.
-             * 
-             * Note, this routine returns the tailSentinel if {@code index == longSize()}.
-             *
-             * @param index index of the node to return
-             * @return the node at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index >= longSize())}
-             * @throws IllegalStateException     if end of list is reached unexpectedly; the
-             *                                   sublist's last node most likely comes
-             *                                   before the sublists's first node in the
-             *                                   list
-             */
-            private LinkNode<E> getNode(long index) {
-                // Note, this routine returns the tailSentinel if index = longSize()
-                if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
-                LinkNode<E> node;
-                long cursorIndex;
-                if (sizeIsKnown() && tailSentinelIsKnown()) {
-                    // both size and tailSentinel is known, therefore, we also know that
-                    // the tailSentinel comes after the headSentinel in the list
-                    if (index > longSize()) {
-                        throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                    }
-                    if (index <= ((longSize()) >> 1)) {
-                        cursorIndex = 0L;
-                        node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel());
-                        while (cursorIndex < index) { node = iGetNodeAfter(node); cursorIndex++; }
-                    } else {
-                        cursorIndex = longSize();
-                        node = tailSentinel();
-                        while (cursorIndex > index) { node = iGetNodeBefore(node); cursorIndex--; }
-                    }
-                } else if (sizeIsKnown()) {
-                    // size is known, tailSentinel is unknown
-                    if (index > longSize()) {
-                        throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                    }
-                    cursorIndex = 0L;
-                    node = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
-                    while (cursorIndex < index) {
-                        node = iGetNodeAfterFromListWithKnownTailSentinel(node);
-                        cursorIndex++;
-                    }
-                    if (index == longSize()) setTailSentinel(node);
-                    if (index == longSize()-1) setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(node));
-                } else {
-                    // size is unknown, tailSentinel is known
-                    cursorIndex = 0L;
-                    node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel());
-                    while ( cursorIndex < index && node != iGetTailSentinel()) {
-                        node = iGetNodeAfterOrTailSentinel(node);
-                        cursorIndex++;
-                    }
-                    if (cursorIndex < index) {
-                        throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
-                    }
-                    if (node == iGetTailSentinel()) this.setSize(cursorIndex);
-                    else if (iGetNodeAfterOrTailSentinel(node) == iGetTailSentinel()) this.setSize(cursorIndex + 1L);
-                }
-                return node;
-            }
-            
-            /**
-             * Returns the index of the specified node in this sublist, or -1 if this
-             * sublist does not contain the specified node.
-             * 
-             * @param node {@code Node} to search for
-             * @return the index of the specified node in this sublist, or -1 if this
-             *         sublist does not contain the specified node
-             * @throws IllegalStateException if end of list is reached unexpectedly; the
-             *                               sublist's last node most likely comes before
-             *                               the sublists's first node in the list
-             */
-            private long getIndex(Node<?> node) {
-                if (node.isSubListNode() && node.subList() != this.nodableLinkedListSubList()) return -1;
-                return getIndex(node.linkNode());
-            }
-            private long getIndex(LinkNode<?> node) {
-                if (!linkedNodes().contains(node)) return -1;
-                long cursorIndex = 0L;
-                LinkNode<E> cursorNode;
-                if (sizeIsKnown() && tailSentinelIsKnown()) {
-                    // both size and tailSentinel is known, therefore, we also know that
-                    // the tailSentinel comes after the headSentinel in the list
-                    cursorNode = iGetFirstNode();
-                    while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
-                        cursorIndex++;
-                    cursorNode = iGetNodeAfter(cursorNode);
-                    }
-                    if (cursorNode == null) cursorIndex = -1L; // node not found
-                } else if (sizeIsKnown()) {
-                    // size is known, tailSentinel is unknown
-                    cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
-                    while (cursorIndex < longSize() && !cursorNode.isEquivalentTo(node)) {
-                        cursorIndex++;
-                    cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(cursorNode);
-                    }
-                    if (cursorIndex == longSize()-1) {
-                        this.setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(cursorNode));
-                    }
-                    if (cursorIndex == longSize()) {
-                        this.setTailSentinel(cursorNode);
-                        cursorIndex = -1L; // node not found
-                    }
-                } else {
-                    // size is unknown, tailSentinel is known
-                    cursorNode = iGetFirstNode();
-                    while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
-                        cursorIndex++;
-                        cursorNode = iGetNodeAfter(cursorNode);
-                    }
-                    if (cursorNode == null) {
-                        this.setSize(cursorIndex);
-                        cursorIndex = -1L; // node not found
-                    } else if (iGetNodeAfter(cursorNode) == null) this.setSize(cursorIndex + 1L);
-                }
-                return cursorIndex;
-            }
-            
-            private boolean sizeIsKnown() {
-                return iGetSize() >= 0L;
-            }
-
-            /**
-             * Returns the number of {@code Nodes} in this sublist. If this sublist contains
-             * more than Integer.MAX_VALUE nodes, Integer.MAX_VALUE is returned.
-             *
-             * @return the number of {@code Nodes} in this sublist
-             */
-            @Override
-            public int size() {
-                final long longSize = longSize();
-                return (longSize > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)longSize;
-            }
-
-            /**
-             * Returns the number of {@code Nodes} in this sublist.
-             *
-             * @return the number of {@code Nodes} in this sublist
-             */
-            public long longSize() {
-                checkForModificationException();
-                if (!sizeIsKnown()) { // size unknown?
-                    //assert tailSentinelIsKnown() : "tail sentinel shouldn't be null";
-                    LinkNode<E> node;
-                    long size = 0L;
-                    for (node = iGetFirstNode(); node != null; node = iGetNodeAfter(node)) {
-                        size++;
-                    }
-                    this.setSize(size);
-                }
-                return iGetSize();
-            }
-            
-            /**
-             * Returns {@code true} if this sublist contains no {@code Nodes}.
-             *
-             * @return {@code true} if this sublist contains no {@code Nodes}
-             */
-            @Override
-            public boolean isEmpty() {
-                checkForModificationException();
-                if (sizeIsKnown()) return longSize() == 0L;
-                return !iHasNodeAfter(iGetHeadSentinel());
-            }
-
-            /**
-             * Appends the specified node to the end of this sublist.
-             * <p>
-             * This method is equivalent to {@link #addNodeLast}.
-             *
-             * @param node {@code Node} to be appended to the end of this sublist
-             * @throws IllegalArgumentException if node is {@code null} or already a node of
-             *                                  a list
-             */
-            public void addNode(Node<E> node) {
-                addNodeLast(node);
-            }
-
-            /**
-             * Inserts the specified node at the beginning of this sublist.
-             * <p>
-             * If the specified node is a {@code SubListNode}, after this operation is
-             * completed, it will be associated with this sublist.
-             *
-             * @param node the {@code Node} to be inserted at the beginning of this
-             *             sublist
-             * @throws IllegalArgumentException if node is {@code null} or already a node of
-             *                                  a list
-             */
-            public void addNodeFirst(Node<E> node) {
-                checkForModificationException();
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node is null or already an element of a list");
-                }
-                iAddNodeFirst(node.linkNode());
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
-                    subListNode.updateExpectedModCount();
-                }
-            }
-
-            /**
-             * Appends the specified node to the end of this sublist.
-             * <p>
-             * If the specified node is a {@code SubListNode}, after this operation is
-             * completed, it will be associated with this sublist.
-             *
-             * @param node {@code Node} to be appended to the end of this sublist
-             * @throws IllegalArgumentException if node is {@code null} or already a node of
-             *                                  a list
-             */
-            public void addNodeLast(Node<E> node) {
-                checkForModificationException();
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node is null or already an element of a list");
-                }
-                iAddNodeLast(node.linkNode());
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
-                    subListNode.updateExpectedModCount();
-                }
-            }
-            
-            /**
-             * Returns the first {@code SubListNode} of this sublist, or returns
-             * {@code null} if this sublist is empty.
-             *
-             * @return the first {@code SubListNode} of this sublist, or
-             *         {@code null} if this sublist is empty
-             */
-            public SubListNode<E> getFirstNode() {
-                checkForModificationException();
-                return (this.isEmpty()) ? null : new SubListNode<E>(iGetFirstNode(), this.nodableLinkedListSubList());
-            }
-            
-            /**
-             * Returns the last {@code SubListNode} of this sublist, or returns
-             * {@code null} if this sublist is empty.
-             *
-             * @return the last {@code SubListNode} of this sublist, or {@code null}
-             *         if this sublist is empty
-             */
-            public SubListNode<E> getLastNode() {
-                checkForModificationException();
-                return (this.isEmpty()) ? null : new SubListNode<E>(iGetLastNode(), this.nodableLinkedListSubList());
-            }
-            
-            /**
-             * Removes and returns the first {@code SubListNode} of this sublist, or returns
-             * {@code null} if this sublist is empty.
-             *
-             * @return the first {@code SubListNode} of this sublist that was removed, or
-             *         {@code null} if this sublist is empty
-             */       
-            public SubListNode<E> removeFirstNode() {
-                checkForModificationException();
-                final SubListNode<E> firstNode = getFirstNode();
-                if (firstNode != null) iRemoveNode(firstNode.linkNode());
-                return firstNode;
-            }
-            
-            /**
-             * Removes and returns the last {@code SubListNode} of this sublist, or returns
-             * {@code null} if this sublist is empty.
-             *
-             * @return the last {@code SubListNode} of this sublist that was
-             *         removed, or {@code null} if this sublist is empty
-             */        
-            public SubListNode<E> removeLastNode() {
-                checkForModificationException();
-                final SubListNode<E> lastNode = getLastNode();
-                if (lastNode != null) iRemoveNode(lastNode.linkNode());
-                return lastNode;
-            }
-            
-            /**
-             * Removes all of the {@code Nodes} from this sublist.
-             */
-            @Override
-            public void clear() {
-                checkForModificationException();
-                LinkNode<E> node = iGetFirstNode();
-                if (sizeIsKnown()) {
-                     while (longSize() > 0) {
-                        final LinkNode<E> nodeToRemove = node;
-                        node = iGetNodeAfterFromListWithKnownTailSentinel(node);
-                        iRemoveNode(nodeToRemove);
-                    }
-                } else {
-                    while (node != null) {
-                        final LinkNode<E> nodeToRemove = node;
-                        node = iGetNodeAfter(node);
-                        iRemoveNode(nodeToRemove);
-                    }
-                }
-            }
-            
-            /**
-             * Returns and possibly reverses the specified {@code Node's} backing
-             * {@code LinkNode} to match the forward direction of this sublist. In other
-             * words, returns a {@code LinkNode} which can be used to essentially traverse
-             * this sublist from the specified node to the sublist's last node when making
-             * successive calls to the {@code LinkNode.next()} method.
-             * <p>
-             * As a reminder, a {@code LinkNode} traverses the base {@code LinkedNodes} and
-             * not the sublist. For instance:
-             * <pre>
-             * {@code
-             *    import net.pfeifdom.java.util.NodableLinkedList.Node;
-             *    // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
-             *    final Node<Integer> lastNode = sublist.getLastNode();
-             *    Node<Integer> linkNode = sublist.forwardLinkNode(node);
-             *    while (linkNode != null) {
-             *       System.out.println(linkNode.element());
-             *    if (linkNode.isEquivalentTo(lastNode)) break;
-             *    linkNode = linkNode.next();
-             *    }
-             * }
-             * </pre>
-             * 
-             * @param node the {@code Node} whose backing {@code LinkNode} is returned and
-             *             possibly reversed to match the forward direction of this sublist
-             * @return a {@code LinkNode} which can be used to essentially traverse this
-             *         sublist in a forward direction
-             * @throws IllegalArgumentException if node is not linked to this sublist
-             */
-            public LinkNode<E> forwardLinkNode(Node<E> node) {
-                if (!this.contains(node)) {
-                    throw new IllegalArgumentException("Specified node is not linked to this list");
-                }
-                if (parent() == null) return linkedNodes().forwardLinkNode(node);
-                return parent().forwardLinkNode(node);
-            }
-
-            /**
-             * Returns the index of the specified object ({@code Node}) in this sublist, or
-             * -1 if there is no such index (this sublist does not contain the specified
-             * object ({@code Node)} or the {@code index > Integer.MAX_VALUE}). Note, a -1 is
-             * returned if the specified object is a {@code SubListNode} and it is not
-             * associated with this sublist.
-             * 
-             * @param object {@code Object} ({@code Node}) to search for
-             * 
-             * @return the index of the specified object ({@code Node}) in this sublist, or
-             *         -1 if there is no such index
-             */
-            @Override
-            public int indexOf(Object object) {
-                checkForModificationException();
-                LinkNode<?> node;
-                if (object instanceof LinkNode) {
-                    node = (LinkNode<?>)object;
-                } else if (object instanceof SubListNode) {
-                    final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                    if (sublistnode.subList() != this.nodableLinkedListSubList()) {
-                        return -1;
-                    }
-                    node = ((SubListNode<?>)object).linkNode();
-                } else {
-                    return -1;
-                }
-                final long index = getIndex(node);
-                return (index > Integer.MAX_VALUE) ? -1 : (int)index;
-            }
-            
-            /**
-             * Returns the index of the specified object ({@code Node}) in this sublist, or
-             * -1 if there is no such index (this sublist does not contain the specified
-             * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}). Note, a -1
-             * is returned if the specified object is a {@code SubListNode} and it is not
-             * associated with this sublist.
-             * <p>
-             * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
-             * except {@code lastIndexOf} attempts to traverse the sublist backwards from
-             * the end of the sublist. However, it's not guaranteed this routine will
-             * traverse the sublist backwards from the end of the sublist. for instance, if
-             * the sublist's last node is unknown, the routine will traverse the sublist
-             * from the start of the sublist.
-             *
-             * @param object {@code Object} ({@code Node}) to search for
-             * @return the index of the specified object ({@code Node}) in this sublist, or
-             *         -1 if there is no such index
-             */
-            @Override
-            public int lastIndexOf(Object object) {
-                if (!tailSentinelIsKnown() || !sizeIsKnown()) return indexOf(object);
-                checkForModificationException();
-
-                LinkNode<?> searchNode;
-                if (object instanceof LinkNode) {
-                    searchNode = (LinkNode<?>) object;
-                } else if (object instanceof SubListNode) {
-                    final SubListNode<?> sublistnode = (SubListNode<?>) object;
-                    if (sublistnode.subList() != this.nodableLinkedListSubList()) {
-                        return -1;
-                    }
-                    searchNode = ((SubListNode<?>) object).linkNode();
-                } else {
-                    return -1;
-                }
-
-                long index = longSize() - 1L;
-                for (LinkNode<E> node = iGetLastNode(); node != null; node = iGetNodeBefore(node), index--) {
-                    if (node == searchNode) {
-                        return (index > Integer.MAX_VALUE) ? -1 : (int) index;
-                    }
-                }
-                return -1;
-            }
-            
-            /**
-             * Returns the {@code SublistNode} at the specified position in this sublist.
-             *
-             * @param index index of the {@code SubListNode} to return
-             * @return the {@code SubListNode} at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index >= longSize())}
-             */
-            @Override
-            public SubListNode<E> get(int index) {
-                checkForModificationException();
-                final long getIndex = index;
-                if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) {
-                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
-                }
-                LinkNode<E> node = getNode(index);
-                if (node == iGetTailSentinel()) {
-                    throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
-                }
-                return new SubListNode<E>(node, this.nodableLinkedListSubList());
-            }
-            
-            /**
-             * Inserts the specified node at the specified position in this sublist. Shifts
-             * the {@code Node} currently at that position (if any) and any subsequent
-             * {@code Nodes} to the right (adds one to their indices).
-             * <p>
-             * If the specified node is a {@code SubListNode}, after this operation is completed,
-             * it will be associated with this sublist.
-             *
-             * @param index position where the specified node is to be inserted
-             * @param node  {@code Node} to be inserted
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index > longSize())}
-             * @throws IllegalArgumentException  if node is {@code null} or already a node
-             *                                   of a list
-             */
-            @Override
-            public void add(int index, Node<E> node) {
-                checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index > longSize())) {
-                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-                }
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node is null or already an element of a list");
-                }
-                iAddNodeBefore(node.linkNode(), getNode(index));
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
-                    subListNode.updateExpectedModCount();
-                }
-            }
-            
-            /**
-             * Removes and returns the {@code SubListNode} at the specified position in this
-             * sublist. Shifts any subsequent {@code Nodes} to the left (subtracts one from
-             * their indices).
-             *
-             * @param index the index of the {@code SubListNode} to be removed
-             * @return the {@code SubListNode} previously at the specified position
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index >= longSize())}
-             */
-            @Override
-            public SubListNode<E> remove(int index) {
-                checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
-                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-                }
-                final SubListNode<E> subListNode = get(index);
-                iRemoveNode(subListNode.linkNode());
-                return subListNode;
-            }            
-
-            /**
-             * Removes, if present, the specified object ({@code Node}) from this sublist.
-             * If this sublist does not contain the specified object ({@code Node}), it is
-             * unchanged. Note, if the specified object is a {@code SubListNode}, it will
-             * not be removed if the {@code SubListNode} is not associated with this
-             * sublist.
-             * 
-             * @param object {@code Object} ({@code Node}) to be removed from this sublist
-             * @return {@code true} if this sublist contained the specified object
-             *         ({@code Node})
-             */
-            @SuppressWarnings("unchecked")
-            @Override
-            public boolean remove(Object object) {
-                checkForModificationException();
-                if (!this.contains(object)) return false;
-                LinkNode<E> node;
-                if (object instanceof LinkNode) {
-                    node = (LinkNode<E>)object;
-                } else if (object instanceof SubListNode) {
-                    node = ((SubListNode<E>)object).linkNode();
-                } else {
-                    return false;
-                }
-                iRemoveNode(node);
-                return true;        
-            }
-            
-            /**
-             * Returns {@code true} if this sublist is a reverse-ordered view of the base
-             * {@code NodableLinkedList}.
-             * 
-             * Note, {@code true} doesn't mean this is a sublist that has been reversed. It
-             * means this sublist's traversal direction is in the opposite direction than
-             * the traversal direction of the base {@code NodableLinkedList} (the
-             * {@code NodableLinkedList} initially created).
-             * 
-             * @return {@code true} if this sublist is a reverse-ordered view of the base
-             *         {@code NodableLinkedList}
-             */
-            public boolean isReversed() {
-                if (parent() == null) return linkedNodes().isReversed();
-                return parent().isReversed();
-            }            
-            
-            /**
-             * Returns reverse-order view of this sublist.
-             * 
-             * The encounter order of {@code Nodes} in the returned view is the inverse of the
-             * encounter order of {@code Nodes} in this sublist. The reverse ordering affects all
-             * order-sensitive operations, including those on the view collections of the
-             * returned view. Modifications to the reversed view are permitted and will be
-             * propagated to this sublist. In addition, modifications to this sublist will
-             * be visible in the reversed view.
-             * 
-             * @return a reverse-order view of this sublist
-             */
-            //@Override //not until JDK 21
-            public LinkedSubNodes reversed() {
-                getConfirmedTailSentinel(); // make sure the new reversed sublist's headSentinel is valid
-                return (new ReversedSubList(nodableLinkedListSubList())).linkedSubNodes();
-            }
-            
-            /**
-             * Replaces the {@code Node} at the specified position in this sublist with the
-             * specified node.
-             *
-             * @param index index of the node to replace
-             * @param node  {@code Node} to be stored at the specified position
-             * @return the {@code SubListNode} previously at the specified position
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index >= longSize())}
-             * @throws IllegalArgumentException  if node is {@code null} or already a node
-             *                                   of a list
-             */
-            @Override
-            public SubListNode<E> set(int index, Node<E> node) {
-                checkForModificationException();
-                if (sizeIsKnown() && (index < 0L || index >= longSize())) {
-                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-                }
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
-                }
-                final SubListNode<E> originalNode = get(index);
-                iReplaceNode(originalNode.linkNode(), node.linkNode());
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
-                    subListNode.updateExpectedModCount();
-                }
-                return originalNode;
-            }
-            
-            /**
-             * Appends all of the {@code Nodes} in the specified collection to the end of
-             * this sublist, in the order that they are returned by the specified
-             * collection's iterator.
-             * <p>
-             * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will be associated with this sublist.
-             * <p>
-             * The behavior of this operation is undefined if the specified collection is
-             * modified while the operation is in progress. (Note that this will occur if
-             * the specified collection is this sublist, and it's nonempty.)
-             *
-             * @param collection collection containing {@code Nodes} to be added to this
-             *                   sublist
-             * @return {@code true} if this sublist changed as a result of the call
-             * @throws NullPointerException     if the specified collection is {@code null}
-             * @throws IllegalArgumentException if any {@code Node} in the collection is
-             *                                  {@code null} or already a node of a list
-             */
-            @Override
-            public boolean addAll(Collection<? extends Node<E>> collection) {
-                checkForModificationException();
-                final long initialSize = longSize();
-                final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
-                for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) {
-                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                    }
-                    iAddNodeBefore(node.linkNode(), tailSentinel);
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>)node;
-                        subListNode.setSubList(this.nodableLinkedListSubList());
-                    }
-                }
-                for (Node<E> node: collection) {
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>)node;
-                        subListNode.updateExpectedModCount();
-                    }
-                }
-                return longSize() != initialSize;
-            }
-            
-            /**
-             * Inserts all of the {@code Nodes} in the specified collection into this
-             * sublist, starting at the specified position. Shifts the {@code Node}
-             * currently at that position (if any) and any subsequent {@code Nodes} to the
-             * right (increases their indices). The new {@code Nodes} will appear in this
-             * sublist in the order that they are returned by the specified collection's
-             * iterator. if the specified {@code index == longSize()}, the {@code Nodes}
-             * will be appended to the end of this sublist.
-             * 
-             * Note that {@code addAll(longSize(), Collection)} is identical in function to
-             * {@code addAll(Collection)}.
-             * <p>
-             * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will associated with this sublist.
-             * <p>
-             * The behavior of this operation is undefined if the specified collection is
-             * modified while the operation is in progress. (Note that this will occur if
-             * the specified collection is this sublist, and it's nonempty.)
-             *
-             * @param index      position where to insert the first {@code Node} from the
-             *                   specified collection
-             * @param collection collection containing {@code Nodes} to be added to this
-             *                   sublist
-             * @return {@code true} if this sublist changed as a result of the call
-             * @throws IllegalArgumentException  if any {@code Node} in the collection is
-             *                                   {@code null} or already a node of a list
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index > longSize())}
-             * @throws NullPointerException      if the specified collection is {@code null}
-             */
-            @Override
-            public boolean addAll(int index, Collection<? extends Node<E>> collection) {
-                checkForModificationException();
-                if (sizeIsKnown() && (index < 0 || index > longSize())) {
-                    throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-                }
-                boolean changed = false;            
-                final LinkNode<E> targetNode = getNode(index);
-                for (Node<E> node: collection) {
-                    if (node == null || node.isLinked()) {
-                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                    }
-                    iAddNodeBefore(node.linkNode(), targetNode);
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>)node;
-                        subListNode.setSubList(this.nodableLinkedListSubList());
-                    }
-                    changed = true;
-                }
-                for (Node<E> node: collection) {
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>)node;
-                        subListNode.updateExpectedModCount();
-                    }
-                }
-                return changed;
-            }
-            
-            /**
-             * Inserts all of the {@code Nodes} in the specified collection into this
-             * sublist, before the specified targetNode. Shifts the {@code Node} currently
-             * at that position and any subsequent {@code Nodes} to the right (increases
-             * their indices). The new {@code Nodes} will appear in this sublist in the
-             * order that they are returned by the specified collection's iterator. if the
-             * specified targetNode is {@code null}, the {@code Nodes} will be appended to
-             * the end of this sublist.
-             * 
-             * Note that {@code addAll(null, Collection)} is identical in function to
-             * {@code addAll(Collection)}.
-             * <p>
-             * After this operation is completed, all {@code SubListNodes} in the specified
-             * collection will be associated with this sublist.
-             * <p>
-             * The behavior of this operation is undefined if the specified collection is
-             * modified while the operation is in progress. (Note that this will occur if
-             * the specified collection is this sublist, and it's nonempty.)
-             *
-             * @param targetNode {@code Node} the specified collection is to be inserted
-             *                   before
-             * @param collection collection containing {@code Nodes} to be added to this
-             *                   sublist
-             * @return {@code true} if this sublist changed as a result of the call
-             * @throws IllegalArgumentException if targetNode is not linked to this sublist,
-             *                                  or any {@code Node} in the collection is
-             *                                  {@code null} or already a node of a list
-             * @throws NullPointerException     if the specified collection is {@code null}
-             */
-            public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> collection) {
-                checkForModificationException();
-                if (targetNode == null) return addAll(collection);
-                if (!this.contains(targetNode)) {
-                    throw new IllegalArgumentException("specified targetNode is not part of this sublist");
-                }
-                final LinkNode<E> targetListNode = targetNode.linkNode();
-                boolean changed = false;
-                for (Node<E> node : collection) {
-                    if (node == null || node.isLinked()) {
-                        throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                    }
-                    iAddNodeBefore(node.linkNode(), targetListNode);
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>) node;
-                        subListNode.setSubList(this.nodableLinkedListSubList());
-                    }
-                    changed = true;
-                }
-                for (Node<E> node : collection) {
-                    if (node.isSubListNode()) {
-                        final SubListNode<E> subListNode = (SubListNode<E>) node;
-                        subListNode.updateExpectedModCount();
-                    }
-                }
-                return changed;
-            }
-            
-            /**
-             * Returns {@code true} if this sublist contains the specified object
-             * ({@code Node}). Note, if the specified object is a {@code SubListNode} and it
-             * is not associated with this sublist, {@code false} will be returned even if
-             * the {@code SubListNode's} {@code LinkNode} is contained by this sublist.
-             *
-             * @param object {@code Object} ({@code Node}) whose presence in this sublist is
-             *               to be tested
-             * @return {@code true} if this sublist contains the specified object
-             *         ({@code Node})
-             */
-            @Override
-            public boolean contains(Object object) {
-                checkForModificationException();
-                LinkNode<?> node;
-                if (object instanceof LinkNode) {
-                    node = (LinkNode<?>)object;
-                } else if (object instanceof SubListNode) {
-                    final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                    if (sublistnode.subList() != this.nodableLinkedListSubList()) {
-                        return false;
-                    }
-                    if (sublistnode.isExpectedModCount()) return true;
-                    node = sublistnode.linkNode();
-                } else {
-                    return false;
-                }
-                return contains(node);
-            }
-
-            private boolean contains(LinkNode<?> node) {
-                if (sizeIsKnown() && tailSentinelIsKnown() &&
-                        (linkedNodes().longSize() - this.longSize() < this.longSize() / 2)) {
-                    // The portion of the list not occupied by the sublist is less than
-                    // 1/2 the size of the sublist, therefore, it might be faster
-                    // to search the portion of the list not occupied by the sublist
-                    // instead of searching the sublist itself
-                    if (!linkedNodes().contains(node)) return false;
-                    LinkNode<E> linkNode = linkedNodes().iGetHeadSentinel();
-                    while (linkNode != null) {
-                        if (node == linkNode) return false;
-                        if (linkNode == this.iGetHeadSentinel() || linkNode == this.iGetTailSentinel()) {
-                            if (linkNode == this.iGetHeadSentinel())
-                                 linkNode = this.iGetTailSentinel();
-                            else linkNode = this.iGetHeadSentinel();
-                            if (linkNode == linkedNodes().iGetTailSentinel()) break;
-                            if (node == linkNode) return false;
-                        }
-                    linkNode = linkedNodes().iGetNodeAfter(linkNode);
-                    }
-                    return true;
-                }
-                return (getIndex(node) < 0L) ? false : true;
-            }
-            
-            /**
-             * Returns a view of the portion of this sublist between the specified
-             * fromIndex, inclusive, and toIndex, exclusive. (If the specified fromIndex and
-             * toIndex are equal, the returned {@code SubList} is empty.) The returned
-             * {@code SubList} is backed by this sublist, so structural changes in the
-             * returned {@code SubList} are reflected in this sublist. The returned
-             * {@code SubList} supports all of the optional {@code List} operations.
-             * <p>
-             * This method eliminates the need for explicit range operations (of the sort
-             * that commonly exist for arrays). Any operation that expects a list can be
-             * used as a range operation by passing a {@code SubList} view instead of a
-             * whole list. For example, the following idiom removes a range of elements from
-             * a list:
-             * <pre>
-             * {@code
-             *      list.subList(fromIndex, toIndex).clear();
-             * }
-             * </pre>
-             * 
-             * Similar idioms may be constructed for {@code indexOf} and
-             * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
-             * class can be applied to a {@code SubList}.
-             * <p>
-             * The semantics of the {@code SubList} returned by this method become undefined
-             * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
-             * other than via the returned {@code SubList} or any of its sublists.
-             * (Structural modifications are those that change the size of this sublist, or
-             * otherwise perturb it in such a fashion that iterations in progress may yield
-             * incorrect results.) A {@code ConcurrentModificationException} is thrown for
-             * any operation on a {@code SubList} that is structurally unsound.
-             *
-             * @param fromIndex low endpoint (inclusive) of the {@code SubList}
-             * @param toIndex   high endpoint (exclusive) of the {@code SubList}
-             * @return a view of the specified range within this sublist
-             * @throws IndexOutOfBoundsException for an illegal endpoint index value
-             *                                   ({@code fromIndex < 0 || toIndex > size ||
-             *                                   fromIndex > toIndex})
-             */
-            @Override
-            public SubList.LinkedSubNodes subList(int fromIndex, int toIndex) {
-                return newSubList(fromIndex, toIndex).linkedSubNodes;
-            }
-            
-            private SubList newSubList(int fromIndex, int toIndex) {
-                checkForModificationException();
-                if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-                if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
-                if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
-                final long size = toIndex - fromIndex;
-                final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : getNode(fromIndex-1);
-                final LinkNode<E> tailSentinel = (size == 0L)
-                                                 ? iGetNodeAfterOrTailSentinel(headSentinel)
-                                                 : null; // tailSentinel is unknown
-                return new SubList(headSentinel, tailSentinel, SubList.this, size);
-            }
-            
-            /**
-             * Returns a view of the portion of this sublist between the specified
-             * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
-             * backed by this sublist, so structural changes in the returned {@code SubList}
-             * are reflected in this sublist. The returned {@code SubList} supports all of
-             * the optional {@code List} operations.
-             * <p>
-             * If the specified firstNode is {@code null}, an empty {@code SubList},
-             * positioned right before the specified lastNode, is returned. If the specified
-             * lastNode is {@code null}, an empty {@code SubList}, positioned right after
-             * the specified firstNode, is returned. if both the specified firstNode and
-             * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
-             * this sublist, is returned.
-             * <p>
-             * This method verifies the specified lastNode comes after the specified
-             * FirstNode in this {@code SubList}. Also, the size of the returned
-             * {@code SubList} is known.
-             * <p>
-             * This method eliminates the need for explicit range operations (of the sort
-             * that commonly exist for arrays). Any operation that expects a list can be
-             * used as a range operation by passing a {@code SubList} view instead of a
-             * whole list. For example, the following idiom removes a range of elements from
-             * a list:
-             * <pre>
-             * {@code
-             *      list.subList(firstNode, lastNode).clear();
-             * }
-             * </pre>
-             * 
-             * Similar idioms may be constructed for {@code indexOf} and
-             * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
-             * class can be applied to a {@code SubList}.
-             * <p>
-             * The semantics of the {@code SubList} returned by this method become undefined
-             * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
-             * other than via the returned {@code SubList} or any of its sublists.
-             * (Structural modifications are those that change the size of this sublist, or
-             * otherwise perturb it in such a fashion that iterations in progress may yield
-             * incorrect results.) A {@code ConcurrentModificationException} is thrown for
-             * any operation on a {@code SubList} that is structurally unsound.
-             *
-             * @param firstNode low endpoint (inclusive) of the {@code SubList}
-             * @param lastNode  high endpoint (inclusive) of the {@code SubList}
-             * @return a view of the specified range within this sublist
-             * @throws IllegalArgumentException if any specified node is not linked to this
-             *                                  sublist or if the lastNode comes before the
-             *                                  firstNode in this sublist.
-             */
-            public SubList.LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
-                return newSubList(firstNode, lastNode).linkedSubNodes;
-            }
-            
-            private SubList newSubList(Node<E> firstNode, Node<E> lastNode) {
-                checkForModificationException();
-                if (firstNode == null && lastNode == null) {
-                    // both firstNode and lastNode are null
-                    final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
-                    return new SubList(iGetNodeBeforeOrHeadSentinel(tailSentinel), tailSentinel, SubList.this, 0L);
-                } else if (firstNode == null) {
-                    // only the lastNode is specified
-                    if (!contains(lastNode)) {
-                        throw new IllegalArgumentException("Specified last node is not linked to this sublist");
-                    }
-                    return new SubList(iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), SubList.this, 0L);
-                } else if (lastNode == null) {
-                    // only the firstNode is specified
-                    if (!contains(firstNode)) {
-                        throw new IllegalArgumentException("Specified first node is not linked to this sublist");
-                    }
-                    return new SubList(firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), SubList.this, 0L);
-                }
-                // both firstNode and LastNode are specified
-                if (!linkedNodes().contains(firstNode)) {
-                    throw new IllegalArgumentException("Specified first node is not linked to this list");
-                }
-                if (!linkedNodes().contains(lastNode)) {
-                    throw new IllegalArgumentException("Specified last node is not linked to this list");
-                }
-                LinkNode<E> node;
-                long subListSize = 0;
-                boolean foundFirstNode = false;
-                boolean foundLastNode = false;
-                final LinkNode<E> firstLinkNode = firstNode.linkNode();
-                final LinkNode<E> lastLinkNode = lastNode.linkNode();
-                if (sizeIsKnown()) {
-                    long remaining = longSize();
-                    for (node = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel()); remaining > 0;
-                            node = iGetNodeAfterFromListWithKnownTailSentinel(node), remaining--) {    
-                        if (node == firstLinkNode) foundFirstNode = true;
-                        if (foundFirstNode) subListSize++;
-                        if (node == lastLinkNode) {
-                            foundLastNode = true;
-                            break;
-                        }
-                    }
-                    if (remaining == 0) this.setTailSentinel(node);
-                    if (remaining == 1) this.setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(node));
-                } else {
-                    long listSize = 0;
-                    for (node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel()); node != iGetTailSentinel();
-                            node = iGetNodeAfterOrTailSentinel(node)) {
-                        listSize++;
-                        if (node == firstLinkNode) foundFirstNode = true;
-                        if (foundFirstNode) subListSize++;
-                        if (node == lastLinkNode) {
-                            foundLastNode = true;
-                            break;
-                        }
-                    }
-                    if (node == iGetTailSentinel()) this.setSize(listSize);
-                    else if (iGetNodeAfterOrTailSentinel(node) == iGetTailSentinel()) this.setSize(listSize + 1L);
-                }
-                if (foundLastNode && !foundFirstNode) {
-                    throw new IllegalArgumentException(
-                            "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
-                }
-                if (!foundFirstNode) {
-                    throw new IllegalArgumentException("specified first node is not part of this sublist");
-                }
-                if (!foundLastNode) {
-                    throw new IllegalArgumentException("specified last node is not part of this sublist");
-                }
-                return new SubList(iGetNodeBeforeOrHeadSentinel(firstLinkNode),
-                        iGetNodeAfterOrTailSentinel(lastLinkNode), SubList.this, subListSize);
-            }
-
-            /**
-             * Sorts this sublist according to the order induced by the specified
-             * comparator.
-             * <p>
-             * The specified comparator compares the {@code Nodes} not the elements of the
-             * {@code Nodes}. for example:
-             * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-             * {@code sort((node1, node2) -> { return
-             * node1.element().compareTo(node2.element()); });}.
-             *
-             * If the specified comparator is {@code null} then all elements in this sublist
-             * must implement the {@code Comparable} interface and the elements' natural
-             * ordering should be used.
-             * <p>
-             * <strong>Implementation Specification:</strong> This implementation obtains an
-             * array containing all nodes in this sublist, sorts the array using
-             * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
-             * clears the sublist and puts the sorted nodes from the array back into this
-             * sublist in order. If this sublist's {@code size > Integer.MAX_VALUE-8}, a
-             * {@link #mergeSort} is performed.
-             * <p>
-             * <strong>Implementation Note:</strong> This implementation is a stable,
-             * adaptive, iterative mergesort that requires far fewer than n lg(n)
-             * comparisons when the input array is partially sorted, while offering the
-             * performance of a traditional mergesort when the input array is randomly
-             * ordered. If the input array is nearly sorted, the implementation requires
-             * approximately n comparisons. Temporary storage requirements vary from a small
-             * constant for nearly sorted input arrays to n/2 object references for randomly
-             * ordered input arrays.
-             * <p>
-             * The implementation takes equal advantage of ascending and descending order in
-             * its input array, and can take advantage of ascending and descending order in
-             * different parts of the same input array. It is well-suited to merging two or
-             * more sorted arrays: simply concatenate the arrays and sort the resulting
-             * array.
-             * <p>
-             * The implementation was adapted from Tim Peters's list sort for Python
-             * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-             * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
-             * Information Theoretic Complexity", in Proceedings of the Fourth Annual
-             * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
-             *
-             * @see Arrays#sort
-             * @param comparator the {@code Comparator} used to compare {@code Nodes}. A
-             *                   {@code null} value indicates that the elements' natural
-             *                   ordering should be used
-             * @throws ClassCastException if the sublist contains elements that are not
-             *                            <i>mutually comparable</i> using the specified
-             *                            comparator
-             */
-            @Override
-            public void sort(Comparator<? super Node<E>> comparator) {
-                checkForModificationException();
-                if (longSize() < 2L) return;
-                if (longSize() > Integer.MAX_VALUE-8) { mergeSort(comparator); return; }
-                @SuppressWarnings("unchecked")
-                final LinkNode<E>[] sortedNodes = new LinkNode[size()]; 
-                final ListIterator<Node<E>> listIterator = linkNodeListIterator(0);
-                for (int index = 0; listIterator.hasNext(); sortedNodes[index++] = (LinkNode<E>)listIterator.next());
-                Arrays.sort(sortedNodes, comparator);
-                LinkNode<E> node = iGetFirstNode();
-                for (LinkNode<E> sortedNode: sortedNodes) {
-                    LinkNode.swapNodes(node, sortedNode);
-                    node = iGetNodeAfter(sortedNode); // node = node.next() (effectively)
-                                                     // sortedNode has replaced node's position in the list
-                }
-                updateParentModCount();
-            }
-            
-            /**
-             * Sorts this sublist according to the order induced by the specified
-             * comparator.
-             * <p>
-             * The specified comparator compares the {@code Nodes} not the elements of the
-             * {@code Nodes}. for example:
-             * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
-             * {@code sort((node1, node2) -> { return
-             * node1.element().compareTo(node2.element()); });}.
-             *
-             * If the specified comparator is {@code null} then all elements in this sublist
-             * must implement the {@code Comparable} interface and the elements' natural
-             * ordering should be used.
-             * <p>
-             * <strong>Implementation Note:</strong> This implementation is a stable,
-             * iterative mergesort that requires n lg(n) comparisons. this implementation
-             * avoids the N auxiliary storage cost normally associated with a mergesort.
-             *
-             * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
-             * (<a href=
-             * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
-             * SimonTathamMergesort</a>).
-             *
-             * @param comparator the {@code Comparator} used to compare {@code Nodes}. A
-             *                   {@code null} value indicates that the elements' natural
-             *                   ordering should be used
-             * @throws ClassCastException if the sublist contains elements that are not
-             *                            <i>mutually comparable</i> using the specified
-             *                            comparator
-             */
-            public void mergeSort(Comparator<? super Node<E>> comparator) {
-                checkForModificationException();
-                NodableLinkedList.mergeSort(this, comparator);
-                updateParentModCount();
-            }
-
-            /**
-             * Returns an array containing all of the {@code Nodes} (specifically
-             * SubListNodes) in this sublist in proper sequence (from first to last node).
-             * The {@code Nodes} in the array are still linked to this list.
-             * <p>
-             * The returned array will be "safe" in that no references to it are maintained
-             * by this list. (In other words, this method allocates a new array). The caller
-             * is thus free to modify the returned array.
-             * <p>
-             * This method acts as bridge between array-based and collection-based APIs.
-             *
-             * @return an array containing all of the {@code Nodes} (specifically
-             *         SubListNodes) in this list in proper sequence
-             * @throws IllegalStateException if the sublist is too large to fit in an array
-             */
-            @Override
-            public Object[] toArray() {
-                if (longSize() > Integer.MAX_VALUE) {
-                    throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-                }
-                final Object[] nodes = new Object[(int) longSize()];
-                int index = 0;
-                for (Node<E> node: this) nodes[index++] = node;
-                return nodes;
-            }
-
-            /**
-             * Returns an array containing all of the {@code Nodes} (specifically
-             * SubListNodes) in this sublist in proper sequence (from first to last node);
-             * the runtime type of the returned array is that of the specified array. If the
-             * list fits in the specified array, it is returned therein. Otherwise, a new
-             * array is allocated with the runtime type of the specified array and the size
-             * of this list.
-             * <p>
-             * If the list fits in the specified array with room to spare (i.e., the array
-             * has more elements than the list), the element in the array immediately
-             * following the end of the list is set to {@code null}. (This is useful in
-             * determining the length of the sublist since {@code Nodes} are never null.)
-             * <p>
-             * Like the {@link #toArray()} method, this method acts as bridge between
-             * array-based and collection-based APIs. Further, this method allows precise
-             * control over the runtime type of the output array, and may, under certain
-             * circumstances, be used to save allocation costs.
-             *
-             * Note that {@code toArray(new Object[0])} is identical in function to
-             * {@code toArray()}.
-             *
-             * @param array the array into which the {@code Nodes} of the list are to be
-             *              stored, if it is big enough; otherwise, a new array of the same
-             *              runtime type is allocated for this purpose.
-             * @return an array containing the {@code Nodes} (specifically SubListNodes) of
-             *         the sublist
-             * @throws ArrayStoreException   if the runtime type of the specified array is
-             *                               not a supertype of the runtime type of every
-             *                               node in this sublist
-             * @throws IllegalStateException if the sublist is too large to fit in an array
-             * @throws NullPointerException  if the specified array is {@code null}
-             */
-            @Override
-            @SuppressWarnings("unchecked")
-            public <T> T[] toArray(T[] array) {
-                if (longSize() > Integer.MAX_VALUE) {
-                    throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-                }
-                if (array.length < longSize()) {
-                    array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int) longSize());
-                }
-                int index = 0;
-                Object[] nodes = array;
-                for (Node<E> node: this) nodes[index++] = node;
-                if (array.length > longSize()) array[(int) longSize()] = null;
-                return array;
-            }
-            
-            /**
-             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
-             * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
-             * specified position in this sublist. Obeys the general contract of
-             * {@code List.listIterator(int)}.
-             * <p>
-             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-             * this method behaves differently when the sublist's
-             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-             * <p>
-             * The {@code ListIterator} is <i>fail-fast</i>: if the
-             * {@code NodableLinkedList} is structurally modified at any time after the
-             * Iterator is created, in any way except through the {@code ListIterator's} own
-             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-             * modification, the iterator fails quickly and cleanly, rather than risking
-             * arbitrary, non-deterministic behavior at an undetermined time in the future.
-             * <p>
-             * Instead of using a {@code ListIterator}, consider iterating over the sublist
-             * via {@code SubListNodes}. For example:
-             * <pre>
-             * {@code
-             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
-             *     Node<Integer> subListNode = sublist.get(index);
-             *     //                       or sublist.getFirstNode();
-             *     while (subListNode != null) {
-             *         System.out.println(subListNode.element());
-             *         subListNode = subListNode.next();
-             *     }
-             * }
-             * </pre>
-             *
-             * @param index index of the first {@code Node} to be returned from the
-             *              {@code ListIterator} (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} (specifically
-             *         {@code SubListNodes}) in this sublist (in proper sequence), starting
-             *         at the specified position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index > longSize())}
-             * @see List#listIterator(int)
-             */
-            @Override
-            public ListIterator<Node<E>> listIterator(int index) {
-                checkForModificationException();
-                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-                return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
-            }
-            
-            /**
-             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
-             * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
-             * specified node in this sublist. if the specified node is {@code null}, the
-             * {@code ListIterator} will be positioned right after the last {@code Node} in
-             * this sublist.
-             * <p>
-             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-             * this method behaves differently when the sublist's
-             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-             * <p>
-             * The {@code ListIterator} is <i>fail-fast</i>: if the
-             * {@code NodableLinkedList} is structurally modified at any time after the
-             * Iterator is created, in any way except through the {@code ListIterator's} own
-             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-             * modification, the iterator fails quickly and cleanly, rather than risking
-             * arbitrary, non-deterministic behavior at an undetermined time in the future.
-             * <p>
-             * Instead of using a {@code ListIterator}, consider iterating over the sublist
-             * via {@code SubListNodes}. For example:
-             * <pre>
-             * {@code
-             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
-             *     Node<Integer> subListNode =
-             *         (node == null) ?  null : node.subListNode(sublist.nodableLinkedListSubList());
-             *     while (subListNode != null) {
-             *         System.out.println(subListNode.element());
-             *         subListNode = subListNode.next();
-             *     }
-             * }
-             * </pre>
-             *
-             * @param node first {@code Node} to be returned from the {@code ListIterator}
-             *             (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} (specifically
-             *         {@code SubListNodes}) in this sublist (in proper sequence), starting
-             *         at the specified node in the sublist
-             * @throws IllegalArgumentException if node is not linked to this sublist
-             */
-            public ListIterator<Node<E>> listIterator(Node<E> node) {
-                checkForModificationException();
-                if (node == null) {
-                    return new SubListNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
-                }
-                final long index = getIndex(node);
-                if (index < 0) {
-                    throw new IllegalArgumentException("specified node is not part of this sublist");
-                }
-                return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
-            }
-            
-            /**
-             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
-             * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
-             * specified position in this sublist. Obeys the general contract of
-             * {@code List.listIterator(int)}.
-             * <p>
-             * The returned {@code ListIterator} should perform better and have a smaller
-             * memory footprint than the standard {@code ListIterator} returned by
-             * {@link #listIterator(int)}. The standard {@code ListIterator} returns newly
-             * created {@code SubListNodes}, where as, the {@code ListIterator} returned by
-             * this method returns the existing {@code LinkNodes} which comprise this
-             * sublist. As a reminder, a {@code LinkNode} traverses the base
-             * {@code LinkedNodes} and not the sublist.
-             * <p>
-             * This example builds an ArrayList of {@code LinkNodes} which comprise this
-             * sublist:
-             * <pre>
-             * {@code
-             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
-             *     final int estimatedSize = 0;
-             *     final ArrayList<LinkNode<Integer>> arrayList = new ArrayList<>(estimatedSize);
-             *     final ListIterator<Node<Integer>> listIterator = sublist.linkNodeListIterator(0);
-             *     while (listIterator.hasNext()) arrayList.add((LinkNode<Integer>) listIterator.next());
-             *     for (LinkNode<Integer> linkNode : arrayList) System.out.println(linkNode.element());
-             * }
-             * </pre>
-             * <p>
-             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-             * this method behaves differently when the sublist's
-             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-             * <p>
-             * The {@code ListIterator} is <i>fail-fast</i>: if the
-             * {@code NodableLinkedList} is structurally modified at any time after the
-             * Iterator is created, in any way except through the {@code ListIterator's} own
-             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-             * modification, the iterator fails quickly and cleanly, rather than risking
-             * arbitrary, non-deterministic behavior at an undetermined time in the future.
-             *
-             * @param index index of the first {@code Node} to be returned from the
-             *              {@code ListIterator} (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
-             *         in this sublist (in proper sequence), starting at the specified
-             *         position in this sublist
-             * @throws IndexOutOfBoundsException if the index is out of range
-             *                                   {@code (index < 0 || index > longSize())}
-             * @see List#listIterator(int)
-             */
-            public ListIterator<Node<E>> linkNodeListIterator(int index) {
-                checkForModificationException();
-                if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-                return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
-            }
-            
-            /**
-             * Returns a {@code ListIterator} of the {@code Nodes} (specifically
-             * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
-             * specified node in this sublist. if the specified node is {@code null}, the
-             * {@code ListIterator} will be positioned right after the last {@code Node} in
-             * this sublist.
-             * <p>
-             * The returned {@code ListIterator} should perform better and have a smaller
-             * memory footprint than the standard {@code ListIterator} returned by
-             * {@link #listIterator(Node)}. The standard {@code ListIterator} returns newly
-             * created {@code SubListNodes}, where as, the {@code ListIterator} returned by
-             * this method returns the existing {@code LinkNodes} which comprise this
-             * sublist. As a reminder, a {@code LinkNode} traverses the base
-             * {@code LinkedNodes} and not the sublist.
-             * <p>
-             * This example builds an ArrayList of {@code LinkNodes} which comprise this
-             * sublist:
-             * <pre>
-             * {@code
-             *     // sublist is a NodableLinkedList<Integer>.SubList.LinkedSubNodes
-             *     final int estimatedSize = 0;
-             *     final ArrayList<LinkNode<Integer>> arrayList = new ArrayList<>(estimatedSize);
-             *     final ListIterator<Node<Integer>> listIterator = sublist.linkNodeListIterator(sublist.getFirstNode());
-             *     while (listIterator.hasNext()) arrayList.add((LinkNode<Integer>) listIterator.next());
-             *     for (LinkNode<Integer> linkNode : arrayList) System.out.println(linkNode.element());
-             * }
-             * </pre>
-             * <p>
-             * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
-             * this method behaves differently when the sublist's
-             * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
-             * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
-             * <p>
-             * The {@code ListIterator} is <i>fail-fast</i>: if the
-             * {@code NodableLinkedList} is structurally modified at any time after the
-             * Iterator is created, in any way except through the {@code ListIterator's} own
-             * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
-             * {@code ConcurrentModificationException}. Thus, in the face of concurrent
-             * modification, the iterator fails quickly and cleanly, rather than risking
-             * arbitrary, non-deterministic behavior at an undetermined time in the future.
-             *
-             * @param node first {@code Node} to be returned from the {@code ListIterator}
-             *             (by a call to {@code next})
-             * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
-             *         in this sublist (in proper sequence), starting at the specified node
-             *         in the sublist
-             * @throws IllegalArgumentException if node is not linked to this sublist
-             */
-            public ListIterator<Node<E>> linkNodeListIterator(Node<E> node) {
-                checkForModificationException();
-                if (node == null) {
-                    return new LinkNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
-                }
-                final long index = getIndex(node);
-                if (index < 0) {
-                    throw new IllegalArgumentException("specified node is not part of this sublist");
-                }
-                return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
-            }            
-            
-        } // LinkedSubNodes
-        
-        private class ReversedLinkedSubNodes extends LinkedSubNodes {
-            
-            private SubList.LinkedSubNodes linkedSubNodes;
-            
-            private ReversedLinkedSubNodes(LinkedSubNodes linkedSubNodes) {
-                this.linkedSubNodes = linkedSubNodes;
-                super.updateModCount();
-            }
-            
-            //protected int modCount inherited from class java.util.AbstractList
-            @Override
-            int modCount() {
-                return linkedSubNodes.modCount();
-            }
-            
-            @Override
-            void updateModCount() {
-                linkedSubNodes.updateModCount();
-                super.updateModCount();
-            }
-            
-            private void syncModCountWithBase() {
-                SubList.this.modCount = this.modCount = modCount(); // try to keep all modCounts in sync
-            }
-            
-            @Override
-            LinkNode<E> iGetHeadSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetTailSentinel();
-            }
-            
-            @Override
-            LinkNode<E> iGetTailSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetHeadSentinel();
-            }
-            
-            @Override            
-            void setHeadSentinel(LinkNode<E> headSentinel) {
-                syncModCountWithBase();
-                linkedSubNodes.setTailSentinel(headSentinel);
-            }
-            
-            @Override  
-            void setTailSentinel(LinkNode<E> tailSentinel) {
-                syncModCountWithBase();
-                linkedSubNodes.setHeadSentinel(tailSentinel);
-            }
-            
-            @Override
-            LinkedSubNodes parent () {
-                syncModCountWithBase();
-                return linkedSubNodes.parent();
-            }
-            
-            @Override
-            long iGetSize() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetSize();
-            }
-            
-            @Override
-            void setSize(long size) {
-                syncModCountWithBase();
-                linkedSubNodes.setSize(size);
-            }
-            
-            @Override
-            LinkNode<E> iGetMyLinkedNodesHeadSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetMyLinkedNodesTailSentinel();
-            }
-            
-            @Override
-            LinkNode<E> iGetMyLinkedNodesTailSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetMyLinkedNodesHeadSentinel();
-            }
-            
-            @Override
-            LinkNode<E> tailSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetHeadSentinel();
-            }
-            
-            @Override
-            LinkNode<E> getConfirmedTailSentinel() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetHeadSentinel();
-            }
-            
-            @Override
-            void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-                linkedSubNodes.iAddNodeBefore(node, afterThisNode);
-                syncModCountWithBase();
-            }
-
-            @Override
-            void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
-                linkedSubNodes.iAddNodeAfter(node, beforeThisNode);
-                syncModCountWithBase();
-            }
-
-            @Override
-            void iRemoveNode(LinkNode<E> node) {
-                linkedSubNodes.iRemoveNode(node);
-                syncModCountWithBase();
-            }
-
-            @Override
-            void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
-                linkedSubNodes.iReplaceNode(node, replacementNode);
-                syncModCountWithBase();
-            }
-
-            @Override
-            boolean iHasNodeAfter(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iHasNodeBefore(node);           
-            }
-
-            @Override
-            boolean iHasNodeBefore(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iHasNodeAfter(node);           
-            }
-            
-            @Override
-            LinkNode<E> iGetFirstNode() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetLastNode();
-            }
-            
-            @Override
-            LinkNode<E> iGetLastNode() {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetFirstNode();
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetNodeBefore(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetNodeBeforeOrHeadSentinel(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetNodeBeforeOrHeadSentinel(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetNodeAfter(node);
-            }
-            
-            @Override
-            LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
-                syncModCountWithBase();
-                return linkedSubNodes.iGetNodeAfterOrTailSentinel(node);
-            }
-            
-            @Override
-            public LinkNode<E> forwardLinkNode(Node<E> node) {
-                return linkedSubNodes.forwardLinkNode(node).reversed();
-            }
-            
-            @Override
-            public boolean isReversed() {
-                return !linkedSubNodes.isReversed();
-            }
-            
-            @Override
-            public LinkedSubNodes reversed() {
-                syncModCountWithBase();
-                return this.linkedSubNodes;
-            }
-            
-        } // ReversedLinkedSubNodes
         
     } // SubList
     
-    private class ReversedSubList extends SubList {
+    private static class ReversedSubList<E> extends SubList<E> {
         
-        private final SubList sublist;
+        private final SubList<E> sublist;
         
-        private ReversedSubList(SubList sublist) {
-            super(sublist.linkedSubNodes());
+        private ReversedSubList(SubList<E> sublist) {
+            super(sublist);
             this.sublist = sublist;
         }
         
         @Override
-        public NodableLinkedList<E>.SubList reversed() {
+        public SubList<E> reversed() {
             return this.sublist;
         }
         
     } // ReversedSubList
+        
+    /**
+     * Doubly-linked sublist of nodes which back a
+     * {@code NodableLinkedList.SubList}. Implements all optional {@code List}
+     * interface operations. The elements are of type
+     * {@code NodableLinkedList.LinkSubNode}, and are never {@code null}.
+     * 
+     * A {@code LinkedSubNodes} sublist represents a range of {@code LinkNodes} of a
+     * {@code NodableLinkedList.LinkedNodes} list. If a {@code Node} is added to or
+     * removed from a {@code LinkedSubNodes} sublist, the {@code Node's}
+     * {@code LinkNode} is respectively added to or removed from the backing
+     * {@code LinkedNodes} list.
+     * <p>
+     * The iterators returned by this class's {@code iterator} and
+     * {@code listIterator} methods are <i>fail-fast</i>: if the
+     * {@code NodableLinkedList} is structurally modified at any time after the
+     * iterator is created, in any way except through the Iterator's own
+     * {@code remove} or {@code add} methods, the iterator will throw a {@code
+     * ConcurrentModificationException}. Thus, in the face of concurrent
+     * modification, the iterator fails quickly and cleanly, rather than risking
+     * arbitrary, non-deterministic behavior at an undetermined time in the future.
+     * <p>
+     * Note that the fail-fast behavior of an iterator cannot be guaranteed as it
+     * is, generally speaking, impossible to make any hard guarantees in the
+     * presence of unsynchronized concurrent modification. Fail-fast iterators throw
+     * {@code ConcurrentModificationException} on a best-effort basis. Therefore, it
+     * would be wrong to write a program that depended on this exception for its
+     * correctness: <i>the fail-fast behavior of iterators should be used only to
+     * detect bugs.</i>
+     * 
+     * @author James Pfeifer
+     *
+     */
+    public class LinkedSubNodes
+        extends InternalLinkedList
+        implements List<Node<E>> {
+        
+        private LinkNode<E> headSentinel;
+        private LinkNode<E> tailSentinel;
+        private final SubList<E> sublist; // the SubList associated with this LinkedSubNodes
+        private final LinkedSubNodes parent; // != null this is a sublist of a sublist
+        private long size;
+        
+        // used by ReversedLinkedSubNodes
+        private LinkedSubNodes(SubList<E> sublist) {
+            // assert sublist != null : "sublist is null";
+            this.headSentinel = null;
+            this.tailSentinel = null;
+            this.sublist = sublist;
+            this.parent = null;
+            this.size = 0L;
+        }
+        
+        private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
+                SubList<E> sublist, SubList<E> parent, long size) {
+            // assert headSentinel != null : "headSentinel is null";
+            // assert tailSentinel != null : "tailSentinel is null";
+            // assert sublist != null : "sublist is null";
+            // assert headSentinel.linkedNodes == linkedNodes :
+            //     "headSentinel not linked to this linkedList";
+            // assert tailSentinel.linkedNodes == linkedNodes :
+            //     "tailSentinel not linked to this linkedList";
+            // considerations:
+            // . the tailSentinel(null) and size(-1) may be unknown,
+            //   but never both at the same time
+            // . no guarantee that headSentinel comes before tailSentinel
+            //   in the parent list
+            this.headSentinel = headSentinel;
+            this.tailSentinel = tailSentinel;
+            this.sublist = sublist;
+            this.parent = (parent == null) ? null : parent.linkedSubNodes();
+            this.size = size;
+            updateModCount();
+        }
+        
+        // protected int modCount inherited from class java.util.AbstractList
+        // modCount represents the expected modification count
+        int modCount() {
+            return this.modCount;
+        }
+        
+        void updateModCount() {
+            sublist.setModCount(this.modCount = NodableLinkedList.this.modCount()); //keep all modCounts in sync
+        }
+        
+        private void updateParentModCount() {
+            if (parent() != null) parent().updateParentModCount();
+            updateModCount();
+        }            
+        
+        private void updateSizeAndModCount(long sizeChange) {
+            if (sizeIsKnown()) setSize(iGetSize() + sizeChange);
+            updateModCount();
+        }
+        
+        private void checkForModificationException() {
+            if (this.modCount != NodableLinkedList.this.modCount()) {
+                throw new ConcurrentModificationException();
+            }
+        }
+        
+        /**
+         * Returns the {@code NodableLinkedList} which contains this
+         * {@code LinkedSubNodes}.
+         * 
+         * @return the {@code NodableLinkedList} which contains this
+         *         {@code LinkedSubNodes}
+         */
+        public NodableLinkedList<E> nodableLinkedList() {
+            return NodableLinkedList.this;
+        }
+        
+        /**
+         * Returns the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
+         * object is backing.
+         * 
+         * @return the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
+         *         object is backing
+         */
+        public SubList<E> nodableLinkedListSubList() {
+            return sublist;
+        }
+        
+        @Override
+        LinkNode<E> iGetHeadSentinel() {
+            return this.headSentinel;
+        }
+        
+        @Override
+        LinkNode<E> iGetTailSentinel() {
+            return this.tailSentinel;
+        }
+        
+        void setHeadSentinel(LinkNode<E> headSentinel) {
+            this.headSentinel = headSentinel;
+        }
+        
+        void setTailSentinel(LinkNode<E> tailSentinel) {
+            this.tailSentinel = tailSentinel;
+        }
+        
+        LinkedSubNodes parent () {
+            return this.parent;
+        }
+        
+        long iGetSize() {
+            return this.size;
+        }
+        
+        void setSize(long size) {
+            this.size = size;
+        }
+        
+        /**
+         * Returns the LinkedNodes' headSentinel from the perspective of this sublist. If
+         * this sublist is reversed in relation to the LinkedNodes' traversal direction,
+         * than the LinkeNodes' tailSentinel is returned.
+         * 
+         * @return the LinkedNodes' headSentinel from the perspective of this list
+         */
+        @Override
+        LinkNode<E> iGetMyLinkedNodesHeadSentinel() {
+            if (parent() == null) return linkedNodes().iGetHeadSentinel();
+            return parent().iGetMyLinkedNodesHeadSentinel();
+        }
+        
+        /**
+         * Returns the LinkedNodes' tailSentinel from the perspective of this sublist. If
+         * this sublist is reversed in relation to the LinkedNodes' traversal direction,
+         * than the LinkeNodes' headSentinel is returned.
+         * 
+         * @return the LinkedNodes' tailSentinel from the perspective of this list
+         */
+        @Override
+        LinkNode<E> iGetMyLinkedNodesTailSentinel() {
+            if (parent() == null) return linkedNodes().iGetTailSentinel();
+            return parent().iGetMyLinkedNodesTailSentinel();
+        }
+        
+        private boolean tailSentinelIsKnown() {
+            return this.iGetTailSentinel() != null;
+        }
+        
+        LinkNode<E> tailSentinel() {
+            if (!tailSentinelIsKnown()) { // tailSentinel unknown?
+                //assert size >= 0 : "sublist size is unknown";
+                long remaining = longSize();
+                final LinkNode<E> linkedNodesTailSentinel = iGetMyLinkedNodesTailSentinel();
+                LinkNode<E> tailSentinel = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
+                while (remaining > 0 && tailSentinel != linkedNodesTailSentinel) {
+                    remaining--;
+                    tailSentinel = iGetNodeAfterFromListWithKnownTailSentinel(tailSentinel);
+                }
+                if (remaining > 0) {
+                    throw new IllegalStateException("End of list reached unexpectedly");
+                }
+                setTailSentinel(tailSentinel);
+            }
+            return iGetTailSentinel();
+        }
+        
+        LinkNode<E> getConfirmedTailSentinel() {
+            if (sizeIsKnown() & tailSentinelIsKnown()) return iGetTailSentinel();
+            return getNode(longSize());
+        }
+        
+        @Override
+        void iAddNodeFirst(LinkNode<E> node) {
+            //assert node != null && !node.isLinked() :
+            //    "Node is null or already an element of a list";
+            iAddNodeAfter(node, iGetHeadSentinel());
+        }
+        
+        @Override
+        void iAddNodeLast(LinkNode<E> node) {
+            //assert node != null && !node.isLinked() :
+            //    "Node is null or already an element of a list";
+            iAddNodeBefore(node, getConfirmedTailSentinel());
+        }
+
+        @Override
+        void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
+            //assert node != null && !node.isLinked() :
+            //    "Node is null or already an element of a list";
+            //assert this.contains(afterThisNode) :
+            //    "Before Node is not an element of this sublist";
+            if (parent() == null) linkedNodes().iAddNodeAfter(node, afterThisNode);
+            else parent().iAddNodeAfter(node, afterThisNode);
+            updateSizeAndModCount(1L);
+        }
+
+        @Override
+        void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
+            //assert node != null && !node.isLinked() :
+            //    "Node is null or already an element of a list";
+            //assert this.contains(beforeThisNode) :
+            //    "Before Node is not an element of this sublist";
+            if (parent() == null) linkedNodes().iAddNodeBefore(node, beforeThisNode);
+            else parent().iAddNodeBefore(node, beforeThisNode);
+            updateSizeAndModCount(1L);
+        }
+        
+        @Override
+        void iRemoveNode(LinkNode<E> node) {
+            //assert this.contains(node) : "Node is not an element of this sublist";
+            if (parent() == null) linkedNodes().iRemoveNode(node);
+            else parent().iRemoveNode(node);
+            updateSizeAndModCount(-1L);                
+        }
+        
+        @Override
+        void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
+            //assert this.contains(node) : "Node is not an element of this sublist";
+            //assert replacementNode != null && !replacementNode.isLinked() :
+            //    "Replacement Node is null or is already an element of a list";
+            if (parent() == null) linkedNodes().iReplaceNode(node, replacementNode);
+            else parent().iReplaceNode(node, replacementNode);
+            updateSizeAndModCount(0L);
+        }
+
+        @Override
+        boolean iHasNodeAfter(LinkNode<E> node) {
+            //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
+            LinkNode<?> nextNode;
+            if (parent() == null) nextNode = linkedNodes().iGetNodeAfterOrTailSentinel(node);
+            else nextNode = parent().iGetNodeAfterOrTailSentinel(node);
+            if (nextNode == tailSentinel()) return false;
+            if (nextNode == iGetMyLinkedNodesTailSentinel()) {
+                throw new IllegalStateException(
+                        "End of list reached unexpectedly; the sublists's last node most likely comes before the sublist's first node in the list");
+            }
+            return true;
+        }
+
+        @Override
+        boolean iHasNodeBefore(LinkNode<E> node) {
+            //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
+            if (parent() == null) return (linkedNodes().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true;
+            return (parent().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true; 
+        }
+        
+        @Override
+        LinkNode<E> iGetFirstNode() {
+            return iGetNodeAfter(iGetHeadSentinel());
+        }
+        
+        @Override
+        LinkNode<E> iGetLastNode() {
+            return iGetNodeBefore(getConfirmedTailSentinel());
+        }            
+        
+        @Override
+        LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
+            //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
+            if (!iHasNodeAfter(node)) return null;
+            if (parent() == null) return linkedNodes().iGetNodeAfter(node);
+            return parent().iGetNodeAfter(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
+            //assert this.contains(node) || node == headSentinel : "Node is not an element of this sublist";
+            if (!iHasNodeAfter(node)) return tailSentinel();
+            if (parent() == null) return linkedNodes().iGetNodeAfter(node);
+            return parent().iGetNodeAfter(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
+            LinkedSubNodes linkedSubNodes = this;
+            do {
+                if (linkedSubNodes.tailSentinelIsKnown()) {
+                    return linkedSubNodes.iGetNodeAfterOrTailSentinel(node);
+                }
+            linkedSubNodes = linkedSubNodes.parent();
+            } while (linkedSubNodes != null);
+            return linkedNodes().iGetNodeAfterOrTailSentinel(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
+            //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
+            if (!iHasNodeBefore(node)) return null;
+            if (parent() == null) return linkedNodes().iGetNodeBefore(node);
+            return parent().iGetNodeBefore(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
+            //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
+            if (!iHasNodeBefore(node)) return iGetHeadSentinel();
+            if (parent() == null) return linkedNodes().iGetNodeBefore(node);
+            return parent().iGetNodeBefore(node);
+        }
+        
+        private void swappedNodes(LinkNode<E> subSetNode, LinkNode<E> swappedNode) {
+            if (subSetNode.linkedNodes() == swappedNode.linkedNodes()) {
+                // both nodes are nodes of the same list, therefore,
+                // the head or tail sentinels may have been swapped
+                if (swappedNode == iGetHeadSentinel()) setHeadSentinel(subSetNode);
+                if (swappedNode == iGetTailSentinel()) setTailSentinel(subSetNode);
+                if (parent() != null) parent().swappedNodes(subSetNode, swappedNode);
+            }
+            updateSizeAndModCount(0L);
+        }
+        
+        /**
+         * Returns the node at the specified position in this sublist.
+         * 
+         * Note, this routine returns the tailSentinel if {@code index == longSize()}.
+         *
+         * @param index index of the node to return
+         * @return the node at the specified position in this sublist
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
+         * @throws IllegalStateException     if end of list is reached unexpectedly; the
+         *                                   sublist's last node most likely comes
+         *                                   before the sublists's first node in the
+         *                                   list
+         */
+        private LinkNode<E> getNode(long index) {
+            // Note, this routine returns the tailSentinel if index = longSize()
+            if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
+            LinkNode<E> node;
+            long cursorIndex;
+            if (sizeIsKnown() && tailSentinelIsKnown()) {
+                // both size and tailSentinel is known, therefore, we also know that
+                // the tailSentinel comes after the headSentinel in the list
+                if (index > longSize()) {
+                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
+                }
+                if (index <= ((longSize()) >> 1)) {
+                    cursorIndex = 0L;
+                    node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel());
+                    while (cursorIndex < index) { node = iGetNodeAfter(node); cursorIndex++; }
+                } else {
+                    cursorIndex = longSize();
+                    node = tailSentinel();
+                    while (cursorIndex > index) { node = iGetNodeBefore(node); cursorIndex--; }
+                }
+            } else if (sizeIsKnown()) {
+                // size is known, tailSentinel is unknown
+                if (index > longSize()) {
+                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
+                }
+                cursorIndex = 0L;
+                node = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
+                while (cursorIndex < index) {
+                    node = iGetNodeAfterFromListWithKnownTailSentinel(node);
+                    cursorIndex++;
+                }
+                if (index == longSize()) setTailSentinel(node);
+                if (index == longSize()-1) setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(node));
+            } else {
+                // size is unknown, tailSentinel is known
+                cursorIndex = 0L;
+                node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel());
+                while ( cursorIndex < index && node != iGetTailSentinel()) {
+                    node = iGetNodeAfterOrTailSentinel(node);
+                    cursorIndex++;
+                }
+                if (cursorIndex < index) {
+                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
+                }
+                if (node == iGetTailSentinel()) this.setSize(cursorIndex);
+                else if (iGetNodeAfterOrTailSentinel(node) == iGetTailSentinel()) this.setSize(cursorIndex + 1L);
+            }
+            return node;
+        }
+        
+        /**
+         * Returns the index of the specified node in this sublist, or -1 if this
+         * sublist does not contain the specified node.
+         * 
+         * @param node {@code Node} to search for
+         * @return the index of the specified node in this sublist, or -1 if this
+         *         sublist does not contain the specified node
+         * @throws IllegalStateException if end of list is reached unexpectedly; the
+         *                               sublist's last node most likely comes before
+         *                               the sublists's first node in the list
+         */
+        private long getIndex(Node<?> node) {
+            if (node.isSubListNode() && node.subList() != this.nodableLinkedListSubList()) return -1;
+            return getIndex(node.linkNode());
+        }
+        private long getIndex(LinkNode<?> node) {
+            if (!linkedNodes().contains(node)) return -1;
+            long cursorIndex = 0L;
+            LinkNode<E> cursorNode;
+            if (sizeIsKnown() && tailSentinelIsKnown()) {
+                // both size and tailSentinel is known, therefore, we also know that
+                // the tailSentinel comes after the headSentinel in the list
+                cursorNode = iGetFirstNode();
+                while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
+                    cursorIndex++;
+                cursorNode = iGetNodeAfter(cursorNode);
+                }
+                if (cursorNode == null) cursorIndex = -1L; // node not found
+            } else if (sizeIsKnown()) {
+                // size is known, tailSentinel is unknown
+                cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
+                while (cursorIndex < longSize() && !cursorNode.isEquivalentTo(node)) {
+                    cursorIndex++;
+                cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(cursorNode);
+                }
+                if (cursorIndex == longSize()-1) {
+                    this.setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(cursorNode));
+                }
+                if (cursorIndex == longSize()) {
+                    this.setTailSentinel(cursorNode);
+                    cursorIndex = -1L; // node not found
+                }
+            } else {
+                // size is unknown, tailSentinel is known
+                cursorNode = iGetFirstNode();
+                while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
+                    cursorIndex++;
+                    cursorNode = iGetNodeAfter(cursorNode);
+                }
+                if (cursorNode == null) {
+                    this.setSize(cursorIndex);
+                    cursorIndex = -1L; // node not found
+                } else if (iGetNodeAfter(cursorNode) == null) this.setSize(cursorIndex + 1L);
+            }
+            return cursorIndex;
+        }
+        
+        private boolean sizeIsKnown() {
+            return iGetSize() >= 0L;
+        }
+
+        /**
+         * Returns the number of {@code Nodes} in this sublist. If this sublist contains
+         * more than Integer.MAX_VALUE nodes, Integer.MAX_VALUE is returned.
+         *
+         * @return the number of {@code Nodes} in this sublist
+         */
+        @Override
+        public int size() {
+            final long longSize = longSize();
+            return (longSize > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)longSize;
+        }
+
+        /**
+         * Returns the number of {@code Nodes} in this sublist.
+         *
+         * @return the number of {@code Nodes} in this sublist
+         */
+        public long longSize() {
+            checkForModificationException();
+            if (!sizeIsKnown()) { // size unknown?
+                //assert tailSentinelIsKnown() : "tail sentinel shouldn't be null";
+                LinkNode<E> node;
+                long size = 0L;
+                for (node = iGetFirstNode(); node != null; node = iGetNodeAfter(node)) {
+                    size++;
+                }
+                this.setSize(size);
+            }
+            return iGetSize();
+        }
+        
+        /**
+         * Returns {@code true} if this sublist contains no {@code Nodes}.
+         *
+         * @return {@code true} if this sublist contains no {@code Nodes}
+         */
+        @Override
+        public boolean isEmpty() {
+            checkForModificationException();
+            if (sizeIsKnown()) return longSize() == 0L;
+            return !iHasNodeAfter(iGetHeadSentinel());
+        }
+
+        /**
+         * Appends the specified node to the end of this sublist.
+         * <p>
+         * This method is equivalent to {@link #addNodeLast}.
+         *
+         * @param node {@code Node} to be appended to the end of this sublist
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
+         */
+        public void addNode(Node<E> node) {
+            addNodeLast(node);
+        }
+
+        /**
+         * Inserts the specified node at the beginning of this sublist.
+         * <p>
+         * If the specified node is a {@code SubListNode}, after this operation is
+         * completed, it will be associated with this sublist.
+         *
+         * @param node the {@code Node} to be inserted at the beginning of this
+         *             sublist
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
+         */
+        public void addNodeFirst(Node<E> node) {
+            checkForModificationException();
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
+            iAddNodeFirst(node.linkNode());
+            if (node.isSubListNode()) {
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
+            }
+        }
+
+        /**
+         * Appends the specified node to the end of this sublist.
+         * <p>
+         * If the specified node is a {@code SubListNode}, after this operation is
+         * completed, it will be associated with this sublist.
+         *
+         * @param node {@code Node} to be appended to the end of this sublist
+         * @throws IllegalArgumentException if node is {@code null} or already a node of
+         *                                  a list
+         */
+        public void addNodeLast(Node<E> node) {
+            checkForModificationException();
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
+            iAddNodeLast(node.linkNode());
+            if (node.isSubListNode()) {
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
+            }
+        }
+        
+        /**
+         * Returns the first {@code SubListNode} of this sublist, or returns
+         * {@code null} if this sublist is empty.
+         *
+         * @return the first {@code SubListNode} of this sublist, or
+         *         {@code null} if this sublist is empty
+         */
+        public SubListNode<E> getFirstNode() {
+            checkForModificationException();
+            return (this.isEmpty()) ? null : new SubListNode<E>(iGetFirstNode(), this.nodableLinkedListSubList());
+        }
+        
+        /**
+         * Returns the last {@code SubListNode} of this sublist, or returns
+         * {@code null} if this sublist is empty.
+         *
+         * @return the last {@code SubListNode} of this sublist, or {@code null}
+         *         if this sublist is empty
+         */
+        public SubListNode<E> getLastNode() {
+            checkForModificationException();
+            return (this.isEmpty()) ? null : new SubListNode<E>(iGetLastNode(), this.nodableLinkedListSubList());
+        }
+        
+        /**
+         * Removes and returns the first {@code SubListNode} of this sublist, or returns
+         * {@code null} if this sublist is empty.
+         *
+         * @return the first {@code SubListNode} of this sublist that was removed, or
+         *         {@code null} if this sublist is empty
+         */       
+        public SubListNode<E> removeFirstNode() {
+            checkForModificationException();
+            final SubListNode<E> firstNode = getFirstNode();
+            if (firstNode != null) iRemoveNode(firstNode.linkNode());
+            return firstNode;
+        }
+        
+        /**
+         * Removes and returns the last {@code SubListNode} of this sublist, or returns
+         * {@code null} if this sublist is empty.
+         *
+         * @return the last {@code SubListNode} of this sublist that was
+         *         removed, or {@code null} if this sublist is empty
+         */        
+        public SubListNode<E> removeLastNode() {
+            checkForModificationException();
+            final SubListNode<E> lastNode = getLastNode();
+            if (lastNode != null) iRemoveNode(lastNode.linkNode());
+            return lastNode;
+        }
+        
+        /**
+         * Removes all of the {@code Nodes} from this sublist.
+         */
+        @Override
+        public void clear() {
+            checkForModificationException();
+            LinkNode<E> node = iGetFirstNode();
+            if (sizeIsKnown()) {
+                 while (longSize() > 0) {
+                    final LinkNode<E> nodeToRemove = node;
+                    node = iGetNodeAfterFromListWithKnownTailSentinel(node);
+                    iRemoveNode(nodeToRemove);
+                }
+            } else {
+                while (node != null) {
+                    final LinkNode<E> nodeToRemove = node;
+                    node = iGetNodeAfter(node);
+                    iRemoveNode(nodeToRemove);
+                }
+            }
+        }
+        
+        /**
+         * Returns and possibly reverses the specified {@code Node's} backing
+         * {@code LinkNode} to match the forward direction of this sublist. In other
+         * words, returns a {@code LinkNode} which can be used to essentially traverse
+         * this sublist from the specified node to the sublist's last node when making
+         * successive calls to the {@code LinkNode.next()} method.
+         * <p>
+         * As a reminder, a {@code LinkNode} traverses the base {@code LinkedNodes} and
+         * not the sublist. For instance:
+         * <pre>
+         * {@code
+         *    import net.pfeifdom.java.util.NodableLinkedList.Node;
+         *    // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
+         *    final Node<Integer> lastNode = sublist.getLastNode();
+         *    Node<Integer> linkNode = sublist.forwardLinkNode(node);
+         *    while (linkNode != null) {
+         *       System.out.println(linkNode.element());
+         *    if (linkNode.isEquivalentTo(lastNode)) break;
+         *    linkNode = linkNode.next();
+         *    }
+         * }
+         * </pre>
+         * 
+         * @param node the {@code Node} whose backing {@code LinkNode} is returned and
+         *             possibly reversed to match the forward direction of this sublist
+         * @return a {@code LinkNode} which can be used to essentially traverse this
+         *         sublist in a forward direction
+         * @throws IllegalArgumentException if node is not linked to this sublist
+         */
+        public LinkNode<E> forwardLinkNode(Node<E> node) {
+            if (!this.contains(node)) {
+                throw new IllegalArgumentException("Specified node is not linked to this list");
+            }
+            if (parent() == null) return linkedNodes().forwardLinkNode(node);
+            return parent().forwardLinkNode(node);
+        }
+
+        /**
+         * Returns the index of the specified object ({@code Node}) in this sublist, or
+         * -1 if there is no such index (this sublist does not contain the specified
+         * object ({@code Node)} or the {@code index > Integer.MAX_VALUE}). Note, a -1 is
+         * returned if the specified object is a {@code SubListNode} and it is not
+         * associated with this sublist.
+         * 
+         * @param object {@code Object} ({@code Node}) to search for
+         * 
+         * @return the index of the specified object ({@code Node}) in this sublist, or
+         *         -1 if there is no such index
+         */
+        @Override
+        public int indexOf(Object object) {
+            checkForModificationException();
+            LinkNode<?> node;
+            if (object instanceof LinkNode) {
+                node = (LinkNode<?>)object;
+            } else if (object instanceof SubListNode) {
+                final SubListNode<?> sublistnode = (SubListNode<?>)object;
+                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                    return -1;
+                }
+                node = ((SubListNode<?>)object).linkNode();
+            } else {
+                return -1;
+            }
+            final long index = getIndex(node);
+            return (index > Integer.MAX_VALUE) ? -1 : (int)index;
+        }
+        
+        /**
+         * Returns the index of the specified object ({@code Node}) in this sublist, or
+         * -1 if there is no such index (this sublist does not contain the specified
+         * object ({@code Node}) or the {@code index > Integer.MAX_VALUE}). Note, a -1
+         * is returned if the specified object is a {@code SubListNode} and it is not
+         * associated with this sublist.
+         * <p>
+         * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
+         * except {@code lastIndexOf} attempts to traverse the sublist backwards from
+         * the end of the sublist. However, it's not guaranteed this routine will
+         * traverse the sublist backwards from the end of the sublist. for instance, if
+         * the sublist's last node is unknown, the routine will traverse the sublist
+         * from the start of the sublist.
+         *
+         * @param object {@code Object} ({@code Node}) to search for
+         * @return the index of the specified object ({@code Node}) in this sublist, or
+         *         -1 if there is no such index
+         */
+        @Override
+        public int lastIndexOf(Object object) {
+            if (!tailSentinelIsKnown() || !sizeIsKnown()) return indexOf(object);
+            checkForModificationException();
+
+            LinkNode<?> searchNode;
+            if (object instanceof LinkNode) {
+                searchNode = (LinkNode<?>) object;
+            } else if (object instanceof SubListNode) {
+                final SubListNode<?> sublistnode = (SubListNode<?>) object;
+                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                    return -1;
+                }
+                searchNode = ((SubListNode<?>) object).linkNode();
+            } else {
+                return -1;
+            }
+
+            long index = longSize() - 1L;
+            for (LinkNode<E> node = iGetLastNode(); node != null; node = iGetNodeBefore(node), index--) {
+                if (node == searchNode) {
+                    return (index > Integer.MAX_VALUE) ? -1 : (int) index;
+                }
+            }
+            return -1;
+        }
+        
+        /**
+         * Returns the {@code SublistNode} at the specified position in this sublist.
+         *
+         * @param index index of the {@code SubListNode} to return
+         * @return the {@code SubListNode} at the specified position in this sublist
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
+         */
+        @Override
+        public SubListNode<E> get(int index) {
+            checkForModificationException();
+            final long getIndex = index;
+            if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
+            }
+            LinkNode<E> node = getNode(index);
+            if (node == iGetTailSentinel()) {
+                throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
+            }
+            return new SubListNode<E>(node, this.nodableLinkedListSubList());
+        }
+        
+        /**
+         * Inserts the specified node at the specified position in this sublist. Shifts
+         * the {@code Node} currently at that position (if any) and any subsequent
+         * {@code Nodes} to the right (adds one to their indices).
+         * <p>
+         * If the specified node is a {@code SubListNode}, after this operation is completed,
+         * it will be associated with this sublist.
+         *
+         * @param index position where the specified node is to be inserted
+         * @param node  {@code Node} to be inserted
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @throws IllegalArgumentException  if node is {@code null} or already a node
+         *                                   of a list
+         */
+        @Override
+        public void add(int index, Node<E> node) {
+            checkForModificationException();
+            if (sizeIsKnown() && (index < 0L || index > longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            }
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Node is null or already an element of a list");
+            }
+            iAddNodeBefore(node.linkNode(), getNode(index));
+            if (node.isSubListNode()) {
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
+            }
+        }
+        
+        /**
+         * Removes and returns the {@code SubListNode} at the specified position in this
+         * sublist. Shifts any subsequent {@code Nodes} to the left (subtracts one from
+         * their indices).
+         *
+         * @param index the index of the {@code SubListNode} to be removed
+         * @return the {@code SubListNode} previously at the specified position
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
+         */
+        @Override
+        public SubListNode<E> remove(int index) {
+            checkForModificationException();
+            if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            }
+            final SubListNode<E> subListNode = get(index);
+            iRemoveNode(subListNode.linkNode());
+            return subListNode;
+        }            
+
+        /**
+         * Removes, if present, the specified object ({@code Node}) from this sublist.
+         * If this sublist does not contain the specified object ({@code Node}), it is
+         * unchanged. Note, if the specified object is a {@code SubListNode}, it will
+         * not be removed if the {@code SubListNode} is not associated with this
+         * sublist.
+         * 
+         * @param object {@code Object} ({@code Node}) to be removed from this sublist
+         * @return {@code true} if this sublist contained the specified object
+         *         ({@code Node})
+         */
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean remove(Object object) {
+            checkForModificationException();
+            if (!this.contains(object)) return false;
+            LinkNode<E> node;
+            if (object instanceof LinkNode) {
+                node = (LinkNode<E>)object;
+            } else if (object instanceof SubListNode) {
+                node = ((SubListNode<E>)object).linkNode();
+            } else {
+                return false;
+            }
+            iRemoveNode(node);
+            return true;        
+        }
+        
+        /**
+         * Returns {@code true} if this sublist is a reverse-ordered view of the base
+         * {@code NodableLinkedList}.
+         * 
+         * Note, {@code true} doesn't mean this is a sublist that has been reversed. It
+         * means this sublist's traversal direction is in the opposite direction than
+         * the traversal direction of the base {@code NodableLinkedList} (the
+         * {@code NodableLinkedList} initially created).
+         * 
+         * @return {@code true} if this sublist is a reverse-ordered view of the base
+         *         {@code NodableLinkedList}
+         */
+        public boolean isReversed() {
+            if (parent() == null) return linkedNodes().isReversed();
+            return parent().isReversed();
+        }            
+        
+        /**
+         * Returns reverse-order view of this sublist.
+         * 
+         * The encounter order of {@code Nodes} in the returned view is the inverse of the
+         * encounter order of {@code Nodes} in this sublist. The reverse ordering affects all
+         * order-sensitive operations, including those on the view collections of the
+         * returned view. Modifications to the reversed view are permitted and will be
+         * propagated to this sublist. In addition, modifications to this sublist will
+         * be visible in the reversed view.
+         * 
+         * @return a reverse-order view of this sublist
+         */
+        //@Override //not until JDK 21
+        public LinkedSubNodes reversed() {
+            getConfirmedTailSentinel(); // make sure the new reversed sublist's headSentinel is valid
+            return (new ReversedSubList<E>(nodableLinkedListSubList())).linkedSubNodes();
+        }
+        
+        /**
+         * Replaces the {@code Node} at the specified position in this sublist with the
+         * specified node.
+         *
+         * @param index index of the node to replace
+         * @param node  {@code Node} to be stored at the specified position
+         * @return the {@code SubListNode} previously at the specified position
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index >= longSize())}
+         * @throws IllegalArgumentException  if node is {@code null} or already a node
+         *                                   of a list
+         */
+        @Override
+        public SubListNode<E> set(int index, Node<E> node) {
+            checkForModificationException();
+            if (sizeIsKnown() && (index < 0L || index >= longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            }
+            if (node == null || node.isLinked()) {
+                throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
+            }
+            final SubListNode<E> originalNode = get(index);
+            iReplaceNode(originalNode.linkNode(), node.linkNode());
+            if (node.isSubListNode()) {
+                final SubListNode<E> subListNode = (SubListNode<E>)node;
+                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.updateExpectedModCount();
+            }
+            return originalNode;
+        }
+        
+        /**
+         * Appends all of the {@code Nodes} in the specified collection to the end of
+         * this sublist, in the order that they are returned by the specified
+         * collection's iterator.
+         * <p>
+         * After this operation is completed, all {@code SubListNodes} in the specified
+         * collection will be associated with this sublist.
+         * <p>
+         * The behavior of this operation is undefined if the specified collection is
+         * modified while the operation is in progress. (Note that this will occur if
+         * the specified collection is this sublist, and it's nonempty.)
+         *
+         * @param collection collection containing {@code Nodes} to be added to this
+         *                   sublist
+         * @return {@code true} if this sublist changed as a result of the call
+         * @throws NullPointerException     if the specified collection is {@code null}
+         * @throws IllegalArgumentException if any {@code Node} in the collection is
+         *                                  {@code null} or already a node of a list
+         */
+        @Override
+        public boolean addAll(Collection<? extends Node<E>> collection) {
+            checkForModificationException();
+            final long initialSize = longSize();
+            final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
+            for (Node<E> node: collection) {
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                }
+                iAddNodeBefore(node.linkNode(), tailSentinel);
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>)node;
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                }
+            }
+            for (Node<E> node: collection) {
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>)node;
+                    subListNode.updateExpectedModCount();
+                }
+            }
+            return longSize() != initialSize;
+        }
+        
+        /**
+         * Inserts all of the {@code Nodes} in the specified collection into this
+         * sublist, starting at the specified position. Shifts the {@code Node}
+         * currently at that position (if any) and any subsequent {@code Nodes} to the
+         * right (increases their indices). The new {@code Nodes} will appear in this
+         * sublist in the order that they are returned by the specified collection's
+         * iterator. if the specified {@code index == longSize()}, the {@code Nodes}
+         * will be appended to the end of this sublist.
+         * 
+         * Note that {@code addAll(longSize(), Collection)} is identical in function to
+         * {@code addAll(Collection)}.
+         * <p>
+         * After this operation is completed, all {@code SubListNodes} in the specified
+         * collection will associated with this sublist.
+         * <p>
+         * The behavior of this operation is undefined if the specified collection is
+         * modified while the operation is in progress. (Note that this will occur if
+         * the specified collection is this sublist, and it's nonempty.)
+         *
+         * @param index      position where to insert the first {@code Node} from the
+         *                   specified collection
+         * @param collection collection containing {@code Nodes} to be added to this
+         *                   sublist
+         * @return {@code true} if this sublist changed as a result of the call
+         * @throws IllegalArgumentException  if any {@code Node} in the collection is
+         *                                   {@code null} or already a node of a list
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @throws NullPointerException      if the specified collection is {@code null}
+         */
+        @Override
+        public boolean addAll(int index, Collection<? extends Node<E>> collection) {
+            checkForModificationException();
+            if (sizeIsKnown() && (index < 0 || index > longSize())) {
+                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
+            }
+            boolean changed = false;            
+            final LinkNode<E> targetNode = getNode(index);
+            for (Node<E> node: collection) {
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                }
+                iAddNodeBefore(node.linkNode(), targetNode);
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>)node;
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                }
+                changed = true;
+            }
+            for (Node<E> node: collection) {
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>)node;
+                    subListNode.updateExpectedModCount();
+                }
+            }
+            return changed;
+        }
+        
+        /**
+         * Inserts all of the {@code Nodes} in the specified collection into this
+         * sublist, before the specified targetNode. Shifts the {@code Node} currently
+         * at that position and any subsequent {@code Nodes} to the right (increases
+         * their indices). The new {@code Nodes} will appear in this sublist in the
+         * order that they are returned by the specified collection's iterator. if the
+         * specified targetNode is {@code null}, the {@code Nodes} will be appended to
+         * the end of this sublist.
+         * 
+         * Note that {@code addAll(null, Collection)} is identical in function to
+         * {@code addAll(Collection)}.
+         * <p>
+         * After this operation is completed, all {@code SubListNodes} in the specified
+         * collection will be associated with this sublist.
+         * <p>
+         * The behavior of this operation is undefined if the specified collection is
+         * modified while the operation is in progress. (Note that this will occur if
+         * the specified collection is this sublist, and it's nonempty.)
+         *
+         * @param targetNode {@code Node} the specified collection is to be inserted
+         *                   before
+         * @param collection collection containing {@code Nodes} to be added to this
+         *                   sublist
+         * @return {@code true} if this sublist changed as a result of the call
+         * @throws IllegalArgumentException if targetNode is not linked to this sublist,
+         *                                  or any {@code Node} in the collection is
+         *                                  {@code null} or already a node of a list
+         * @throws NullPointerException     if the specified collection is {@code null}
+         */
+        public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> collection) {
+            checkForModificationException();
+            if (targetNode == null) return addAll(collection);
+            if (!this.contains(targetNode)) {
+                throw new IllegalArgumentException("specified targetNode is not part of this sublist");
+            }
+            final LinkNode<E> targetListNode = targetNode.linkNode();
+            boolean changed = false;
+            for (Node<E> node : collection) {
+                if (node == null || node.isLinked()) {
+                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
+                }
+                iAddNodeBefore(node.linkNode(), targetListNode);
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>) node;
+                    subListNode.setSubList(this.nodableLinkedListSubList());
+                }
+                changed = true;
+            }
+            for (Node<E> node : collection) {
+                if (node.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>) node;
+                    subListNode.updateExpectedModCount();
+                }
+            }
+            return changed;
+        }
+        
+        /**
+         * Returns {@code true} if this sublist contains the specified object
+         * ({@code Node}). Note, if the specified object is a {@code SubListNode} and it
+         * is not associated with this sublist, {@code false} will be returned even if
+         * the {@code SubListNode's} {@code LinkNode} is contained by this sublist.
+         *
+         * @param object {@code Object} ({@code Node}) whose presence in this sublist is
+         *               to be tested
+         * @return {@code true} if this sublist contains the specified object
+         *         ({@code Node})
+         */
+        @Override
+        public boolean contains(Object object) {
+            checkForModificationException();
+            LinkNode<?> node;
+            if (object instanceof LinkNode) {
+                node = (LinkNode<?>)object;
+            } else if (object instanceof SubListNode) {
+                final SubListNode<?> sublistnode = (SubListNode<?>)object;
+                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                    return false;
+                }
+                if (sublistnode.isExpectedModCount()) return true;
+                node = sublistnode.linkNode();
+            } else {
+                return false;
+            }
+            return contains(node);
+        }
+
+        private boolean contains(LinkNode<?> node) {
+            if (sizeIsKnown() && tailSentinelIsKnown() &&
+                    (linkedNodes().longSize() - this.longSize() < this.longSize() / 2)) {
+                // The portion of the list not occupied by the sublist is less than
+                // 1/2 the size of the sublist, therefore, it might be faster
+                // to search the portion of the list not occupied by the sublist
+                // instead of searching the sublist itself
+                if (!linkedNodes().contains(node)) return false;
+                LinkNode<E> linkNode = linkedNodes().iGetHeadSentinel();
+                while (linkNode != null) {
+                    if (node == linkNode) return false;
+                    if (linkNode == this.iGetHeadSentinel() || linkNode == this.iGetTailSentinel()) {
+                        if (linkNode == this.iGetHeadSentinel())
+                             linkNode = this.iGetTailSentinel();
+                        else linkNode = this.iGetHeadSentinel();
+                        if (linkNode == linkedNodes().iGetTailSentinel()) break;
+                        if (node == linkNode) return false;
+                    }
+                linkNode = linkedNodes().iGetNodeAfter(linkNode);
+                }
+                return true;
+            }
+            return (getIndex(node) < 0L) ? false : true;
+        }
+        
+        /**
+         * Returns a view of the portion of this sublist between the specified
+         * fromIndex, inclusive, and toIndex, exclusive. (If the specified fromIndex and
+         * toIndex are equal, the returned {@code SubList} is empty.) The returned
+         * {@code SubList} is backed by this sublist, so structural changes in the
+         * returned {@code SubList} are reflected in this sublist. The returned
+         * {@code SubList} supports all of the optional {@code List} operations.
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * <pre>
+         * {@code
+         *      list.subList(fromIndex, toIndex).clear();
+         * }
+         * </pre>
+         * 
+         * Similar idioms may be constructed for {@code indexOf} and
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are those that change the size of this sublist, or
+         * otherwise perturb it in such a fashion that iterations in progress may yield
+         * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+         * any operation on a {@code SubList} that is structurally unsound.
+         *
+         * @param fromIndex low endpoint (inclusive) of the {@code SubList}
+         * @param toIndex   high endpoint (exclusive) of the {@code SubList}
+         * @return a view of the specified range within this sublist
+         * @throws IndexOutOfBoundsException for an illegal endpoint index value
+         *                                   ({@code fromIndex < 0 || toIndex > size ||
+         *                                   fromIndex > toIndex})
+         */
+        @Override
+        public LinkedSubNodes subList(int fromIndex, int toIndex) {
+            return newSubList(fromIndex, toIndex).linkedSubNodes;
+        }
+        
+        private SubList<E> newSubList(int fromIndex, int toIndex) {
+            checkForModificationException();
+            if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
+            if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
+            if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
+            final long size = toIndex - fromIndex;
+            final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : getNode(fromIndex-1);
+            final LinkNode<E> tailSentinel = (size == 0L)
+                                             ? iGetNodeAfterOrTailSentinel(headSentinel)
+                                             : null; // tailSentinel is unknown
+            return new SubList<E>(nodableLinkedList(), headSentinel, tailSentinel, sublist, size);
+        }
+        
+        /**
+         * Returns a view of the portion of this sublist between the specified
+         * fisrtNode, and lastNode (both inclusive). The returned {@code SubList} is
+         * backed by this sublist, so structural changes in the returned {@code SubList}
+         * are reflected in this sublist. The returned {@code SubList} supports all of
+         * the optional {@code List} operations.
+         * <p>
+         * If the specified firstNode is {@code null}, an empty {@code SubList},
+         * positioned right before the specified lastNode, is returned. If the specified
+         * lastNode is {@code null}, an empty {@code SubList}, positioned right after
+         * the specified firstNode, is returned. if both the specified firstNode and
+         * lastNode are {@code null}, an empty {@code SubList}, positioned at the end of
+         * this sublist, is returned.
+         * <p>
+         * This method verifies the specified lastNode comes after the specified
+         * FirstNode in this {@code SubList}. Also, the size of the returned
+         * {@code SubList} is known.
+         * <p>
+         * This method eliminates the need for explicit range operations (of the sort
+         * that commonly exist for arrays). Any operation that expects a list can be
+         * used as a range operation by passing a {@code SubList} view instead of a
+         * whole list. For example, the following idiom removes a range of elements from
+         * a list:
+         * <pre>
+         * {@code
+         *      list.subList(firstNode, lastNode).clear();
+         * }
+         * </pre>
+         * 
+         * Similar idioms may be constructed for {@code indexOf} and
+         * {@code lastIndexOf}, and all of the algorithms in the {@code Collections}
+         * class can be applied to a {@code SubList}.
+         * <p>
+         * The semantics of the {@code SubList} returned by this method become undefined
+         * if the {@code NodableLinkedList} is <i>structurally modified</i> in any way
+         * other than via the returned {@code SubList} or any of its sublists.
+         * (Structural modifications are those that change the size of this sublist, or
+         * otherwise perturb it in such a fashion that iterations in progress may yield
+         * incorrect results.) A {@code ConcurrentModificationException} is thrown for
+         * any operation on a {@code SubList} that is structurally unsound.
+         *
+         * @param firstNode low endpoint (inclusive) of the {@code SubList}
+         * @param lastNode  high endpoint (inclusive) of the {@code SubList}
+         * @return a view of the specified range within this sublist
+         * @throws IllegalArgumentException if any specified node is not linked to this
+         *                                  sublist or if the lastNode comes before the
+         *                                  firstNode in this sublist.
+         */
+        public LinkedSubNodes subList(Node<E> firstNode, Node<E> lastNode) {
+            return newSubList(firstNode, lastNode).linkedSubNodes;
+        }
+        
+        private SubList<E> newSubList(Node<E> firstNode, Node<E> lastNode) {
+            checkForModificationException();
+            if (firstNode == null && lastNode == null) {
+                // both firstNode and lastNode are null
+                final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
+                return new SubList<E>(nodableLinkedList(),
+                        iGetNodeBeforeOrHeadSentinel(tailSentinel), tailSentinel, sublist, 0L);
+            } else if (firstNode == null) {
+                // only the lastNode is specified
+                if (!contains(lastNode)) {
+                    throw new IllegalArgumentException("Specified last node is not linked to this sublist");
+                }
+                return new SubList<E>(nodableLinkedList(),
+                        iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), sublist, 0L);
+            } else if (lastNode == null) {
+                // only the firstNode is specified
+                if (!contains(firstNode)) {
+                    throw new IllegalArgumentException("Specified first node is not linked to this sublist");
+                }
+                return new SubList<E>(nodableLinkedList(),
+                        firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), sublist, 0L);
+            }
+            // both firstNode and LastNode are specified
+            if (!linkedNodes().contains(firstNode)) {
+                throw new IllegalArgumentException("Specified first node is not linked to this list");
+            }
+            if (!linkedNodes().contains(lastNode)) {
+                throw new IllegalArgumentException("Specified last node is not linked to this list");
+            }
+            LinkNode<E> node;
+            long subListSize = 0;
+            boolean foundFirstNode = false;
+            boolean foundLastNode = false;
+            final LinkNode<E> firstLinkNode = firstNode.linkNode();
+            final LinkNode<E> lastLinkNode = lastNode.linkNode();
+            if (sizeIsKnown()) {
+                long remaining = longSize();
+                for (node = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel()); remaining > 0;
+                        node = iGetNodeAfterFromListWithKnownTailSentinel(node), remaining--) {    
+                    if (node == firstLinkNode) foundFirstNode = true;
+                    if (foundFirstNode) subListSize++;
+                    if (node == lastLinkNode) {
+                        foundLastNode = true;
+                        break;
+                    }
+                }
+                if (remaining == 0) this.setTailSentinel(node);
+                if (remaining == 1) this.setTailSentinel(iGetNodeAfterFromListWithKnownTailSentinel(node));
+            } else {
+                long listSize = 0;
+                for (node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel()); node != iGetTailSentinel();
+                        node = iGetNodeAfterOrTailSentinel(node)) {
+                    listSize++;
+                    if (node == firstLinkNode) foundFirstNode = true;
+                    if (foundFirstNode) subListSize++;
+                    if (node == lastLinkNode) {
+                        foundLastNode = true;
+                        break;
+                    }
+                }
+                if (node == iGetTailSentinel()) this.setSize(listSize);
+                else if (iGetNodeAfterOrTailSentinel(node) == iGetTailSentinel()) this.setSize(listSize + 1L);
+            }
+            if (foundLastNode && !foundFirstNode) {
+                throw new IllegalArgumentException(
+                        "specified last node comes before the specified first node in this sublist, or the specified first node is not part of this sublist");
+            }
+            if (!foundFirstNode) {
+                throw new IllegalArgumentException("specified first node is not part of this sublist");
+            }
+            if (!foundLastNode) {
+                throw new IllegalArgumentException("specified last node is not part of this sublist");
+            }
+            return new SubList<E>(nodableLinkedList(),
+                    iGetNodeBeforeOrHeadSentinel(firstLinkNode),
+                    iGetNodeAfterOrTailSentinel(lastLinkNode), sublist, subListSize);
+        }
+
+        /**
+         * Sorts this sublist according to the order induced by the specified
+         * comparator.
+         * <p>
+         * The specified comparator compares the {@code Nodes} not the elements of the
+         * {@code Nodes}. for example:
+         * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
+         * {@code sort((node1, node2) -> { return
+         * node1.element().compareTo(node2.element()); });}.
+         *
+         * If the specified comparator is {@code null} then all elements in this sublist
+         * must implement the {@code Comparable} interface and the elements' natural
+         * ordering should be used.
+         * <p>
+         * <strong>Implementation Specification:</strong> This implementation obtains an
+         * array containing all nodes in this sublist, sorts the array using
+         * {@code Arrays.sort(T[] a, Comparator<? super T> c)}, and then effectively
+         * clears the sublist and puts the sorted nodes from the array back into this
+         * sublist in order. If this sublist's {@code size > Integer.MAX_VALUE-8}, a
+         * {@link #mergeSort} is performed.
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * adaptive, iterative mergesort that requires far fewer than n lg(n)
+         * comparisons when the input array is partially sorted, while offering the
+         * performance of a traditional mergesort when the input array is randomly
+         * ordered. If the input array is nearly sorted, the implementation requires
+         * approximately n comparisons. Temporary storage requirements vary from a small
+         * constant for nearly sorted input arrays to n/2 object references for randomly
+         * ordered input arrays.
+         * <p>
+         * The implementation takes equal advantage of ascending and descending order in
+         * its input array, and can take advantage of ascending and descending order in
+         * different parts of the same input array. It is well-suited to merging two or
+         * more sorted arrays: simply concatenate the arrays and sort the resulting
+         * array.
+         * <p>
+         * The implementation was adapted from Tim Peters's list sort for Python
+         * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+         * TimSort</a>). It uses techniques from Peter McIlroy's "Optimistic Sorting and
+         * Information Theoretic Complexity", in Proceedings of the Fourth Annual
+         * ACM-SIAM Symposium on Discrete Algorithms, pp 467-474, January 1993.
+         *
+         * @see Arrays#sort
+         * @param comparator the {@code Comparator} used to compare {@code Nodes}. A
+         *                   {@code null} value indicates that the elements' natural
+         *                   ordering should be used
+         * @throws ClassCastException if the sublist contains elements that are not
+         *                            <i>mutually comparable</i> using the specified
+         *                            comparator
+         */
+        @Override
+        public void sort(Comparator<? super Node<E>> comparator) {
+            checkForModificationException();
+            if (longSize() < 2L) return;
+            if (longSize() > Integer.MAX_VALUE-8) { mergeSort(comparator); return; }
+            @SuppressWarnings("unchecked")
+            final LinkNode<E>[] sortedNodes = new LinkNode[size()]; 
+            final ListIterator<Node<E>> listIterator = linkNodeListIterator(0);
+            for (int index = 0; listIterator.hasNext(); sortedNodes[index++] = (LinkNode<E>)listIterator.next());
+            Arrays.sort(sortedNodes, comparator);
+            LinkNode<E> node = iGetFirstNode();
+            for (LinkNode<E> sortedNode: sortedNodes) {
+                LinkNode.swapNodes(node, sortedNode);
+                node = iGetNodeAfter(sortedNode); // node = node.next() (effectively)
+                                                 // sortedNode has replaced node's position in the list
+            }
+            updateParentModCount();
+        }
+        
+        /**
+         * Sorts this sublist according to the order induced by the specified
+         * comparator.
+         * <p>
+         * The specified comparator compares the {@code Nodes} not the elements of the
+         * {@code Nodes}. for example:
+         * {@code sort((node1, node2) -> { return node1.compareTo(node2); });}, or
+         * {@code sort((node1, node2) -> { return
+         * node1.element().compareTo(node2.element()); });}.
+         *
+         * If the specified comparator is {@code null} then all elements in this sublist
+         * must implement the {@code Comparable} interface and the elements' natural
+         * ordering should be used.
+         * <p>
+         * <strong>Implementation Note:</strong> This implementation is a stable,
+         * iterative mergesort that requires n lg(n) comparisons. this implementation
+         * avoids the N auxiliary storage cost normally associated with a mergesort.
+         *
+         * The implementation was adapted from Simon Tatham's Mergesort for Linked Lists
+         * (<a href=
+         * "https://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html">
+         * SimonTathamMergesort</a>).
+         *
+         * @param comparator the {@code Comparator} used to compare {@code Nodes}. A
+         *                   {@code null} value indicates that the elements' natural
+         *                   ordering should be used
+         * @throws ClassCastException if the sublist contains elements that are not
+         *                            <i>mutually comparable</i> using the specified
+         *                            comparator
+         */
+        public void mergeSort(Comparator<? super Node<E>> comparator) {
+            checkForModificationException();
+            NodableLinkedList.mergeSort(this, comparator);
+            updateParentModCount();
+        }
+
+        /**
+         * Returns an array containing all of the {@code Nodes} (specifically
+         * SubListNodes) in this sublist in proper sequence (from first to last node).
+         * The {@code Nodes} in the array are still linked to this list.
+         * <p>
+         * The returned array will be "safe" in that no references to it are maintained
+         * by this list. (In other words, this method allocates a new array). The caller
+         * is thus free to modify the returned array.
+         * <p>
+         * This method acts as bridge between array-based and collection-based APIs.
+         *
+         * @return an array containing all of the {@code Nodes} (specifically
+         *         SubListNodes) in this list in proper sequence
+         * @throws IllegalStateException if the sublist is too large to fit in an array
+         */
+        @Override
+        public Object[] toArray() {
+            if (longSize() > Integer.MAX_VALUE) {
+                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+            }
+            final Object[] nodes = new Object[(int) longSize()];
+            int index = 0;
+            for (Node<E> node: this) nodes[index++] = node;
+            return nodes;
+        }
+
+        /**
+         * Returns an array containing all of the {@code Nodes} (specifically
+         * SubListNodes) in this sublist in proper sequence (from first to last node);
+         * the runtime type of the returned array is that of the specified array. If the
+         * list fits in the specified array, it is returned therein. Otherwise, a new
+         * array is allocated with the runtime type of the specified array and the size
+         * of this list.
+         * <p>
+         * If the list fits in the specified array with room to spare (i.e., the array
+         * has more elements than the list), the element in the array immediately
+         * following the end of the list is set to {@code null}. (This is useful in
+         * determining the length of the sublist since {@code Nodes} are never null.)
+         * <p>
+         * Like the {@link #toArray()} method, this method acts as bridge between
+         * array-based and collection-based APIs. Further, this method allows precise
+         * control over the runtime type of the output array, and may, under certain
+         * circumstances, be used to save allocation costs.
+         *
+         * Note that {@code toArray(new Object[0])} is identical in function to
+         * {@code toArray()}.
+         *
+         * @param array the array into which the {@code Nodes} of the list are to be
+         *              stored, if it is big enough; otherwise, a new array of the same
+         *              runtime type is allocated for this purpose.
+         * @return an array containing the {@code Nodes} (specifically SubListNodes) of
+         *         the sublist
+         * @throws ArrayStoreException   if the runtime type of the specified array is
+         *                               not a supertype of the runtime type of every
+         *                               node in this sublist
+         * @throws IllegalStateException if the sublist is too large to fit in an array
+         * @throws NullPointerException  if the specified array is {@code null}
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] array) {
+            if (longSize() > Integer.MAX_VALUE) {
+                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
+            }
+            if (array.length < longSize()) {
+                array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int) longSize());
+            }
+            int index = 0;
+            Object[] nodes = array;
+            for (Node<E> node: this) nodes[index++] = node;
+            if (array.length > longSize()) array[(int) longSize()] = null;
+            return array;
+        }
+        
+        /**
+         * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+         * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
+         * specified position in this sublist. Obeys the general contract of
+         * {@code List.listIterator(int)}.
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator's} own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         * <p>
+         * Instead of using a {@code ListIterator}, consider iterating over the sublist
+         * via {@code SubListNodes}. For example:
+         * <pre>
+         * {@code
+         *     // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
+         *     Node<Integer> subListNode = sublist.get(index);
+         *     //                       or sublist.getFirstNode();
+         *     while (subListNode != null) {
+         *         System.out.println(subListNode.element());
+         *         subListNode = subListNode.next();
+         *     }
+         * }
+         * </pre>
+         *
+         * @param index index of the first {@code Node} to be returned from the
+         *              {@code ListIterator} (by a call to {@code next})
+         * @return a ListIterator of the {@code Nodes} (specifically
+         *         {@code SubListNodes}) in this sublist (in proper sequence), starting
+         *         at the specified position in this sublist
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @see List#listIterator(int)
+         */
+        @Override
+        public ListIterator<Node<E>> listIterator(int index) {
+            checkForModificationException();
+            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
+        }
+        
+        /**
+         * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+         * {@code SubListNodes}) in this sublist (in proper sequence), starting at the
+         * specified node in this sublist. if the specified node is {@code null}, the
+         * {@code ListIterator} will be positioned right after the last {@code Node} in
+         * this sublist.
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator's} own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         * <p>
+         * Instead of using a {@code ListIterator}, consider iterating over the sublist
+         * via {@code SubListNodes}. For example:
+         * <pre>
+         * {@code
+         *     // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
+         *     Node<Integer> subListNode =
+         *         (node == null) ?  null : node.subListNode(sublist.nodableLinkedListSubList());
+         *     while (subListNode != null) {
+         *         System.out.println(subListNode.element());
+         *         subListNode = subListNode.next();
+         *     }
+         * }
+         * </pre>
+         *
+         * @param node first {@code Node} to be returned from the {@code ListIterator}
+         *             (by a call to {@code next})
+         * @return a ListIterator of the {@code Nodes} (specifically
+         *         {@code SubListNodes}) in this sublist (in proper sequence), starting
+         *         at the specified node in the sublist
+         * @throws IllegalArgumentException if node is not linked to this sublist
+         */
+        public ListIterator<Node<E>> listIterator(Node<E> node) {
+            checkForModificationException();
+            if (node == null) {
+                return new SubListNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
+            }
+            final long index = getIndex(node);
+            if (index < 0) {
+                throw new IllegalArgumentException("specified node is not part of this sublist");
+            }
+            return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
+        }
+        
+        /**
+         * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+         * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
+         * specified position in this sublist. Obeys the general contract of
+         * {@code List.listIterator(int)}.
+         * <p>
+         * The returned {@code ListIterator} should perform better and have a smaller
+         * memory footprint than the standard {@code ListIterator} returned by
+         * {@link #listIterator(int)}. The standard {@code ListIterator} returns newly
+         * created {@code SubListNodes}, where as, the {@code ListIterator} returned by
+         * this method returns the existing {@code LinkNodes} which comprise this
+         * sublist. As a reminder, a {@code LinkNode} traverses the base
+         * {@code LinkedNodes} and not the sublist.
+         * <p>
+         * This example builds an ArrayList of {@code LinkNodes} which comprise this
+         * sublist:
+         * <pre>
+         * {@code
+         *     // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
+         *     final int estimatedSize = 0;
+         *     final ArrayList<LinkNode<Integer>> arrayList = new ArrayList<>(estimatedSize);
+         *     final ListIterator<Node<Integer>> listIterator = sublist.linkNodeListIterator(0);
+         *     while (listIterator.hasNext()) arrayList.add((LinkNode<Integer>) listIterator.next());
+         *     for (LinkNode<Integer> linkNode : arrayList) System.out.println(linkNode.element());
+         * }
+         * </pre>
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator's} own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         *
+         * @param index index of the first {@code Node} to be returned from the
+         *              {@code ListIterator} (by a call to {@code next})
+         * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
+         *         in this sublist (in proper sequence), starting at the specified
+         *         position in this sublist
+         * @throws IndexOutOfBoundsException if the index is out of range
+         *                                   {@code (index < 0 || index > longSize())}
+         * @see List#listIterator(int)
+         */
+        public ListIterator<Node<E>> linkNodeListIterator(int index) {
+            checkForModificationException();
+            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
+        }
+        
+        /**
+         * Returns a {@code ListIterator} of the {@code Nodes} (specifically
+         * {@code LinkNodes}) in this sublist (in proper sequence), starting at the
+         * specified node in this sublist. if the specified node is {@code null}, the
+         * {@code ListIterator} will be positioned right after the last {@code Node} in
+         * this sublist.
+         * <p>
+         * The returned {@code ListIterator} should perform better and have a smaller
+         * memory footprint than the standard {@code ListIterator} returned by
+         * {@link #listIterator(Node)}. The standard {@code ListIterator} returns newly
+         * created {@code SubListNodes}, where as, the {@code ListIterator} returned by
+         * this method returns the existing {@code LinkNodes} which comprise this
+         * sublist. As a reminder, a {@code LinkNode} traverses the base
+         * {@code LinkedNodes} and not the sublist.
+         * <p>
+         * This example builds an ArrayList of {@code LinkNodes} which comprise this
+         * sublist:
+         * <pre>
+         * {@code
+         *     // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
+         *     final int estimatedSize = 0;
+         *     final ArrayList<LinkNode<Integer>> arrayList = new ArrayList<>(estimatedSize);
+         *     final ListIterator<Node<Integer>> listIterator = sublist.linkNodeListIterator(sublist.getFirstNode());
+         *     while (listIterator.hasNext()) arrayList.add((LinkNode<Integer>) listIterator.next());
+         *     for (LinkNode<Integer> linkNode : arrayList) System.out.println(linkNode.element());
+         * }
+         * </pre>
+         * <p>
+         * <strong>Implementation Note:</strong> The {@code ListIterator} returned by
+         * this method behaves differently when the sublist's
+         * {@code size > Integer.MAX_VALUE}. Methods {@code nextIndex} and
+         * {@code previousIndex} return -1 if the {@code index > Integer_MAX_VALUE}.
+         * <p>
+         * The {@code ListIterator} is <i>fail-fast</i>: if the
+         * {@code NodableLinkedList} is structurally modified at any time after the
+         * Iterator is created, in any way except through the {@code ListIterator's} own
+         * {@code remove} or {@code add} methods, the {@code ListIterator} will throw a
+         * {@code ConcurrentModificationException}. Thus, in the face of concurrent
+         * modification, the iterator fails quickly and cleanly, rather than risking
+         * arbitrary, non-deterministic behavior at an undetermined time in the future.
+         *
+         * @param node first {@code Node} to be returned from the {@code ListIterator}
+         *             (by a call to {@code next})
+         * @return a ListIterator of the {@code Nodes} (specifically {@code LinkNodes})
+         *         in this sublist (in proper sequence), starting at the specified node
+         *         in the sublist
+         * @throws IllegalArgumentException if node is not linked to this sublist
+         */
+        public ListIterator<Node<E>> linkNodeListIterator(Node<E> node) {
+            checkForModificationException();
+            if (node == null) {
+                return new LinkNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
+            }
+            final long index = getIndex(node);
+            if (index < 0) {
+                throw new IllegalArgumentException("specified node is not part of this sublist");
+            }
+            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
+        }            
+        
+    } // LinkedSubNodes
+    
+    private class ReversedLinkedSubNodes extends LinkedSubNodes {
+        
+        private LinkedSubNodes linkedSubNodes;
+        
+        private ReversedLinkedSubNodes(SubList<E> sublist, LinkedSubNodes linkedSubNodes) {
+            super(sublist);
+            this.linkedSubNodes = linkedSubNodes;
+            super.updateModCount();
+        }
+        
+        @Override
+        int modCount() {
+            return linkedSubNodes.modCount();
+        }
+        
+        @Override
+        void updateModCount() {
+            linkedSubNodes.updateModCount();
+            super.updateModCount();
+        }
+        
+        // protected int modCount inherited from class java.util.AbstractList
+        // modCount represents the expected modification count
+        private void syncModCountWithBase() {
+            nodableLinkedListSubList().setModCount(this.modCount = modCount()); // try to keep all modCounts in sync
+        }
+        
+        @Override
+        LinkNode<E> iGetHeadSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetTailSentinel();
+        }
+        
+        @Override
+        LinkNode<E> iGetTailSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetHeadSentinel();
+        }
+        
+        @Override            
+        void setHeadSentinel(LinkNode<E> headSentinel) {
+            syncModCountWithBase();
+            linkedSubNodes.setTailSentinel(headSentinel);
+        }
+        
+        @Override  
+        void setTailSentinel(LinkNode<E> tailSentinel) {
+            syncModCountWithBase();
+            linkedSubNodes.setHeadSentinel(tailSentinel);
+        }
+        
+        @Override
+        LinkedSubNodes parent () {
+            syncModCountWithBase();
+            return linkedSubNodes.parent();
+        }
+        
+        @Override
+        long iGetSize() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetSize();
+        }
+        
+        @Override
+        void setSize(long size) {
+            syncModCountWithBase();
+            linkedSubNodes.setSize(size);
+        }
+        
+        @Override
+        LinkNode<E> iGetMyLinkedNodesHeadSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetMyLinkedNodesTailSentinel();
+        }
+        
+        @Override
+        LinkNode<E> iGetMyLinkedNodesTailSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetMyLinkedNodesHeadSentinel();
+        }
+        
+        @Override
+        LinkNode<E> tailSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetHeadSentinel();
+        }
+        
+        @Override
+        LinkNode<E> getConfirmedTailSentinel() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetHeadSentinel();
+        }
+        
+        @Override
+        void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
+            linkedSubNodes.iAddNodeBefore(node, afterThisNode);
+            syncModCountWithBase();
+        }
+
+        @Override
+        void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
+            linkedSubNodes.iAddNodeAfter(node, beforeThisNode);
+            syncModCountWithBase();
+        }
+
+        @Override
+        void iRemoveNode(LinkNode<E> node) {
+            linkedSubNodes.iRemoveNode(node);
+            syncModCountWithBase();
+        }
+
+        @Override
+        void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
+            linkedSubNodes.iReplaceNode(node, replacementNode);
+            syncModCountWithBase();
+        }
+
+        @Override
+        boolean iHasNodeAfter(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iHasNodeBefore(node);           
+        }
+
+        @Override
+        boolean iHasNodeBefore(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iHasNodeAfter(node);           
+        }
+        
+        @Override
+        LinkNode<E> iGetFirstNode() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetLastNode();
+        }
+        
+        @Override
+        LinkNode<E> iGetLastNode() {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetFirstNode();
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetNodeBefore(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetNodeBeforeOrHeadSentinel(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetNodeBeforeOrHeadSentinel(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetNodeAfter(node);
+        }
+        
+        @Override
+        LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
+            syncModCountWithBase();
+            return linkedSubNodes.iGetNodeAfterOrTailSentinel(node);
+        }
+        
+        @Override
+        public LinkNode<E> forwardLinkNode(Node<E> node) {
+            return linkedSubNodes.forwardLinkNode(node).reversed();
+        }
+        
+        @Override
+        public boolean isReversed() {
+            return !linkedSubNodes.isReversed();
+        }
+        
+        @Override
+        public LinkedSubNodes reversed() {
+            syncModCountWithBase();
+            return this.linkedSubNodes;
+        }
+        
+    } // ReversedLinkedSubNodes
 
     /*
      * ListIterator index type.
@@ -6255,7 +6296,7 @@ public class NodableLinkedList<E>
     enum IndexType { ABSOLUTE, RELATIVE }
 
     /*
-     * ListIterator that all other ListIterators utilize.
+     * The ListIterator that all other ListIterators utilize.
      */    
     private class NodeListIterator implements ListIterator<Node<E>> {
         
@@ -6636,9 +6677,9 @@ public class NodableLinkedList<E>
     
     private class SubListNodeListIterator extends NodeListIterator {
         
-        private final NodableLinkedList<E>.SubList sublist;
+        private final SubList<E> sublist;
         
-        private SubListNodeListIterator(NodableLinkedList<E>.SubList.LinkedSubNodes list,
+        private SubListNodeListIterator(NodableLinkedList<E>.LinkedSubNodes list,
                 long index, IndexType indexType, LinkNode<E> node) {
             super(list, index, indexType, node);
             this.sublist = list.nodableLinkedListSubList();
@@ -6675,7 +6716,7 @@ public class NodableLinkedList<E>
 
         private void bind() {
             this.remainingSize = list.iGetSize();
-            this.expectedModCount = modCount();
+            this.expectedModCount = NodableLinkedList.this.modCount();
         }
         
         private int batchSize() {
@@ -6683,7 +6724,7 @@ public class NodableLinkedList<E>
         }
         
         private void checkForModificationException() {
-            if (modCount() != expectedModCount) {
+            if (this.expectedModCount != NodableLinkedList.this.modCount()) {
                 throw new ConcurrentModificationException();
             }
         }
@@ -6808,8 +6849,8 @@ public class NodableLinkedList<E>
     } // NodableLinkedListSpliterator    
 
     /**
-     * Sublist node of a {@link NodableLinkedList.SubList}. A {@code SubListNode}
-     * represents a {@code NodableLinkedList.LinkNode} that is associated with a
+     * Node of a {@link NodableLinkedList.SubList}. A {@code SubListNode}
+     * represents a {@link NodableLinkedList.LinkNode} that is associated with a
      * specific {@code SubList}. Any operation performed on a {@code SubListNode} is
      * performed on its associated {@code SubList}. A {@code SubListNode} can be
      * removed from its current {@code SubList} and added to a different
@@ -6820,7 +6861,7 @@ public class NodableLinkedList<E>
      * time because it may be necessary to verify, in linear time, that the
      * {@code SubListNode} is still a node of its associated {@code SubList}. If the
      * {@code NodableLinkedList} which contains the {@code SubListNode}, is
-     * structurally modified in anyway except via the {@code SubListNode}, the
+     * structurally modified in any way except via the {@code SubListNode}, the
      * {@code SubListNode} is invalidated and it will be necessary to verify that
      * the {@code SubListNode} is still contained by its associated {@code SubList}
      * the next time the {@code SubListNode} is used.
@@ -6841,7 +6882,7 @@ public class NodableLinkedList<E>
     public static class SubListNode<E> implements Node<E>, Comparable<Node<E>> {
         
         private final LinkNode<E> linkNode; // never a ReverseLinkNode
-        private NodableLinkedList<E>.SubList subList;
+        private SubList<E> subList;
         
         private int expectedModCount;
         
@@ -6850,13 +6891,13 @@ public class NodableLinkedList<E>
             this.subList = null;
         }
         
-        private SubListNode(LinkNode<E> linkNode, NodableLinkedList<E>.SubList subList) {
+        private SubListNode(LinkNode<E> linkNode, SubList<E> subList) {
             this.linkNode = (linkNode.isReversed()) ? linkNode.reversed() : linkNode;
             this.subList = subList;
             updateExpectedModCount();
         }
         
-        void setSubList(NodableLinkedList<E>.SubList subList) {
+        void setSubList(SubList<E> subList) {
             this.subList = subList;
         }
         
@@ -7009,7 +7050,7 @@ public class NodableLinkedList<E>
          *         belongs to
          */
         @Override
-        public NodableLinkedList<E>.SubList subList() {
+        public SubList<E> subList() {
             return this.subList;
         }
 
@@ -7316,7 +7357,7 @@ public class NodableLinkedList<E>
             checkIfStillNodeOfSubList();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
+                final SubList<E> thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
                 LinkNode.swapNodes(this.linkNode(), subListNode.linkNode());
@@ -7358,7 +7399,7 @@ public class NodableLinkedList<E>
          *                                  specified subList
          */
         @Override
-        public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
+        public SubListNode<E> subListNode(SubList<E> subList) {
             if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
             subList.checkForModificationException();
             if (this.isLinked() && !subList.linkedSubNodes().contains(this.linkNode())) {
@@ -7425,12 +7466,12 @@ public class NodableLinkedList<E>
        }
        
        @Override
-       public NodableLinkedList<E>.SubList subList() {
+       public SubList<E> subList() {
            return subListNode.subList();
        }
        
        @Override
-       void setSubList(NodableLinkedList<E>.SubList subList) {
+       void setSubList(SubList<E> subList) {
            subListNode.setSubList(subList);
        }
        
@@ -7505,13 +7546,13 @@ public class NodableLinkedList<E>
    } // ReverseSubListNode    
 
    /**
-    * Link node of a {@link NodableLinkedList.LinkedNodes} list. Contains
-    * references to the previous and next {@code LinkNodes} in a doubly-linked
-    * list, and contains an element which can be {@code null}. Does not belong to
-    * any particular {@link NodableLinkedList} until the {@code LinkNode} is
-    * inserted/added. Once inserted, the {@code LinkNode} remains linked to a
-    * {@code NodableLinkedList} until removed. A {@code LinkNode} can belong to
-    * different lists, just not at the same time.
+    * Node of a {@link NodableLinkedList}. Contains references to the previous and
+    * next {@code LinkNodes} in a doubly-linked list, and contains an element which
+    * can be {@code null}. Does not belong to any particular
+    * {@link NodableLinkedList} until the {@code LinkNode} is inserted/added. Once
+    * inserted, the {@code LinkNode} remains linked to a {@code NodableLinkedList}
+    * until removed. A {@code LinkNode} can belong to different lists, just not at
+    * the same time.
     * <P>
     * A {@code LinkNode} can only be used to traverse the base (initially created)
     * {@code NodableLinkedList} in a forward direction (from the list's first node
@@ -7618,7 +7659,7 @@ public class NodableLinkedList<E>
          * @return {@code null}
          */
         @Override
-        public NodableLinkedList<E>.SubList subList() {
+        public SubList<E> subList() {
             return null;
         }        
 
@@ -8009,7 +8050,7 @@ public class NodableLinkedList<E>
             }
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                final NodableLinkedList<E>.SubList thatSubList = subListNode.subList();
+                final SubList<E> thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
                 swapNodes(this, node.linkNode());
@@ -8086,7 +8127,7 @@ public class NodableLinkedList<E>
          *                                  the specified subList
          */
         @Override
-        public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList) {
+        public SubListNode<E> subListNode(SubList<E> subList) {
             if (subList == null) throw new IllegalArgumentException("Specified SubList is null");
             subList.checkForModificationException();
             if (this.isLinked() && !subList.linkedSubNodes().contains(this)) {
@@ -8275,7 +8316,7 @@ public class NodableLinkedList<E>
     } // ReverseLinkNode
 
     /**
-     * Node of a {@link NodableLinkedList}.
+     * Node of a {@link NodableLinkedList} or a {@link NodableLinkedList.SubList}.
      * <p>
      * There are two types of {@code Nodes}: One is a {@link LinkNode} which
      * contains an element and references to the previous and next nodes in a
@@ -8565,7 +8606,7 @@ public class NodableLinkedList<E>
          * 
          * @return the {@code NodableLinkedList.SubList} this {@code Node} belongs to
          */
-        public NodableLinkedList<E>.SubList subList();       
+        public SubList<E> subList();       
 
         /**
          * Returns a {@code SubListNode}, backed by this {@code Node's}
@@ -8583,7 +8624,7 @@ public class NodableLinkedList<E>
          * @throws IllegalStateException    if this {@code Node} is not a node of the
          *                                  specified subList
          */
-        public SubListNode<E> subListNode(NodableLinkedList<E>.SubList subList);
+        public SubListNode<E> subListNode(SubList<E> subList);
         
         /**
          * Compares this {@code Node} with the specified object ({@code Node}) for
