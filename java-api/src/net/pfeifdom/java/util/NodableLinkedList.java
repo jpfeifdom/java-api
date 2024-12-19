@@ -134,12 +134,12 @@ import java.util.function.Function;
  * static void nodableLinkedListMergeSort(NodableLinkedList<Integer> list) {
  *       
  *     NodableLinkedList.Node<Integer> p, q, e, tail;
- *     int insize, nmerges, psize, qsize;
+ *     long subListSize, nMerges, pSize, qSize;
  *     
  *     if (list == null) return; // no list to sort
  *      
- *     insize = 1; // initial size of the p and q lists;
- *                 // after each pass through the list, insize is doubled
+ *     subListSize = 1; // initial size of the p and q lists;
+ *                      // after each pass through the list, subListSize is doubled
  *      
  *     // make as many passes through the list as necessary until the list is sorted
  *     while (true) {
@@ -148,48 +148,48 @@ import java.util.function.Function;
  *                      // the merged nodes are placed at the front of the list, and
  *                      // tail is the last node of the merged (sorted) nodes
  *          
- *         nmerges = 0; // initialize the number of merges performed in this pass
+ *         nMerges = 0; // initialize the number of merges performed in this pass
  *             
- *         // merge successive sublists (p and q lists) of the list, of size 'insize',
+ *         // merge successive sublists (p and q lists) of the list, of size 'subListSize',
  *         // until the entire list has been processed
  *         p = list.getFirstNode(); // start the p list at the beginning of the list
  *         while (p != null) {
  *             // p list is not empty; there's more nodes to merge
  *           
- *             nmerges++; // count the number of merges performed in this pass
+ *             nMerges++; // count the number of merges performed in this pass
  *              
  *             // find the start of the q list
- *             // which is 'insize' nodes from the start of the p list
+ *             // which is 'subListSize' nodes from the start of the p list
  *             q = p;
- *             psize = 0;
- *             for (int i = 0; i < insize; i++) {
- *                 psize++; // determine the exact size of the p list
+ *             pSize = 0;
+ *             for (long i = 0; i < subListSize; i++) {
+ *                 pSize++; // determine the exact size of the p list
  *                 q = q.next(); // traverse the list
  *                 if (q == null) break; // quit if the end of the list has been reached
  *             }
- *             qsize = insize; // assume the q list size is the maximum possible size
+ *             qSize = subListSize; // assume the q list size is the maximum possible size
  *              
  *             // we have two lists where p is the first node of the first list (p list),
  *             // and q is the first node (or null if the list is empty) of the second
  *             // list (q list); we also know the exact size of the p list
  *              
  *             // merge the p and q lists
- *             while (psize > 0 || (qsize > 0 && q != null)) {
+ *             while (pSize > 0 || (qSize > 0 && q != null)) {
  *              
  *                 // decide where the next element (e) to merge comes from
  *                 // (the p list or the q list)
- *                 if (psize == 0) {
+ *                 if (pSize == 0) {
  *                     // p list is empty; e must come from the q list
- *                     e = q; q = q.next(); qsize--;
- *                 } else if (qsize == 0 || q == null) {
+ *                     e = q; q = q.next(); qSize--;
+ *                 } else if (qSize == 0 || q == null) {
  *                     // q list is empty; e must come from the p list
- *                     e = p; p = p.next(); psize--;
+ *                     e = p; p = p.next(); pSize--;
  *                 } else if (p.compareTo(q) <= 0) {
- *                     // p's element is lower (or same); e must come from the p list
- *                     e = p; p = p.next(); psize--;
+ *                     // p's element is lower (or equal); e must come from the p list
+ *                     e = p; p = p.next(); pSize--;
  *                 } else {
  *                     // q's element is lower; e must come from the q list
- *                     e = q; q = q.next(); qsize--;
+ *                     e = q; q = q.next(); qSize--;
  *                 }
  *                  
  *                 // remove e then add it back to the front of the list
@@ -202,15 +202,18 @@ import java.util.function.Function;
  *                     e.addAfter(tail);
  *                 }
  *                 tail = e; // tail is the last node of the merged (sorted) list
- *             }
+ *                 
+ *             } // loop until all elements in the p and q lists have been merged
  *              
  *             p = q; // the next p list starts where the q list ended
- *         }
+ *             
+ *         } // loop to perform a merge of the next p and q sublists
+ *           // until the entire list has been processed
  *          
- *         if (nmerges <= 1) break; // list is completely sorted if only one merge
+ *         if (nMerges <= 1) break; // list is completely sorted if only one merge
  *                                  // was performed on this pass
  *          
- *         insize *= 2; // make another pass with the p and q lists twice the size
+ *         subListSize *= 2; // make another pass with the p and q lists twice the size
  *     }
  * }
  * }
@@ -235,7 +238,7 @@ import java.util.function.Function;
  *     NodableLinkedList.Node<String> node = list.getFirstNode();
  *     for (NodableLinkedList.Node<String> sortedNode: sortedNodes) {
  *         node.swapWith(sortedNode);
- *         node = sortedNode.next(); // node = node.next() effectively
+ *         node = sortedNode.next(); // effectively node = node.next() since
  *                                   // sortedNode has replaced node's position in the list
  *     }
  * }
@@ -3519,7 +3522,7 @@ public class NodableLinkedList<E>
     } // ReversedLinkedNodes
 
     /**
-     * Sublist of a {@code NodableLinkedList}. Implements all optional {@code List}
+     * Sublist of a {@link NodableLinkedList}. Implements all optional {@code List}
      * interface operations, and permits all elements (including {@code null}). A
      * {@code SubList} represents a range of elements of a
      * {@code NodableLinkedList}. If an element is added to or removed from a
@@ -3532,7 +3535,7 @@ public class NodableLinkedList<E>
      * the inner class {@link NodableLinkedList.LinkedSubNodes}. A {@code SubList}
      * is backed by one and only one {@code LinkedSubNodes} instance. Method
      * {@link #linkedSubNodes()} returns the {@code LinkedSubNodes} object backing
-     * the {@code NodableLinkedList.SubList}.
+     * a {@code NodableLinkedList.SubList}.
      * <p>
      * <strong>Implementation Note:</strong> When a {@code SubList} is created,
      * normally either the last node is unknown (if created via subList(fromIndex,
@@ -4377,15 +4380,16 @@ public class NodableLinkedList<E>
         
     /**
      * Doubly-linked sublist of nodes which back a
-     * {@code NodableLinkedList.SubList}. Implements all optional {@code List}
+     * {@link NodableLinkedList.SubList}. Implements all optional {@code List}
      * interface operations. The elements are of type
-     * {@code NodableLinkedList.LinkSubNode}, and are never {@code null}.
-     * 
-     * A {@code LinkedSubNodes} sublist represents a range of {@code LinkNodes} of a
-     * {@code NodableLinkedList.LinkedNodes} list. If a {@code Node} is added to or
-     * removed from a {@code LinkedSubNodes} sublist, the {@code Node's}
-     * {@code LinkNode} is respectively added to or removed from the backing
-     * {@code LinkedNodes} list.
+     * {@link NodableLinkedList.LinkSubNode}, and are never {@code null}.
+     * <p>
+     * Note, just like a {@code SubList} which represents a range of elements of a
+     * {@link NodableLinkedList}, a {@code LinkedSubNodes} sublist represents a
+     * range of {@code Nodes} of a {@link NodableLinkedList.LinkedNodes} list. If a
+     * {@code Node} is added to or removed from a {@code LinkedSubNodes} sublist,
+     * the {@code Node} is respectively added to or removed from the backing
+     * {@code NodableLinkedList.LinkedNodes} list.
      * <p>
      * The iterators returned by this class's {@code iterator} and
      * {@code listIterator} methods are <i>fail-fast</i>: if the
@@ -4413,25 +4417,25 @@ public class NodableLinkedList<E>
         
         private LinkNode<E> headSentinel;
         private LinkNode<E> tailSentinel;
-        private final SubList<E> sublist; // the SubList associated with this LinkedSubNodes
+        private final SubList<E> subList; // the SubList associated with this LinkedSubNodes
         private final LinkedSubNodes parent; // != null this is a sublist of a sublist
         private long size;
         
         // used by ReversedLinkedSubNodes
-        private LinkedSubNodes(SubList<E> sublist) {
+        private LinkedSubNodes(SubList<E> subList) {
             // assert sublist != null : "sublist is null";
             this.headSentinel = null;
             this.tailSentinel = null;
-            this.sublist = sublist;
+            this.subList = subList;
             this.parent = null;
             this.size = 0L;
         }
         
         private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
-                SubList<E> sublist, SubList<E> parent, long size) {
+                SubList<E> subList, SubList<E> parent, long size) {
             // assert headSentinel != null : "headSentinel is null";
             // assert tailSentinel != null : "tailSentinel is null";
-            // assert sublist != null : "sublist is null";
+            // assert subList != null : "subList is null";
             // assert headSentinel.linkedNodes == linkedNodes :
             //     "headSentinel not linked to this linkedList";
             // assert tailSentinel.linkedNodes == linkedNodes :
@@ -4443,7 +4447,7 @@ public class NodableLinkedList<E>
             //   in the parent list
             this.headSentinel = headSentinel;
             this.tailSentinel = tailSentinel;
-            this.sublist = sublist;
+            this.subList = subList;
             this.parent = (parent == null) ? null : parent.linkedSubNodes();
             this.size = size;
             updateModCount();
@@ -4456,7 +4460,8 @@ public class NodableLinkedList<E>
         }
         
         void updateModCount() {
-            sublist.setModCount(this.modCount = NodableLinkedList.this.modCount()); //keep all modCounts in sync
+            // keep all modCounts in sync
+            subList.setModCount(this.modCount = NodableLinkedList.this.modCount());
         }
         
         private void updateParentModCount() {
@@ -4493,8 +4498,8 @@ public class NodableLinkedList<E>
          * @return the {@code NodableLinkedList.SubList} this {@code LinkedSubNodes}
          *         object is backing
          */
-        public SubList<E> nodableLinkedListSubList() {
-            return sublist;
+        public SubList<E> subList() {
+            return this.subList;
         }
         
         @Override
@@ -4796,7 +4801,7 @@ public class NodableLinkedList<E>
          *                               the sublists's first node in the list
          */
         private long getIndex(Node<?> node) {
-            if (node.isSubListNode() && node.subList() != this.nodableLinkedListSubList()) return -1;
+            if (node.isSubListNode() && node.subList() != this.subList()) return -1;
             return getIndex(node.linkNode());
         }
         private long getIndex(LinkNode<?> node) {
@@ -4920,7 +4925,7 @@ public class NodableLinkedList<E>
             iAddNodeFirst(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.setSubList(this.subList());
                 subListNode.updateExpectedModCount();
             }
         }
@@ -4943,7 +4948,7 @@ public class NodableLinkedList<E>
             iAddNodeLast(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.setSubList(this.subList());
                 subListNode.updateExpectedModCount();
             }
         }
@@ -4957,7 +4962,7 @@ public class NodableLinkedList<E>
          */
         public SubListNode<E> getFirstNode() {
             checkForModificationException();
-            return (this.isEmpty()) ? null : new SubListNode<E>(iGetFirstNode(), this.nodableLinkedListSubList());
+            return (this.isEmpty()) ? null : new SubListNode<E>(iGetFirstNode(), this.subList());
         }
         
         /**
@@ -4969,7 +4974,7 @@ public class NodableLinkedList<E>
          */
         public SubListNode<E> getLastNode() {
             checkForModificationException();
-            return (this.isEmpty()) ? null : new SubListNode<E>(iGetLastNode(), this.nodableLinkedListSubList());
+            return (this.isEmpty()) ? null : new SubListNode<E>(iGetLastNode(), this.subList());
         }
         
         /**
@@ -5079,7 +5084,7 @@ public class NodableLinkedList<E>
                 node = (LinkNode<?>)object;
             } else if (object instanceof SubListNode) {
                 final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                if (sublistnode.subList() != this.subList()) {
                     return -1;
                 }
                 node = ((SubListNode<?>)object).linkNode();
@@ -5118,7 +5123,7 @@ public class NodableLinkedList<E>
                 searchNode = (LinkNode<?>) object;
             } else if (object instanceof SubListNode) {
                 final SubListNode<?> sublistnode = (SubListNode<?>) object;
-                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                if (sublistnode.subList() != this.subList()) {
                     return -1;
                 }
                 searchNode = ((SubListNode<?>) object).linkNode();
@@ -5154,7 +5159,7 @@ public class NodableLinkedList<E>
             if (node == iGetTailSentinel()) {
                 throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
             }
-            return new SubListNode<E>(node, this.nodableLinkedListSubList());
+            return new SubListNode<E>(node, this.subList());
         }
         
         /**
@@ -5184,7 +5189,7 @@ public class NodableLinkedList<E>
             iAddNodeBefore(node.linkNode(), getNode(index));
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.setSubList(this.subList());
                 subListNode.updateExpectedModCount();
             }
         }
@@ -5270,7 +5275,7 @@ public class NodableLinkedList<E>
         //@Override //not until JDK 21
         public LinkedSubNodes reversed() {
             getConfirmedTailSentinel(); // make sure the new reversed sublist's headSentinel is valid
-            return (new ReversedSubList<E>(nodableLinkedListSubList())).linkedSubNodes();
+            return (new ReversedSubList<E>(subList())).linkedSubNodes();
         }
         
         /**
@@ -5298,7 +5303,7 @@ public class NodableLinkedList<E>
             iReplaceNode(originalNode.linkNode(), node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
-                subListNode.setSubList(this.nodableLinkedListSubList());
+                subListNode.setSubList(this.subList());
                 subListNode.updateExpectedModCount();
             }
             return originalNode;
@@ -5335,7 +5340,7 @@ public class NodableLinkedList<E>
                 iAddNodeBefore(node.linkNode(), tailSentinel);
                 if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
+                    subListNode.setSubList(this.subList());
                 }
             }
             for (Node<E> node: collection) {
@@ -5392,7 +5397,7 @@ public class NodableLinkedList<E>
                 iAddNodeBefore(node.linkNode(), targetNode);
                 if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
+                    subListNode.setSubList(this.subList());
                 }
                 changed = true;
             }
@@ -5449,7 +5454,7 @@ public class NodableLinkedList<E>
                 iAddNodeBefore(node.linkNode(), targetListNode);
                 if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>) node;
-                    subListNode.setSubList(this.nodableLinkedListSubList());
+                    subListNode.setSubList(this.subList());
                 }
                 changed = true;
             }
@@ -5481,7 +5486,7 @@ public class NodableLinkedList<E>
                 node = (LinkNode<?>)object;
             } else if (object instanceof SubListNode) {
                 final SubListNode<?> sublistnode = (SubListNode<?>)object;
-                if (sublistnode.subList() != this.nodableLinkedListSubList()) {
+                if (sublistnode.subList() != this.subList()) {
                     return false;
                 }
                 if (sublistnode.isExpectedModCount()) return true;
@@ -5570,7 +5575,7 @@ public class NodableLinkedList<E>
             final LinkNode<E> tailSentinel = (size == 0L)
                                              ? iGetNodeAfterOrTailSentinel(headSentinel)
                                              : null; // tailSentinel is unknown
-            return new SubList<E>(nodableLinkedList(), headSentinel, tailSentinel, sublist, size);
+            return new SubList<E>(nodableLinkedList(), headSentinel, tailSentinel, subList, size);
         }
         
         /**
@@ -5631,21 +5636,21 @@ public class NodableLinkedList<E>
                 // both firstNode and lastNode are null
                 final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
                 return new SubList<E>(nodableLinkedList(),
-                        iGetNodeBeforeOrHeadSentinel(tailSentinel), tailSentinel, sublist, 0L);
+                        iGetNodeBeforeOrHeadSentinel(tailSentinel), tailSentinel, subList, 0L);
             } else if (firstNode == null) {
                 // only the lastNode is specified
                 if (!contains(lastNode)) {
                     throw new IllegalArgumentException("Specified last node is not linked to this sublist");
                 }
                 return new SubList<E>(nodableLinkedList(),
-                        iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), sublist, 0L);
+                        iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), subList, 0L);
             } else if (lastNode == null) {
                 // only the firstNode is specified
                 if (!contains(firstNode)) {
                     throw new IllegalArgumentException("Specified first node is not linked to this sublist");
                 }
                 return new SubList<E>(nodableLinkedList(),
-                        firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), sublist, 0L);
+                        firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), subList, 0L);
             }
             // both firstNode and LastNode are specified
             if (!linkedNodes().contains(firstNode)) {
@@ -5700,7 +5705,7 @@ public class NodableLinkedList<E>
             }
             return new SubList<E>(nodableLinkedList(),
                     iGetNodeBeforeOrHeadSentinel(firstLinkNode),
-                    iGetNodeAfterOrTailSentinel(lastLinkNode), sublist, subListSize);
+                    iGetNodeAfterOrTailSentinel(lastLinkNode), subList, subListSize);
         }
 
         /**
@@ -6125,7 +6130,7 @@ public class NodableLinkedList<E>
         // protected int modCount inherited from class java.util.AbstractList
         // modCount represents the expected modification count
         private void syncModCountWithBase() {
-            nodableLinkedListSubList().setModCount(this.modCount = modCount()); // try to keep all modCounts in sync
+            subList().setModCount(this.modCount = modCount()); // try to keep all modCounts in sync
         }
         
         @Override
@@ -6677,22 +6682,22 @@ public class NodableLinkedList<E>
     
     private class SubListNodeListIterator extends NodeListIterator {
         
-        private final SubList<E> sublist;
+        private final SubList<E> subList;
         
         private SubListNodeListIterator(NodableLinkedList<E>.LinkedSubNodes list,
                 long index, IndexType indexType, LinkNode<E> node) {
             super(list, index, indexType, node);
-            this.sublist = list.nodableLinkedListSubList();
+            this.subList = list.subList();
         }
         
         @Override
         public SubListNode<E> next() {
-            return new SubListNode<E>((LinkNode<E>)super.next(), sublist);
+            return new SubListNode<E>((LinkNode<E>)super.next(), subList);
         }
         
         @Override
         public SubListNode<E> previous() {
-            return new SubListNode<E>((LinkNode<E>)super.previous(), sublist);
+            return new SubListNode<E>((LinkNode<E>)super.previous(), subList);
         }        
         
     } // SubListNodeListIterator    
