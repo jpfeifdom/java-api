@@ -45,7 +45,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.util.AbstractSequentialList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -305,15 +304,15 @@ public class NodableLinkedList<E>
 
     private static final long serialVersionUID = 6932924870547825064L;
 
-    private transient final LinkedNodes linkedNodes;
-    private static final Field linkedNodesField;
-    static {
-        try {
-            linkedNodesField = NodableLinkedList.class.getDeclaredField("linkedNodes");
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError("linkedNodes field missing? "+e.getMessage(), e);
-        }
-    }
+    private transient LinkedNodes linkedNodes;
+//    private static final Field linkedNodesField;
+//    static {
+//        try {
+//            linkedNodesField = NodableLinkedList.class.getDeclaredField("linkedNodes");
+//        } catch (ReflectiveOperationException e) {
+//            throw new AssertionError("linkedNodes field missing? "+e.getMessage(), e);
+//        }
+//    }
 
     /**
      * Constructs an empty list.
@@ -356,13 +355,11 @@ public class NodableLinkedList<E>
         try {
             @SuppressWarnings("unchecked")
             final NodableLinkedList<E> clone = (NodableLinkedList<E>) super.clone();
-            linkedNodesField.setAccessible(true);
-            linkedNodesField.set(clone, clone.new LinkedNodes()); // clone.linkedNodes = clone.new LinkedNodes()
-            linkedNodesField.setAccessible(false);
+            clone.linkedNodes = clone.new LinkedNodes();
             clone.addAll(this);
             return clone;               
-        } catch (CloneNotSupportedException | ReflectiveOperationException e) {
-            throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("Not Cloneable: "+ e.getMessage(), e);
         }
     }    
 
@@ -398,14 +395,8 @@ public class NodableLinkedList<E>
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException
     {
-        stream.defaultReadObject();	
-        try {
-            linkedNodesField.setAccessible(true);
-            linkedNodesField.set(this, new LinkedNodes()); // this.linkedNodes = new LinkedNodes()
-            linkedNodesField.setAccessible(false);
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError("linkedNodesField not initialized? "+e.getMessage(), e);
-        }
+        stream.defaultReadObject();
+        this.linkedNodes = new LinkedNodes();
         long nodeCount = stream.readLong();
         while (nodeCount-- > 0) {
             @SuppressWarnings("unchecked")
@@ -715,7 +706,7 @@ public class NodableLinkedList<E>
         }
         if (index == longSize()) return addAll(collection);
         final long initialSize = longSize();
-        final LinkNode<E> targetNode = linkedNodes().getNode(index);
+        final LinkNode<E> targetNode = linkedNodes().iGetNode(index);
         for (E element: collection) {
             linkedNodes().iAddNodeBefore(node(element), targetNode);
         }
@@ -1149,10 +1140,7 @@ public class NodableLinkedList<E>
         if (index < 0 || index >= longSize()) {
             throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
         }
-        final Node<E> node = linkedNodes().getNode(index);
-        final E originalElement = node.element();
-        node.set(element);
-        return originalElement;
+        return linkedNodes().iGetNode(index).set(element);
     }    
 
     /**
@@ -1265,8 +1253,8 @@ public class NodableLinkedList<E>
                     NodableLinkedList<T>.InternalLinkedList list,
                     Comparator<? super Node<T>> comparator) {
         LinkNode<T> pNode, qNode, sortedNode, sortedLastNode;
-        int inSize, nMerges, pSize, qSize;
-        inSize = 1;
+        int subListSize, nMerges, pSize, qSize;
+        subListSize = 1;
         while (true) {
             sortedLastNode = null;
             nMerges = 0;
@@ -1275,12 +1263,12 @@ public class NodableLinkedList<E>
                 nMerges++;
                 qNode = pNode;
                 pSize = 0;
-                for (int i = 0; i < inSize; i++) {
+                for (int i = 0; i < subListSize; i++) {
                     pSize++;
                     qNode = list.iGetNodeAfter(qNode);
                     if (qNode == null) break;
                 }
-                qSize = inSize;
+                qSize = subListSize;
                 while (pSize > 0 || (qSize > 0 && qNode != null)) {
                     if (pSize == 0) {
                         sortedNode = qNode;
@@ -1313,7 +1301,7 @@ public class NodableLinkedList<E>
                 pNode = qNode;
             }
             if (nMerges <= 1) break;
-            inSize *= 2;
+            subListSize *= 2;
         }
     } // mergeSort
     
@@ -1547,7 +1535,7 @@ public class NodableLinkedList<E>
             throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
         }
         final LinkedNodes linkedNodes = linkedNodes();
-        return new ElementListIterator(linkedNodes, index, IndexType.ABSOLUTE, linkedNodes.getNode(index));
+        return new ElementListIterator(linkedNodes, index, IndexType.ABSOLUTE, linkedNodes.iGetNode(index));
     }
 
     /**
@@ -2045,16 +2033,34 @@ public class NodableLinkedList<E>
             return node.getPrevious();
         }        
 
-        private long getIndex(LinkNode<?> node) {
-            long index = 0L;
-            for (LinkNode<E> cursorNode = iGetFirstNode(); cursorNode != null;
-                    cursorNode = iGetNodeAfter(cursorNode), index++) {
-                if (cursorNode == node) return index;				
+        /**
+         * Returns the index of the specified node in this list, or -1 if this list does
+         * not contain the specified node.
+         * 
+         * @param node {@code Node} to search for
+         * @return the index of the specified node in this list, or -1 if this list does
+         *         not contain the specified node
+         */
+        private long iGetIndex(LinkNode<?> node) {
+            if (this.contains(node)) {
+                long index = 0L;
+                for (LinkNode<E> cursorNode = iGetFirstNode(); cursorNode != null;
+                        cursorNode = iGetNodeAfter(cursorNode), index++) {
+                    if (cursorNode == node) return index;				
+                }
             }
             return -1L;
         }
         
-        private LinkNode<E> getNode(long index) {
+        /**
+         * Returns the node at the specified position in this sublist.
+         * 
+         * Note, this routine returns the tailSentinel if {@code index == longSize()}.
+         *
+         * @param index index of the node to return
+         * @return the node at the specified position in this sublist
+         */
+        private LinkNode<E> iGetNode(long index) {
             //assert index >= 0L && index <= longSize() : "index=" + index + ", size=" + longSize();
             if (index == longSize()) return iGetTailSentinel();
             LinkNode<E> node;
@@ -2247,7 +2253,7 @@ public class NodableLinkedList<E>
             if (!(object instanceof Node)) return -1;
             final Node<?> node = (Node<?>)object;
             if (!this.contains(node)) return -1;
-            final long index = getIndex(node.linkNode());
+            final long index = iGetIndex(node.linkNode());
             return (index > Integer.MAX_VALUE) ? -1 : (int)index;
         }
 
@@ -2337,7 +2343,7 @@ public class NodableLinkedList<E>
             }
             if (index == longSize()) return addAll(collection);
             final long initialSize = longSize();
-            final LinkNode<E> targetNode = getNode(index);
+            final LinkNode<E> targetNode = iGetNode(index);
             for (Node<E> node: collection) {
                 if (node == null || node.isLinked()) {
                     throw new IllegalArgumentException("Node in collection is null or already an element of a list");
@@ -2425,7 +2431,7 @@ public class NodableLinkedList<E>
                 if (node == null || node.isLinked()) {
                     throw new IllegalArgumentException("Node is null or already an element of a list");
                 }
-                iAddNodeBefore(node.linkNode(), getNode(index));
+                iAddNodeBefore(node.linkNode(), iGetNode(index));
             }       
         }        
 
@@ -2485,7 +2491,7 @@ public class NodableLinkedList<E>
             if (index < 0 || index >= longSize()) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
-            return getNode(index);
+            return iGetNode(index);
         }        
 
         /**
@@ -2685,7 +2691,7 @@ public class NodableLinkedList<E>
             if (index < 0 || index >= longSize()) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
-            final LinkNode<E> node = getNode(index);
+            final LinkNode<E> node = iGetNode(index);
             iRemoveNode(node);
             return node;
         }        
@@ -2814,7 +2820,7 @@ public class NodableLinkedList<E>
             if (node == null || node.isLinked()) {
                 throw new IllegalArgumentException("Specified node is null or already an element of a list");            
             }
-            final LinkNode<E> originalNode = getNode(index);
+            final LinkNode<E> originalNode = iGetNode(index);
             iReplaceNode(originalNode, node.linkNode());
             return originalNode;
         }        
@@ -2983,7 +2989,7 @@ public class NodableLinkedList<E>
                 return new SubList<E>(nodableLinkedList(),
                         iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, size);
             }
-            final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : getNode(fromIndex-1);
+            final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : iGetNode(fromIndex-1);
             final LinkNode<E> tailSentinel = (size == 0L)
                                              ? iGetNodeAfterOrTailSentinel(headSentinel)
                                              : null; // tailSentinel is currently unknown
@@ -3205,7 +3211,7 @@ public class NodableLinkedList<E>
             if (index < 0 || index > longSize()) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
-            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
+            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
 
         /**
@@ -3867,10 +3873,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public E set(int index, E element) {
-            final Node<E> node = linkedSubNodes.get(index);
-            final E originalElement = node.element();
-            node.set(element);
-            return originalElement;
+            return linkedSubNodes.get(index).set(element);
         }
         
         /**
@@ -3931,7 +3934,7 @@ public class NodableLinkedList<E>
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
             boolean changed = false;
-            final LinkNode<E> targetNode = linkedSubNodes.getNode(index);
+            final LinkNode<E> targetNode = linkedSubNodes.iGetNode(index);
             for (E element : collection) {
                 linkedSubNodes.iAddNodeBefore(node(element), targetNode);
                 changed = true;
@@ -4304,7 +4307,7 @@ public class NodableLinkedList<E>
             checkForModificationException();
             if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
             final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes = linkedSubNodes();
-            return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.getNode(index));
+            return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.iGetNode(index));
         }
         
         /**
@@ -4355,7 +4358,7 @@ public class NodableLinkedList<E>
                         longSize(), IndexType.ABSOLUTE,
                         linkedSubNodes.getConfirmedTailSentinel());
             }
-            final long index = linkedSubNodes.getIndex(node);
+            final long index = linkedSubNodes.iGetIndex(node);
             if (index < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
             return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, node.linkNode());
         }
@@ -4382,9 +4385,9 @@ public class NodableLinkedList<E>
      * Doubly-linked sublist of nodes which back a
      * {@link NodableLinkedList.SubList}. Implements all optional {@code List}
      * interface operations. The elements are of type
-     * {@link NodableLinkedList.LinkSubNode}, and are never {@code null}.
+     * {@link NodableLinkedList.SubListNode}, and are never {@code null}.
      * <p>
-     * Note, just like a {@code SubList} which represents a range of elements of a
+     * Note, just as a {@code SubList} represents a range of elements of a
      * {@link NodableLinkedList}, a {@code LinkedSubNodes} sublist represents a
      * range of {@code Nodes} of a {@link NodableLinkedList.LinkedNodes} list. If a
      * {@code Node} is added to or removed from a {@code LinkedSubNodes} sublist,
@@ -4582,7 +4585,7 @@ public class NodableLinkedList<E>
         
         LinkNode<E> getConfirmedTailSentinel() {
             if (sizeIsKnown() & tailSentinelIsKnown()) return iGetTailSentinel();
-            return getNode(longSize());
+            return iGetNode(longSize());
         }
         
         @Override
@@ -4739,7 +4742,7 @@ public class NodableLinkedList<E>
          *                                   before the sublists's first node in the
          *                                   list
          */
-        private LinkNode<E> getNode(long index) {
+        private LinkNode<E> iGetNode(long index) {
             // Note, this routine returns the tailSentinel if index = longSize()
             if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
             LinkNode<E> node;
@@ -4800,16 +4803,16 @@ public class NodableLinkedList<E>
          *                               sublist's last node most likely comes before
          *                               the sublists's first node in the list
          */
-        private long getIndex(Node<?> node) {
+        private long iGetIndex(Node<?> node) {
             if (node.isSubListNode() && node.subList() != this.subList()) return -1;
-            return getIndex(node.linkNode());
+            return iGetIndex(node.linkNode());
         }
-        private long getIndex(LinkNode<?> node) {
+        private long iGetIndex(LinkNode<?> node) {
             if (!linkedNodes().contains(node)) return -1;
             long cursorIndex = 0L;
             LinkNode<E> cursorNode;
             if (sizeIsKnown() && tailSentinelIsKnown()) {
-                // both size and tailSentinel is known, therefore, we also know that
+                // both size and tailSentinel are known, therefore, we also know that
                 // the tailSentinel comes after the headSentinel in the list
                 cursorNode = iGetFirstNode();
                 while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
@@ -5091,7 +5094,7 @@ public class NodableLinkedList<E>
             } else {
                 return -1;
             }
-            final long index = getIndex(node);
+            final long index = iGetIndex(node);
             return (index > Integer.MAX_VALUE) ? -1 : (int)index;
         }
         
@@ -5155,7 +5158,7 @@ public class NodableLinkedList<E>
             if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) {
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
             }
-            LinkNode<E> node = getNode(index);
+            LinkNode<E> node = iGetNode(index);
             if (node == iGetTailSentinel()) {
                 throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
             }
@@ -5186,7 +5189,7 @@ public class NodableLinkedList<E>
             if (node == null || node.isLinked()) {
                 throw new IllegalArgumentException("Node is null or already an element of a list");
             }
-            iAddNodeBefore(node.linkNode(), getNode(index));
+            iAddNodeBefore(node.linkNode(), iGetNode(index));
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.setSubList(this.subList());
@@ -5389,7 +5392,7 @@ public class NodableLinkedList<E>
                 throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
             }
             boolean changed = false;            
-            final LinkNode<E> targetNode = getNode(index);
+            final LinkNode<E> targetNode = iGetNode(index);
             for (Node<E> node: collection) {
                 if (node == null || node.isLinked()) {
                     throw new IllegalArgumentException("Node in collection is null or already a node of a list");
@@ -5519,7 +5522,7 @@ public class NodableLinkedList<E>
                 }
                 return true;
             }
-            return (getIndex(node) < 0L) ? false : true;
+            return (iGetIndex(node) < 0L) ? false : true;
         }
         
         /**
@@ -5571,7 +5574,7 @@ public class NodableLinkedList<E>
             if (toIndex > longSize()) throw new IndexOutOfBoundsException("toIndex(" + toIndex +") > size(" + longSize() + ")");
             if (fromIndex > toIndex) throw new IndexOutOfBoundsException("fromIndex(" + fromIndex +") > toIndex(" + toIndex + ")");
             final long size = toIndex - fromIndex;
-            final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : getNode(fromIndex-1);
+            final LinkNode<E> headSentinel = (fromIndex == 0) ? this.iGetHeadSentinel() : iGetNode(fromIndex-1);
             final LinkNode<E> tailSentinel = (size == 0L)
                                              ? iGetNodeAfterOrTailSentinel(headSentinel)
                                              : null; // tailSentinel is unknown
@@ -5933,7 +5936,7 @@ public class NodableLinkedList<E>
         public ListIterator<Node<E>> listIterator(int index) {
             checkForModificationException();
             if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
+            return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
         
         /**
@@ -5982,7 +5985,7 @@ public class NodableLinkedList<E>
             if (node == null) {
                 return new SubListNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
             }
-            final long index = getIndex(node);
+            final long index = iGetIndex(node);
             if (index < 0) {
                 throw new IllegalArgumentException("specified node is not part of this sublist");
             }
@@ -6041,7 +6044,7 @@ public class NodableLinkedList<E>
         public ListIterator<Node<E>> linkNodeListIterator(int index) {
             checkForModificationException();
             if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
-            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, getNode(index));
+            return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
         
         /**
@@ -6097,7 +6100,7 @@ public class NodableLinkedList<E>
             if (node == null) {
                 return new LinkNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
             }
-            final long index = getIndex(node);
+            final long index = iGetIndex(node);
             if (index < 0) {
                 throw new IllegalArgumentException("specified node is not part of this sublist");
             }
@@ -7212,7 +7215,7 @@ public class NodableLinkedList<E>
         @Override
         public int index() {
             subList().checkForModificationException();
-            final long index = subList().linkedSubNodes().getIndex(linkNode());
+            final long index = subList().linkedSubNodes().iGetIndex(linkNode());
             return (index > Integer.MAX_VALUE) ? -1 : (int)index;
         }
 
@@ -7921,7 +7924,7 @@ public class NodableLinkedList<E>
         @Override
         public int index() {
             if (!this.isLinked()) return -1;
-            final long index = linkedNodes().getIndex(this);
+            final long index = linkedNodes().iGetIndex(this);
             return (index > Integer.MAX_VALUE) ? -1 : (int)index;
         }
 
