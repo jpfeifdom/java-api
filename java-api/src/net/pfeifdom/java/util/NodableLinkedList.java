@@ -234,11 +234,11 @@ import java.util.function.Function;
  *     
  *     // effectively copy the sorted nodes in the array back into the list
  *     // by rearranging the nodes in the list
- *     NodableLinkedList.Node<String> node = list.getFirstNode();
+ *     NodableLinkedList.Node<String> cursor = list.getFirstNode();
  *     for (NodableLinkedList.Node<String> sortedNode: sortedNodes) {
- *         node.swapWith(sortedNode);
- *         node = sortedNode.next(); // effectively node = node.next() since
- *                                   // sortedNode has replaced node's position in the list
+ *         cursor.swapWith(sortedNode);
+ *         cursor = sortedNode.next(); // basically cursor = cursor.next() since
+ *                                     // sortedNode has replaced cursor's position in the list
  *     }
  * }
  * }
@@ -304,15 +304,10 @@ public class NodableLinkedList<E>
 
     private static final long serialVersionUID = 6932924870547825064L;
 
+    /**
+     * The doubly-linked list of nodes which backs this NodableLinkedList
+     */
     private transient LinkedNodes linkedNodes;
-//    private static final Field linkedNodesField;
-//    static {
-//        try {
-//            linkedNodesField = NodableLinkedList.class.getDeclaredField("linkedNodes");
-//        } catch (ReflectiveOperationException e) {
-//            throw new AssertionError("linkedNodes field missing? "+e.getMessage(), e);
-//        }
-//    }
 
     /**
      * Constructs an empty list.
@@ -359,7 +354,7 @@ public class NodableLinkedList<E>
             clone.addAll(this);
             return clone;               
         } catch (CloneNotSupportedException e) {
-            throw new AssertionError("Not Cloneable: "+ e.getMessage(), e);
+            throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
         }
     }    
 
@@ -1650,8 +1645,17 @@ public class NodableLinkedList<E>
     
     private static class Reversed<E> extends NodableLinkedList<E> implements java.io.Externalizable {
         
+        /**
+         * The NodableLinkedList that was reversed
+         */
         private NodableLinkedList<E> nodableLinkedList;
         
+        /**
+         * Constructs a new Reversed NodableLinkedList and associates it with the
+         * NodableLinkedList it reverses.
+         * 
+         * @param nodableLinkedList The NodableLinkedList that was reversed
+         */
         private Reversed(NodableLinkedList<E> nodableLinkedList) {
             super(nodableLinkedList.linkedNodes());
             this.nodableLinkedList = nodableLinkedList;
@@ -1698,94 +1702,185 @@ public class NodableLinkedList<E>
      */
     abstract class InternalLinkedList extends AbstractSequentialList<Node<E>> {
         
+        /**
+         * Returns the list's size, or -1 if the size unknown.
+         * 
+         * @return the list's size, or -1 if the size is unknown
+         */
         abstract long iGetSize();
         
+        /**
+         * Inserts the specified node at the beginning of the list.
+         * 
+         * @param linkNode the LinkNode to be inserted at the beginning of the list
+         */
         abstract void iAddNodeFirst(LinkNode<E> linkNode);
         
+        /**
+         * Appends the specified LinkNode to the end of the list.
+         *
+         * @param linkNode the LinkNode to be appended to the end of the list
+         */
         abstract void iAddNodeLast(LinkNode<E> linkNode);
         
+        /**
+         * Inserts the specified LinkNode after the specified afterThisLinkNode.
+         * 
+         * @param linkNode          the LinkNode to be inserted
+         * @param afterThisLinkNode the LinkNode to be inserted after
+         */
         abstract void iAddNodeAfter(LinkNode<E> linkNode, LinkNode<E> afterThisLinkNode);
         
+        /**
+         * Inserts the specified LinkNode before the specified beforeThisLinkNode.
+         * 
+         * @param linkNode            the LinkNode to be inserted
+         * @param bedforeThisLinkNode the LinkNode to be inserted before
+         */
         abstract void iAddNodeBefore(LinkNode<E> linkNode, LinkNode<E> beforeThisLinkNode);
         
+        /**
+         * Remove the specified LinkNode from the list.
+         * 
+         * @param linkNode the LinkNode to be removed
+         */
         abstract void iRemoveNode(LinkNode<E> linkNode);
         
+        /**
+         * Replace the specified LinkNode with the withThisLinkNode.
+         * 
+         * @param linkNode the LinkNode to be replaced
+         * @param withThisLinkNode the replacement LinkNode
+         */
         abstract void iReplaceNode(LinkNode<E> linkNode, LinkNode<E> withThisLinkNode);
         
+        /**
+         * Return true if there exists a node after the specified LinkNode in the list.
+         * In other words, return true if the specified LinkNode is not the last node in
+         * the list.
+         * 
+         * @param linkNode the LinkNode to check if it has a next node in the list.
+         * @return true if there exists a node after the specified LinkNode in the list.
+         */
         abstract boolean iHasNodeAfter(LinkNode<E> linkNode);
         
+        /**
+         * Return true if there exists a node before the specified LinkNode in the list.
+         * In other words, return true if the specified LinkNode is not the first node
+         * in the list.
+         * 
+         * @param linkNode the LinkNode to check if it has a previous node in the list.
+         * @return true if there exists a node before the specified LinkNode in the
+         *         list.
+         */
         abstract boolean iHasNodeBefore(LinkNode<E> linkNode);
         
         /**
-         * Returns this list's headSentinel.
+         * Returns the list's headSentinel.
          * 
-         * @return this list's headSentinel
+         * @return the list's headSentinel
          */
         abstract LinkNode<E> iGetHeadSentinel();
         
         /**
-         * Returns this list's tailSentinel. For sublists, a null is returned if the
-         * tailSentinel is unknown.
+         * Returns the list's tailSentinel, or null if the tailSentinel is unknown.
          * 
-         * @return this list's tailSentinel
-         */      
+         * @return the list's tailSentinel, or null if the tail sentinel is unknown
+         */     
         abstract LinkNode<E> iGetTailSentinel();
         
         /**
-         * Returns the LinkedNodes' headSentinel from the perspective of this list. If
-         * this list is reversed in relation to the LinkedNodes' traversal direction,
-         * than the LinkeNodes' tailSentinel is returned.
+         * Returns the LinkedNodes' headSentinel from the perspective of the list. If
+         * the list is reversed in relation to the LinkedNodes' traversal direction,
+         * then the LinkeNodes' tailSentinel is returned.
          * 
          * @return the LinkedNodes' headSentinel from the perspective of this list
          */
         abstract LinkNode<E> iGetMyLinkedNodesHeadSentinel();
         
         /**
-         * Returns the LinkedNodes' tailSentinel from the perspective of this list. If
-         * this list is reversed in relation to the LinkedNodes' traversal direction,
-         * than the LinkeNodes' headSentinel is returned.
+         * Returns the LinkedNodes' tailSentinel from the perspective of the list. If
+         * the list is reversed in relation to the LinkedNodes' traversal direction,
+         * then the LinkeNodes' headSentinel is returned.
          * 
          * @return the LinkedNodes' tailSentinel from the perspective of this list
          */
         abstract LinkNode<E> iGetMyLinkedNodesTailSentinel();
         
+        /**
+         * Returns the first LinkNode of the list, or null if the list is empty.
+         * 
+         * @return the first LinkNode of the list, or null if the list is empty
+         */
         abstract LinkNode<E> iGetFirstNode();
         
+        /**
+         * Returns the last LinkNode of the list, or null if the list is empty.
+         * 
+         * @return the last LinkNode of the list, or null if the list is empty
+         */
         abstract LinkNode<E> iGetLastNode();
         
+        /**
+         * Returns the LinkNode that comes after the specified LinkNode, or null if the
+         * specified LinkNode is the last Node in the list.
+         * 
+         * @param linkNode the LinkNode whose next LinkNode is returned
+         * @return the LinkNode that comes after the specified LinkNode, or null if the
+         *         specified LinkNode is the last Node in the list
+         */
         abstract LinkNode<E> iGetNodeAfter(LinkNode<E> linkNode);
         
         /**
-         * Returns the LinkNode that comes after the specified LinkNode. This method is
-         * the same as getNodeAfter method, except this method returns the tailSentinel
-         * instead of null.
+         * Returns the LinkNode that comes after the specified LinkNode, or the
+         * tailSentinel if the specified LinkNode is the last Node in the list. This
+         * method is the same as the iGetNodeAfter method, except this method returns
+         * the tailSentinel instead of null if the specified LinkNode is the last Node
+         * in the list.
          * 
-         * @param node the LinkNode whose next LinkNode is returned
-         * @return the LinkNode that comes after the specified LinkNode
+         * @param linkNode the LinkNode whose next LinkNode is returned
+         * @return the LinkNode that comes after the specified LinkNode, or the
+         *         tailSentinel if the specified LinkNode is the last Node in the list
          */
         abstract LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> linkNode);
 
         /**
-         * Returns the LinkNode that comes after the specified LinkNode. This method is
-         * the same as getNodeAfterOrTailSentinel method, except this method returns the
-         * LinkNode from this list or a parent (sub)list whose tailSentinel is known.
-         * This avoids having to traverse to the end of the list to find the
-         * tailSentinel if the tailSentinel is unknown.
+         * Returns the LinkNode that comes after the specified LinkNode, or the
+         * tailSentinel if the specified LinkNode is the last Node in the list. This
+         * method is the same as the iGetNodeAfterOrTailSentinel method, except this
+         * method returns the LinkNode from the list or parent sublist whose
+         * tailSentinel is known. This method is used when the tailSentinel might be
+         * unknown. It avoids the need to traverse the list to find the unknown
+         * tailSentinel (which is needed to determine if the end of the list has been
+         * reached) by getting the next LinkNode from a parent sublist whose
+         * tailSentinel is already known.
          * 
          * @param linkNode the LinkNode whose next LinkNode is returned
-         * @return the LinkNode that comes after the specified LinkNode
+         * @return the LinkNode that comes after the specified LinkNode, or the
+         *         tailSentinel if the specified LinkNode is the last Node in the list
          */
         abstract LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> linkNode);
         
+        /**
+         * Returns the LinkNode that comes before the specified LinkNode, or null if the
+         * specified LinkNode is the first Node in the list.
+         * 
+         * @param linkNode the LinkNode whose previous LinkNode is returned
+         * @return the LinkNode that comes before the specified LinkNode, or null if the
+         *         specified LinkNode is the first Node in the list
+         */
         abstract LinkNode<E> iGetNodeBefore(LinkNode<E> linkNode);
         
         /**
-         * Returns the LinkNode that comes before the specified LinkNode. This method is
-         * the same as getNodeBefore method, except this method returns the headSentinel
-         * instead of null.
+         * Returns the LinkNode that comes before the specified LinkNode, or the
+         * headSentinel if the specified LinkNode is the first node in the list. This
+         * method is the same as the iGetNodeBefore method, except this method returns
+         * the headSentinel instead of null if the specified LinkNode is the first Node
+         * in the list
          * 
-         * @param linkNode the LinkNode whose previous LInkNode is returned
-         * @return the LinkNode that comes before the specified LinkNode
+         * @param linkNode the LinkNode whose previous LinkNode is returned
+         * @return the LinkNode that comes before the specified LinkNode, or the
+         *         headSentinel if the specified LinkNode is the first node in the list
          */
         abstract LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> linkNode);
         
@@ -1828,10 +1923,24 @@ public class NodableLinkedList<E>
         implements List<Node<E>>, Deque<Node<E>>
     {
 
+        /**
+         * The number of nodes/elements in this list.
+         */
         private long size;
+        
+        /**
+         * The LinkNode which represents this list's head sentinel.
+         */
         private final LinkNode<E> headSentinel = new LinkNode<>();
+        
+        /**
+         * The LinkNode which represents this list's tail sentinel.
+         */
         private final LinkNode<E> tailSentinel = new LinkNode<>();
 
+        /**
+         * Constructs a new empty doubly-linked list of nodes.
+         */
         private LinkedNodes() {
             NodableLinkedList.this.modCount = this.modCount = 0;
             size = 0L;
@@ -2888,13 +2997,13 @@ public class NodableLinkedList<E>
                 sortedNodes[index++] = node;
             }
             Arrays.sort(sortedNodes, comparator);
-            LinkNode<E> node;
+            LinkNode<E> cursor;
             LinkNode<E> sortedNode;
-            for (index = 0, node = iGetFirstNode(); index < sortedNodes.length - 1; index++) {
+            for (index = 0, cursor = iGetFirstNode(); index < sortedNodes.length - 1; index++) {
                 sortedNode = sortedNodes[index];
-                LinkNode.swapNodes(node, sortedNode);
-                node = iGetNodeAfter(sortedNode); // node = node.next (effectively)
-                                                 // sortedNode has replaced node's position in the list
+                LinkNode.swapNodes(cursor, sortedNode);
+                cursor = iGetNodeAfter(sortedNode); // basically cursor = cursor.next since
+                                                    // sortedNode has replaced cursor's position in the list
             }
         }
         
@@ -3328,8 +3437,17 @@ public class NodableLinkedList<E>
     
     private class ReversedLinkedNodes extends LinkedNodes {
         
+        /**
+         * The LinkedNodes that was reversed.
+         */
         private final LinkedNodes linkedNodes;
         
+        /**
+         * Construct a new ReversedLinkedNodes and associate it with the LinkedNodes it
+         * reverses.
+         * 
+         * @param linkedNodes The LinkedNodes that was reversed
+         */
         private ReversedLinkedNodes(LinkedNodes linkedNodes) {
             this.linkedNodes = linkedNodes;
         }
@@ -3589,9 +3707,29 @@ public class NodableLinkedList<E>
      */
     public static class SubList<E> extends AbstractSequentialList<E> implements List<E> {
         
+        /**
+         * The NodableLinkedList which contains this SubList.
+         */
         private final NodableLinkedList<E> list;
+        
+        /**
+         * The doubly-linked list of nodes which back this SubList.
+         */
         private final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes;
         
+        /**
+         * Constructs a new SubList.
+         * 
+         * @param list         The NodableLinkedList which contains this sublist
+         * @param headSentinel The LinkNode which represents this SubList's head
+         *                     sentinel
+         * @param tailSentinel The LinkNode which represents this SubList's tail
+         *                     sentinel, or null if the tail sentinel is unknown
+         * @param parent       The SubList which contains this SubList if this SubList
+         *                     is a sublist of a SubList
+         * @param size         the number of nodes/elements in this SubList, or -1 if
+         *                     the size is unknown
+         */
         private SubList(NodableLinkedList<E> list,
                 LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
                 SubList<E> parent, long size) {
@@ -3599,7 +3737,13 @@ public class NodableLinkedList<E>
             this.linkedSubNodes = list.new LinkedSubNodes(headSentinel, tailSentinel, this, parent, size);
         }
         
-        // used by ReversedSubList
+        /**
+         * Constructs the super SubList of a ReversedSubList and associates it with the
+         * SubList it reverses. This constructor is invoked by the ReversedSubList
+         * constructor.
+         * 
+         * @param sublist The SubList that was reversed
+         */
         private SubList(SubList<E> sublist) {
             this.list = sublist.nodableLinkedList();
             this.linkedSubNodes = list.new ReversedLinkedSubNodes(this, sublist.linkedSubNodes());
@@ -4367,8 +4511,17 @@ public class NodableLinkedList<E>
     
     private static class ReversedSubList<E> extends SubList<E> {
         
+        /**
+         * The SubList this ReversedSubList reversed.
+         */
         private final SubList<E> sublist;
         
+        /**
+         * Constructs a new ReversedSubList and associates it with the SubList it
+         * reverses.
+         * 
+         * @param sublist The SubList that was reversed
+         */
         private ReversedSubList(SubList<E> sublist) {
             super(sublist);
             this.sublist = sublist;
@@ -4414,17 +4567,74 @@ public class NodableLinkedList<E>
      * @author James Pfeifer
      *
      */
-    public class LinkedSubNodes
-        extends InternalLinkedList
-        implements List<Node<E>> {
+    public class LinkedSubNodes extends InternalLinkedList implements List<Node<E>> {
         
+        /**
+         * The LinkNode which represents the head sentinel of this LinkedSubNodes. It is
+         * never null.
+         */
         private LinkNode<E> headSentinel;
+        
+        /**
+         * The LinkNode which represents the tail sentinel of this LinkedSubNodes. It
+         * can be null if the tail sentinel is unknown.
+         */
         private LinkNode<E> tailSentinel;
-        private final SubList<E> subList; // the SubList associated with this LinkedSubNodes
-        private final LinkedSubNodes parent; // != null this is a sublist of a sublist
+        
+        /**
+         * The SubList this LinkedSubNodes backs.
+         */
+        private final SubList<E> subList;
+        
+        /**
+         * The LinkedSubNodes which contains this LinkedSubNodes, or null if this is not
+         * a sublist of a sublist.
+         */
+        private final LinkedSubNodes parent;
+        
+        /**
+         * The number of nodes in this LinkedSubNodes, or -1 if the size is unknown.
+         */
         private long size;
         
-        // used by ReversedLinkedSubNodes
+        /**
+         * Constructs a new LinkedSubNodes which backs a SubList.
+         * <p>
+         * Note, the tailSentinel(null) and size(-1) may be unknown, but never both at
+         * the same time. Also, there's no guarantee that the headSentinel comes before
+         * tailSentinel in the parent list.
+         * 
+         * @param headSentinel The LinkNode which represents this LinkedSubNodes' head
+         *                     sentinel
+         * @param tailSentinel The LinkNode which represents this LinkedSubNodes' tail
+         *                     sentinel, or null if the tail sentinel is unknown
+         * @param sublist      The SubList this LinkedSubNodes backs
+         * @param parent       The LinkedSubNodes which contains this LinkedSubNodes if
+         *                     this is a sublist of a sublist, otherwise, null
+         * @param size         the number of nodes in this LinkedSubNodes, or -1 if the
+         *                     size is unknown
+         */
+        private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
+                SubList<E> subList, SubList<E> parent, long size) {
+            // assert headSentinel != null : "headSentinel is null";
+            // assert subList != null : "subList is null";
+            // assert headSentinel.linkedNodes == linkedNodes :
+            //     "headSentinel not linked to this linkedList";
+            // assert tailSentinel != null && tailSentinel.linkedNodes == linkedNodes :
+            //     "tailSentinel not linked to this linkedList";
+            this.headSentinel = headSentinel;
+            this.tailSentinel = tailSentinel;
+            this.subList = subList;
+            this.parent = (parent == null) ? null : parent.linkedSubNodes();
+            this.size = size;
+            updateModCount();
+        }
+        
+        /**
+         * Used by ReversedLinkedSubNodes to construct its super LinkedSubNodes.
+         * 
+         * @param subList The (Reversed.)SubList this LinkedSubNodes backs
+         */
         private LinkedSubNodes(SubList<E> subList) {
             // assert sublist != null : "sublist is null";
             this.headSentinel = null;
@@ -4432,28 +4642,6 @@ public class NodableLinkedList<E>
             this.subList = subList;
             this.parent = null;
             this.size = 0L;
-        }
-        
-        private LinkedSubNodes(LinkNode<E> headSentinel, LinkNode<E> tailSentinel,
-                SubList<E> subList, SubList<E> parent, long size) {
-            // assert headSentinel != null : "headSentinel is null";
-            // assert tailSentinel != null : "tailSentinel is null";
-            // assert subList != null : "subList is null";
-            // assert headSentinel.linkedNodes == linkedNodes :
-            //     "headSentinel not linked to this linkedList";
-            // assert tailSentinel.linkedNodes == linkedNodes :
-            //     "tailSentinel not linked to this linkedList";
-            // considerations:
-            // . the tailSentinel(null) and size(-1) may be unknown,
-            //   but never both at the same time
-            // . no guarantee that headSentinel comes before tailSentinel
-            //   in the parent list
-            this.headSentinel = headSentinel;
-            this.tailSentinel = tailSentinel;
-            this.subList = subList;
-            this.parent = (parent == null) ? null : parent.linkedSubNodes();
-            this.size = size;
-            updateModCount();
         }
         
         // protected int modCount inherited from class java.util.AbstractList
@@ -6111,8 +6299,18 @@ public class NodableLinkedList<E>
     
     private class ReversedLinkedSubNodes extends LinkedSubNodes {
         
+        /**
+         * The LinkedSubNodes of the SubList that was reversed.
+         */
         private LinkedSubNodes linkedSubNodes;
         
+        /**
+         * Constructs a ReversedLinkedSubNodes.
+         * 
+         * @param sublist        The (Reversed.)SubList this ReversedLinkedSubNodes
+         *                       backs
+         * @param linkedSubNodes The LinkedSubNodes of the SubList that was reversed
+         */
         private ReversedLinkedSubNodes(SubList<E> sublist, LinkedSubNodes linkedSubNodes) {
             super(sublist);
             this.linkedSubNodes = linkedSubNodes;
@@ -6298,8 +6496,8 @@ public class NodableLinkedList<E>
         
     } // ReversedLinkedSubNodes
 
-    /*
-     * ListIterator index type.
+    /**
+     * ListIterator index type: absolute or relative.
      */
     enum IndexType { ABSOLUTE, RELATIVE }
 
