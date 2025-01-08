@@ -159,11 +159,11 @@ import java.util.function.Function;
  *              
  *             // find the start of the q list
  *             // which is 'subListSize' nodes from the start of the p list
- *             q = p;
+ *             q = p; // set the start of the q list to the start of the p list
  *             pSize = 0;
  *             for (long i = 0; i < subListSize; i++) {
  *                 pSize++; // determine the exact size of the p list
- *                 q = q.next(); // traverse the list
+ *                 q = q.next(); // move the start of the q list forward in the list
  *                 if (q == null) break; // quit if the end of the list has been reached
  *             }
  *             qSize = subListSize; // assume the q list size is the maximum possible size
@@ -305,7 +305,7 @@ public class NodableLinkedList<E>
     private static final long serialVersionUID = 6932924870547825064L;
 
     /**
-     * The doubly-linked list of nodes which backs this NodableLinkedList
+     * The doubly-linked list of nodes which backs this NodableLinkedList.
      */
     private transient LinkedNodes linkedNodes;
 
@@ -400,7 +400,12 @@ public class NodableLinkedList<E>
         }
     }
 
-    // protected int modCount inherited from class java.util.AbstractList
+    /**
+     * Returns the protected int modCount inherited from class
+     * java.util.AbstractList.
+     * 
+     * @return returns the modCount
+     */
     int modCount() {
         return this.modCount;
     }
@@ -436,7 +441,174 @@ public class NodableLinkedList<E>
      */
     public static <T> LinkNode<T> node(T element) {
         return new LinkNode<>(element);
-    }    
+    }
+    
+    /**
+     * Returns true if the specified index is the index of an existing node.
+     * 
+     * @param index the index to check
+     * @param size  the size of the list
+     * @return true if {@code index >= 0 && index < size}
+     */
+    private static boolean isNodeIndex(long index, long size) {
+        return index >= 0L && index < size;
+    }
+    
+    /**
+     * Returns true if the specified index is the index of a valid position for an
+     * iterator or an add operation.
+     * 
+     * @param index the index to check
+     * @param size  the size of the list
+     * @return true if {@code index >= 0 && index <= size}
+     */
+    private static boolean isPositionIndex(long index, long size) {
+        return index >= 0L && index <= size;
+    }
+    
+    /**
+     * Constructs an IndexOutOfBoundsException detail message.
+     * 
+     * @param index the index that is out of bounds
+     * @return IndexOutOfBoundsException detail message
+     */
+    private static String outOfBoundsMsg(long index) {
+        return "index=" + index;
+    }
+    
+    /**
+     * Constructs an IndexOutOfBoundsException detail message.
+     * 
+     * @param index the index that is out of bounds
+     * @param size  the size of the list
+     * @return IndexOutOfBoundsException detail message
+     */
+    private static String outOfBoundsMsg(long index, long size) {
+        return "index=" + index + ", size=" + size;
+    }
+    
+    /**
+     * Check if the specified index is a valid index to reference an existing node
+     * in a list of size 'size'.
+     * 
+     * @param index the index to be checked
+     * @param size  the size of the list
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index >= size}
+     */
+    private static void checkNodeIndex(long index, long size) {
+        if (!isNodeIndex(index, size)) {
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index, size));
+        }
+    }
+    
+    /**
+     * Check if the specified index is a valid position in a list of size 'size'.
+     * 
+     * @param index the index to be checked
+     * @param size  the size of the list
+     * @throws IndexOutOfBoundsException if {@code index < 0 || index > size}
+     */
+    private static void checkPositionIndex(long index, long size) {
+        if (!isPositionIndex(index, size)) {
+            throw new IndexOutOfBoundsException(outOfBoundsMsg(index, size));
+        }
+    }
+    
+    /**
+     * Returns true if the specified (not null) Node is linked to a list.
+     * 
+     * @param node the Node to check
+     * @return true if the specified (not null) Node is linked
+     */
+    private static boolean isLinkedNode(Node<?> node) {
+        return node != null && node.isLinked();
+    }
+    
+    /**
+     * Returns true if the specified (not null) Node is unlinked (not already linked
+     * to a list).
+     * 
+     * @param node the Node to check
+     * @return true if the specified (not null) Node is unlinked (not already
+     *         linked)
+     */
+    private static boolean isUnLinkedNode(Node<?> node) {
+        return node != null && !node.isLinked();
+    }
+    
+    /**
+     * Constructs a 'Node is not an element of a list' message.
+     * 
+     * @return 'Node is not an element of a list' message
+     */
+    private static String nodeIsNotLinkedMsg() {
+        return "Specified node is null or not a element of a list";
+    }
+    
+    /**
+     * Constructs a 'Node is already an element of a list' message.
+     * 
+     * @return 'Node is already an element of a list' message
+     */
+    private static String nodeIsNotUnLinkedMsg() {
+        return "Specified node is null or already an element of a list";
+    }
+    
+    /**
+     * Check if the specified Node is linked.
+     * 
+     * @param node the Node to check
+     * @throws IllegalArgumentException if the specified Node is null or not linked
+     */
+    private static void checkNodeIsLinked(Node<?> node) {
+        checkNodeIsLinked(node, nodeIsNotLinkedMsg());
+    }
+    
+    /**
+     * Check if the specified Node is linked.
+     * 
+     * @param node the Node to check
+     * @param msg  the IllegalArgumentException message
+     * @throws IllegalArgumentException if the specified Node is null or not linked
+     */
+    private static void checkNodeIsLinked(Node<?> node, String msg) {
+        if (!isLinkedNode(node)) throw new IllegalArgumentException(msg);
+    }
+    
+    /**
+     * Check if the specified Node is unlinked (not already linked).
+     * 
+     * @param node the Node to check
+     * @throws IllegalArgumentException if the specified Node is null or already
+     *                                  linked
+     */
+    private static void checkNodeIsUnLinked(Node<?> node) {
+        checkNodeIsUnLinked(node, nodeIsNotUnLinkedMsg());
+    }
+    
+    /**
+     * Check if the specified Node is unlinked (not already linked).
+     * 
+     * @param node the Node to check
+     * @param msg  the IllegalArgumentException message
+     * @throws IllegalArgumentException if the specified Node is null or already
+     *                                  linked
+     */
+    private static void checkNodeIsUnLinked(Node<?> node, String msg) {
+        if (!isUnLinkedNode(node)) throw new IllegalArgumentException(msg);
+    }
+    
+    /**
+     * Check if a List can fit in an array.
+     * 
+     * @param size the size of the list
+     * @throws IllegalStateException if the list is too large to fit in an array
+     */
+    private static void checkListCanFitInAnArray(long size) {
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalStateException("list size (" + size + ") is too large to fit in an array");
+        }
+    }
 
     /**
      * Returns the number of elements in this list. If this list contains more than
@@ -696,14 +868,12 @@ public class NodableLinkedList<E>
      */
     @Override
     public boolean addAll(int index, Collection<? extends E> collection) {
-        if (index < 0 || index > longSize()) {
-            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-        }
+        checkPositionIndex(index, longSize());
         if (index == longSize()) return addAll(collection);
         final long initialSize = longSize();
-        final LinkNode<E> targetNode = linkedNodes().iGetNode(index);
+        final LinkNode<E> beforeThisNode = linkedNodes().iGetNode(index);
         for (E element: collection) {
-            linkedNodes().iAddNodeBefore(node(element), targetNode);
+            linkedNodes().iAddNodeBefore(node(element), beforeThisNode);
         }
         return longSize() != initialSize;
     }
@@ -732,13 +902,11 @@ public class NodableLinkedList<E>
      */
     public boolean addAll(Node<E> node, Collection<? extends E> collection) {
         if (node == null) return addAll(collection);
-        if (!linkedNodes().contains(node)) {
-            throw new IllegalArgumentException("Specified node is not linked to this list");
-        }
-        final LinkNode<E> linkNode = node.linkNode();
+        linkedNodes().checkListContainsNode(node);
+        final LinkNode<E> beforeThisNode = node.linkNode();
         final long initialSize = longSize();
         for (E element: collection) {
-            linkedNodes().iAddNodeBefore(node(element), linkNode);
+            linkedNodes().iAddNodeBefore(node(element), beforeThisNode);
         }
         return longSize() != initialSize;
     }
@@ -1117,7 +1285,7 @@ public class NodableLinkedList<E>
      */
     //@Override //not until JDK 21
     public NodableLinkedList<E> reversed() {
-        return new Reversed<E>(this);
+        return new ReversedNodableLinkedList<E>(this);
     }
 
     /**
@@ -1132,9 +1300,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public E set(int index, E element) {
-        if (index < 0 || index >= longSize()) {
-            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-        }
+        checkNodeIndex(index, longSize());
         return linkedNodes().iGetNode(index).set(element);
     }    
 
@@ -1236,7 +1402,7 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Merge Sort
+     * Merge Sort.
      * 
      * @param <T>        the type of elements held in the specified list
      * @param list       the internal linked list to be sorted
@@ -1416,9 +1582,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public Object[] toArray() {
-        if (longSize() > Integer.MAX_VALUE) {
-            throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-        }
+        checkListCanFitInAnArray(longSize());
         final Object[] elements = new Object[size()];
         int index = 0;
         for (LinkNode<E> node = getFirstNode(); node != null;
@@ -1468,9 +1632,7 @@ public class NodableLinkedList<E>
     @Override
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] array) {
-        if (longSize() > Integer.MAX_VALUE) {
-            throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-        }
+        checkListCanFitInAnArray(longSize());
         if (array.length < size()) {
             array = (T[]) java.lang.reflect.Array.newInstance(
                                     array.getClass().getComponentType(),size());
@@ -1526,11 +1688,8 @@ public class NodableLinkedList<E>
      */
     @Override
     public ListIterator<E> listIterator(int index) {
-        if (index < 0 || index > longSize()) {
-            throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-        }
-        final LinkedNodes linkedNodes = linkedNodes();
-        return new ElementListIterator(linkedNodes, index, IndexType.ABSOLUTE, linkedNodes.iGetNode(index));
+        checkPositionIndex(index, longSize());
+        return new ElementListIterator(linkedNodes(), index, IndexType.ABSOLUTE, linkedNodes().iGetNode(index));
     }
 
     /**
@@ -1581,12 +1740,9 @@ public class NodableLinkedList<E>
      * @throws IllegalArgumentException if node is not linked to this list
      */
     public ListIterator<E> listIterator(Node<E> node) {
-        if (node != null && !linkedNodes().contains(node)) {
-            throw new IllegalArgumentException("Specified node is not linked to this list");
-        }
-        final LinkedNodes linkedNodes = linkedNodes();
-        return new ElementListIterator(linkedNodes, 0L, IndexType.RELATIVE,
-                (node == null) ? linkedNodes.iGetTailSentinel() : node.linkNode());
+        if (node != null) linkedNodes().checkListContainsNode(node);
+        return new ElementListIterator(linkedNodes(), 0L, IndexType.RELATIVE,
+                (node == null) ? linkedNodes().iGetTailSentinel() : node.linkNode());
     }
 
     /**
@@ -1643,20 +1799,20 @@ public class NodableLinkedList<E>
         return new ElementSpliterator(linkedNodes());
     }
     
-    private static class Reversed<E> extends NodableLinkedList<E> implements java.io.Externalizable {
+    private static class ReversedNodableLinkedList<E>
+        extends NodableLinkedList<E> implements java.io.Externalizable {
         
         /**
-         * The NodableLinkedList that was reversed
+         * The NodableLinkedList that was reversed.
          */
         private NodableLinkedList<E> nodableLinkedList;
         
         /**
-         * Constructs a new Reversed NodableLinkedList and associates it with the
-         * NodableLinkedList it reverses.
+         * Constructs a new Reversed NodableLinkedList.
          * 
-         * @param nodableLinkedList The NodableLinkedList that was reversed
+         * @param nodableLinkedList the NodableLinkedList that was reversed
          */
-        private Reversed(NodableLinkedList<E> nodableLinkedList) {
+        private ReversedNodableLinkedList(NodableLinkedList<E> nodableLinkedList) {
             super(nodableLinkedList.linkedNodes());
             this.nodableLinkedList = nodableLinkedList;
         }
@@ -1693,11 +1849,11 @@ public class NodableLinkedList<E>
             throw new java.io.InvalidObjectException("not serializable");
         }
         
-    } // Reversed
+    } // ReversedNodableLinkedList
     
     /**
      * Common linked list view of LinkedNodes and SubLinkedNodes.
-     * 
+     * <p>
      * INTERNAL USE ONLY
      */
     abstract class InternalLinkedList extends AbstractSequentialList<Node<E>> {
@@ -1734,8 +1890,8 @@ public class NodableLinkedList<E>
         /**
          * Inserts the specified LinkNode before the specified beforeThisLinkNode.
          * 
-         * @param linkNode            the LinkNode to be inserted
-         * @param bedforeThisLinkNode the LinkNode to be inserted before
+         * @param linkNode           the LinkNode to be inserted
+         * @param beforeThisLinkNode the LinkNode to be inserted before
          */
         abstract void iAddNodeBefore(LinkNode<E> linkNode, LinkNode<E> beforeThisLinkNode);
         
@@ -1950,12 +2106,22 @@ public class NodableLinkedList<E>
             tailSentinel.previous = headSentinel;			
         }
 
-        // protected int modCount inherited from class java.util.AbstractList
+        /**
+         * Returns the protected int modCount inherited from class
+         * java.util.AbstractList.
+         * 
+         * @return returns the modCount
+         */
         int modCount() {
             return this.modCount;
         }
+        
+        /**
+         * Increments the modCount. The modCount for the NodableLinkedList which this
+         * LinkedNodes object backs, is also kept in sync.
+         */
         private void incrementModCount() {
-            NodableLinkedList.this.modCount = ++this.modCount; // keep both modCounts in sync
+            NodableLinkedList.this.modCount = ++this.modCount;
         }
 
         /**
@@ -1967,7 +2133,39 @@ public class NodableLinkedList<E>
          */
         public NodableLinkedList<E> nodableLinkedList() {
             return NodableLinkedList.this;
-        }		
+        }
+        
+        /**
+         * Check if this list is not empty.
+         * 
+         * @throws NoSuchElementException if this list is empty
+         */
+        private void checkListIsNotEmpty() {
+            if (this.isEmpty()) throw new NoSuchElementException("List is empty");
+        }
+        
+        /**
+         * Check if this list contains the specified Node.
+         * 
+         * @param node the Node to check
+         * @throws IllegalArgumentException if the specified Node is not contained by
+         *                                  this list
+         */
+        private void checkListContainsNode(Node<?> node) {
+            checkListContainsNode(node, "Specified node is not linked to this list");
+        }
+        
+        /**
+         * Check if this list contains the specified Node.
+         * 
+         * @param node the Node to check
+         * @param msg  the IllegalArgumentException message
+         * @throws IllegalArgumentException if the specified Node is not contained by
+         *                                  this list
+         */
+        private void checkListContainsNode(Node<?> node, String msg) {
+            if (!this.contains(node)) throw new IllegalArgumentException(msg);
+        }
 
         /**
          * Returns the number of nodes in this list. If this list contains more than
@@ -2006,39 +2204,39 @@ public class NodableLinkedList<E>
         
         @Override
         void iAddNodeFirst(LinkNode<E> node) {
-            //assert node != null && !node.isLinked() : "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             iAddNodeAfter(node, iGetHeadSentinel());
         }
         
         @Override
         void iAddNodeLast(LinkNode<E> node) {
-            //assert node != null && !node.isLinked() : "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             iAddNodeBefore(node, iGetTailSentinel());
         }
 
         @Override
         void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-            //assert node != null && !node.isLinked() : "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             //assert this.contains(afterThisNode) : "After Node is not an element of this list";			
             incrementModCount();			
-            node.setLinkedNodes(this);
-            node.setNext(afterThisNode.getNext());
-            node.setPrevious(afterThisNode);
-            node.getPrevious().setNext(node);
-            node.getNext().setPrevious(node);
+            node.iSetLinkedNodes(this);
+            node.iSetNext(afterThisNode.iGetNext());
+            node.iSetPrevious(afterThisNode);
+            node.iGetPrevious().iSetNext(node);
+            node.iGetNext().iSetPrevious(node);
             size++;
         }
 
         @Override
         void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
-            //assert node != null && !node.isLinked() : "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             //assert this.contains(beforeThisNode) : "Before Node is not an element of this list";			
             incrementModCount();			
-            node.setLinkedNodes(this);
-            node.setNext(beforeThisNode);
-            node.setPrevious(beforeThisNode.getPrevious());
-            node.getPrevious().setNext(node);
-            node.getNext().setPrevious(node);
+            node.iSetLinkedNodes(this);
+            node.iSetNext(beforeThisNode);
+            node.iSetPrevious(beforeThisNode.iGetPrevious());
+            node.iGetPrevious().iSetNext(node);
+            node.iGetNext().iSetPrevious(node);
             size++;
         }
 
@@ -2046,40 +2244,39 @@ public class NodableLinkedList<E>
         void iRemoveNode(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";			
             incrementModCount();			
-            node.getNext().setPrevious(node.getPrevious());
-            node.getPrevious().setNext(node.getNext());
-            node.setNext(null);		
-            node.setPrevious(null);
-            node.setLinkedNodes(null);
+            node.iGetNext().iSetPrevious(node.iGetPrevious());
+            node.iGetPrevious().iSetNext(node.iGetNext());
+            node.iSetNext(null);		
+            node.iSetPrevious(null);
+            node.iSetLinkedNodes(null);
             size--;
         }
 
         @Override
         void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
             //assert this.contains(node) : "Node is not an element of this list";
-            //assert replacementNode != null && !replacementNode.isLinked() :
-            //    "Replacement Node is null or already an element of a list";
+            //assert isUnLinkedNode(replacementNode) : "replacement"+nodeIsNotUnLinkedMsg();
             incrementModCount();
-            replacementNode.setLinkedNodes(this);
-            replacementNode.setNext(node.getNext());
-            replacementNode.setPrevious(node.getPrevious());
-            replacementNode.getPrevious().setNext(replacementNode);
-            replacementNode.getNext().setPrevious(replacementNode);
-            node.setNext(null);		
-            node.setPrevious(null);
-            node.setLinkedNodes(null);
+            replacementNode.iSetLinkedNodes(this);
+            replacementNode.iSetNext(node.iGetNext());
+            replacementNode.iSetPrevious(node.iGetPrevious());
+            replacementNode.iGetPrevious().iSetNext(replacementNode);
+            replacementNode.iGetNext().iSetPrevious(replacementNode);
+            node.iSetNext(null);		
+            node.iSetPrevious(null);
+            node.iSetLinkedNodes(null);
         }
 
         @Override
         boolean iHasNodeAfter(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";			
-            return (node.getNext() == iGetTailSentinel()) ? false : true; 
+            return node.iGetNext() != iGetTailSentinel(); 
         }
 
         @Override
         boolean iHasNodeBefore(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";			
-            return (node.getPrevious() == iGetHeadSentinel()) ? false : true; 
+            return node.iGetPrevious() != iGetHeadSentinel(); 
         }
         
         @Override
@@ -2115,31 +2312,31 @@ public class NodableLinkedList<E>
         @Override
         LinkNode<E> iGetNodeAfter(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";			
-            return (node.getNext() == iGetTailSentinel()) ? null : node.getNext();
+            return (node.iGetNext() == iGetTailSentinel()) ? null : node.iGetNext();
         }
 
         @Override
         LinkNode<E> iGetNodeAfterOrTailSentinel(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";           
-            return node.getNext();
+            return node.iGetNext();
         }
         
         @Override
         LinkNode<E> iGetNodeAfterFromListWithKnownTailSentinel(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";           
-            return node.getNext();
+            return node.iGetNext();
         }
 
         @Override
         LinkNode<E> iGetNodeBefore(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";			
-            return (node.getPrevious() == iGetHeadSentinel()) ? null : node.getPrevious();
+            return (node.iGetPrevious() == iGetHeadSentinel()) ? null : node.iGetPrevious();
         }
         
         @Override
         LinkNode<E> iGetNodeBeforeOrHeadSentinel(LinkNode<E> node) {
             //assert this.contains(node) : "Node is not an element of this list";           
-            return node.getPrevious();
+            return node.iGetPrevious();
         }        
 
         /**
@@ -2170,7 +2367,7 @@ public class NodableLinkedList<E>
          * @return the node at the specified position in this sublist
          */
         private LinkNode<E> iGetNode(long index) {
-            //assert index >= 0L && index <= longSize() : "index=" + index + ", size=" + longSize();
+            //assert isPositionIndex(index, longSize()) : outOfBoundsMsg(index, longSize());
             if (index == longSize()) return iGetTailSentinel();
             LinkNode<E> node;
             long nodeIndex;
@@ -2210,9 +2407,7 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeFirst(Node<E> node) {
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             iAddNodeFirst(node.linkNode());
         }
 
@@ -2226,9 +2421,7 @@ public class NodableLinkedList<E>
          *                                  a list
          */
         public void addNodeLast(Node<E> node) {
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             iAddNodeLast(node.linkNode());
         }
         
@@ -2310,7 +2503,7 @@ public class NodableLinkedList<E>
         }
         
         boolean contains(Node<?> node) {
-             return (node != null && node.linkedNodes() == this) ? true : false;
+             return node != null && node.linkedNodes() == this;
         }
         
         /**
@@ -2327,9 +2520,7 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if node is not linked to this list
          */
         public LinkNode<E> forwardLinkNode(Node<E> node) {
-            if (!this.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
-            }
+            checkListContainsNode(node);
             return node.linkNode();
         }
         
@@ -2447,17 +2638,13 @@ public class NodableLinkedList<E>
          */
         @Override
         public boolean addAll(int index, Collection<? extends Node<E>> collection) {
-            if (index < 0 || index > longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            checkPositionIndex(index, longSize());
             if (index == longSize()) return addAll(collection);
             final long initialSize = longSize();
-            final LinkNode<E> targetNode = iGetNode(index);
+            final LinkNode<E> beforeThisNode = iGetNode(index);
             for (Node<E> node: collection) {
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                }
-                iAddNodeBefore(node.linkNode(), targetNode);
+                checkNodeIsUnLinked(node, "Node in collection is null or already an element of a list");
+                iAddNodeBefore(node.linkNode(), beforeThisNode);
             }
             return longSize() != initialSize;
         }
@@ -2489,16 +2676,12 @@ public class NodableLinkedList<E>
          */
         public boolean addAll(Node<E> node, Collection<? extends Node<E>> collection) {
             if (node == null) return addAll(collection);
-            if (!this.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
-            }
-            final LinkNode<E> linkNode = node.linkNode();
+            checkListContainsNode(node);
+            final LinkNode<E> beforeThisNode = node.linkNode();
             final long initialSize = longSize();
             for (Node<E> collectionNode: collection) {
-                if (collectionNode == null || collectionNode.isLinked()) {
-                    throw new IllegalArgumentException("Node in collection is null or already an element of a list");
-                }
-                iAddNodeBefore(collectionNode.linkNode(), linkNode);
+                checkNodeIsUnLinked(collectionNode, "Node in collection is null or already an element of a list");
+                iAddNodeBefore(collectionNode.linkNode(), beforeThisNode);
             }
             return longSize() != initialSize;
         }
@@ -2531,15 +2714,11 @@ public class NodableLinkedList<E>
          */
         @Override
         public void add(int index, Node<E> node) {
-            if (index < 0 || index > longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            checkPositionIndex(index, longSize());
             if (index == longSize()) {
                 addNodeLast(node);
             } else {
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node is null or already an element of a list");
-                }
+                checkNodeIsUnLinked(node);
                 iAddNodeBefore(node.linkNode(), iGetNode(index));
             }       
         }        
@@ -2597,9 +2776,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> get(int index) {
-            if (index < 0 || index >= longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            checkNodeIndex(index, longSize());
             return iGetNode(index);
         }        
 
@@ -2613,7 +2790,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> getFirst() {
-            if (isEmpty()) throw new NoSuchElementException("List is empty");
+            checkListIsNotEmpty();
             return iGetFirstNode();
         }
 
@@ -2627,7 +2804,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> getLast() {
-            if (isEmpty()) throw new NoSuchElementException("List is empty");
+            checkListIsNotEmpty();
             return iGetLastNode();
         }
 
@@ -2797,9 +2974,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> remove(int index) {
-            if (index < 0 || index >= longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            checkNodeIndex(index, longSize());
             final LinkNode<E> node = iGetNode(index);
             iRemoveNode(node);
             return node;
@@ -2813,7 +2988,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> removeFirst() {
-            if (isEmpty()) throw new NoSuchElementException("List is empty");
+            checkListIsNotEmpty();
             final LinkNode<E> node = iGetFirstNode();
             iRemoveNode(node);
             return node;
@@ -2827,7 +3002,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> removeLast() {
-            if (isEmpty()) throw new NoSuchElementException("List is empty");
+            checkListIsNotEmpty();
             final LinkNode<E> node = iGetLastNode();
             iRemoveNode(node);
             return node;
@@ -2906,7 +3081,7 @@ public class NodableLinkedList<E>
          */
         //@Override //not until JDK 21
         public LinkedNodes reversed() {
-            return (new Reversed<E>(nodableLinkedList())).linkedNodes();
+            return (new ReversedNodableLinkedList<E>(nodableLinkedList())).linkedNodes();
         }        
 
         /**
@@ -2923,12 +3098,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> set(int index, Node<E> node) {
-            if (index < 0 || index >= longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or already an element of a list");            
-            }
+            checkNodeIndex(index, longSize());
+            checkNodeIsUnLinked(node);
             final LinkNode<E> originalNode = iGetNode(index);
             iReplaceNode(originalNode, node.linkNode());
             return originalNode;
@@ -3083,6 +3254,13 @@ public class NodableLinkedList<E>
             return newSubList(fromIndex, toIndex).linkedSubNodes;
         }
         
+        /**
+         * Returns a NodableLinkedList.SubList.
+         * 
+         * @param fromIndex low endpoint (inclusive) of the {@code SubList}
+         * @param toIndex   high endpoint (exclusive) of the {@code SubList}
+         * @return returns a NodableLinkedList.SubList
+         */
         private SubList<E> newSubList(int fromIndex, int toIndex) {
             if (fromIndex < 0) {
                 throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -3162,6 +3340,16 @@ public class NodableLinkedList<E>
             return newSubList(firstNode, lastNode).linkedSubNodes;
         }
         
+        /**
+         * Returns a NodableLinkedList.SubList.
+         * 
+         * @param firstNode low endpoint (inclusive) of the {@code SubList}
+         * @param lastNode  high endpoint (inclusive) of the {@code SubList}
+         * @return returns a NodableLinkedList.SubList
+         * @throws IllegalArgumentException if any specified node is not linked to this
+         *                                  list or if the lastNode comes right before
+         *                                  the firstNode in this list.
+         */
         private SubList<E> newSubList(Node<E> firstNode, Node<E> lastNode) {
             if (firstNode == null && lastNode == null) {
                 // both firstNode and lastNode are null
@@ -3169,26 +3357,18 @@ public class NodableLinkedList<E>
                         iGetNodeBeforeOrHeadSentinel(iGetTailSentinel()), iGetTailSentinel(), null, 0L);
             } else if (firstNode == null) {
                 // only the lastNode is specified
-                if (!contains(lastNode)) {
-                    throw new IllegalArgumentException("Specified last node is not linked to this list");
-                }
+                checkListContainsNode(lastNode, "Specified last node is not linked to this list");
                 return new SubList<E>(nodableLinkedList(),
                         iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), null, 0L);
             } else if (lastNode == null) {
                 // only the firstNode is specified
-                if (!contains(firstNode)) {
-                    throw new IllegalArgumentException("Specified first node is not linked to this list");
-                }
+                checkListContainsNode(firstNode, "Specified first node is not linked to this list");
                 return new SubList<E>(nodableLinkedList(),
                         firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), null, 0L);
             }
-            // both firstNode and LastNode are specified 
-            if (!this.contains(firstNode)) {
-                throw new IllegalArgumentException("Specified first node is not linked to this list");
-            }
-            if (!this.contains(lastNode)) {
-                throw new IllegalArgumentException("Specified last node is not linked to this list");
-            }
+            // both firstNode and LastNode are specified
+            checkListContainsNode(firstNode, "Specified first node is not linked to this list");
+            checkListContainsNode(lastNode, "Specified last node is not linked to this list");
             if (iGetNodeAfter(lastNode.linkNode()) == firstNode.linkNode()) {
                 throw new IllegalArgumentException("Specified last Node comes before the specified first node in this list");
             }
@@ -3214,9 +3394,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public Object[] toArray() {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             final Object[] nodes = new Object[(int) longSize()];
             int index = 0;
             for (LinkNode<E> node = iGetFirstNode(); node != null; node = iGetNodeAfter(node)) {
@@ -3259,9 +3437,7 @@ public class NodableLinkedList<E>
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             if (array.length < longSize()) {
                 array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int) longSize());
             }
@@ -3317,9 +3493,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public ListIterator<Node<E>> listIterator(int index) {
-            if (index < 0 || index > longSize()) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            checkPositionIndex(index, longSize());
             return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
 
@@ -3372,9 +3546,7 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if node is not linked to this list
          */
         public ListIterator<Node<E>> listIterator(Node<E> node) {
-            if (node != null && !this.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
-            }
+            if (node != null) checkListContainsNode(node);
             return new LinkNodeListIterator(this, 0L, IndexType.RELATIVE,
                     (node == null) ? this.iGetTailSentinel() : node.linkNode());
         }
@@ -3443,8 +3615,7 @@ public class NodableLinkedList<E>
         private final LinkedNodes linkedNodes;
         
         /**
-         * Construct a new ReversedLinkedNodes and associate it with the LinkedNodes it
-         * reverses.
+         * Construct a new ReversedLinkedNodes.
          * 
          * @param linkedNodes The LinkedNodes that was reversed
          */
@@ -3457,9 +3628,14 @@ public class NodableLinkedList<E>
             return linkedNodes.modCount();
         }
         
-        // protected int modCount inherited from class java.util.AbstractList
+        /**
+         * Update the protected int modCount inherited from class
+         * java.util.AbstractList, with the modCount of the LinkedNodes that was
+         * reversed. The modCount for the ReversedNodableLinkedList which this
+         * ReversedLinkedNodes object backs, is also kept in sync.
+         */
         private void updateModCount() {
-            NodableLinkedList.this.modCount = this.modCount = modCount(); // try to keep all modCounts in sync
+            NodableLinkedList.this.modCount = this.modCount = modCount();
         }
         
         @Override
@@ -3590,7 +3766,7 @@ public class NodableLinkedList<E>
         
         @Override
         boolean contains(Node<?> node) {
-             return (node != null && node.linkedNodes() == linkedNodes) ? true : false;
+             return node != null && node.linkedNodes() == linkedNodes;
         }
         
         @Override
@@ -3738,9 +3914,8 @@ public class NodableLinkedList<E>
         }
         
         /**
-         * Constructs the super SubList of a ReversedSubList and associates it with the
-         * SubList it reverses. This constructor is invoked by the ReversedSubList
-         * constructor.
+         * Constructs the super SubList of a ReversedSubList. This constructor is
+         * invoked by the ReversedSubList constructor.
          * 
          * @param sublist The SubList that was reversed
          */
@@ -3749,14 +3924,26 @@ public class NodableLinkedList<E>
             this.linkedSubNodes = list.new ReversedLinkedSubNodes(this, sublist.linkedSubNodes());
         }
         
-        // protected int modCount inherited from class java.util.AbstractList
-        // modCount represents the expected modification count
+        /**
+         * Check if the expected modCount matches the list's modCount and throw a
+         * ConcurrentModificationException if they don't match. The protected int
+         * modCount inherited from class java.util.AbstractList represents the expected
+         * modCount.
+         * 
+         * @throws ConcurrentModificationException if the expected modCount does not
+         *                                         match the list's modCount
+         */
         private void checkForModificationException() {
             if (this.modCount != list.modCount()) {
                 throw new ConcurrentModificationException();
             }
         }
         
+        /**
+         * Set the (expected) modCount to the specified value.
+         * 
+         * @param modCount new (expected) modCount value
+         */
         private void setModCount(int modCount) {
             this.modCount = modCount;
         }
@@ -3805,9 +3992,7 @@ public class NodableLinkedList<E>
          */
         public void addNodeFirst(Node<E> node) {
             checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             linkedSubNodes.iAddNodeFirst(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -3828,9 +4013,7 @@ public class NodableLinkedList<E>
          */
         public void addNodeLast(Node<E> node) {
             checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             linkedSubNodes.iAddNodeLast(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -4074,13 +4257,11 @@ public class NodableLinkedList<E>
         @Override
         public boolean addAll(int index, Collection<? extends E> collection) {
             checkForModificationException();
-            if (linkedSubNodes.sizeIsKnown() && (index < 0 || index > longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            if (linkedSubNodes.sizeIsKnown()) checkPositionIndex(index, longSize());
             boolean changed = false;
-            final LinkNode<E> targetNode = linkedSubNodes.iGetNode(index);
+            final LinkNode<E> beforeThisNode = linkedSubNodes.iGetNode(index);
             for (E element : collection) {
-                linkedSubNodes.iAddNodeBefore(node(element), targetNode);
+                linkedSubNodes.iAddNodeBefore(node(element), beforeThisNode);
                 changed = true;
             }
             return changed;
@@ -4112,13 +4293,11 @@ public class NodableLinkedList<E>
         public boolean addAll(Node<E> node, Collection<? extends E> collection) {
             checkForModificationException();
             if (node == null) return addAll(collection);
-            if (!linkedSubNodes.contains(node)) {
-                throw new IllegalArgumentException("specified node is not part of this sublist");
-            }
-            final LinkNode<E> linkNode = node.linkNode();
+            linkedSubNodes.checkSubListContainsNode(node);
+            final LinkNode<E> beforeThisNode = node.linkNode();
             boolean changed = false;
             for (E element: collection) {
-                linkedSubNodes.iAddNodeBefore(node(element), linkNode);
+                linkedSubNodes.iAddNodeBefore(node(element), beforeThisNode);
                 changed = true;
             }
             return changed;
@@ -4338,9 +4517,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public Object[] toArray() {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             final Object[] elements = new Object[size()];
             int index = 0;
             for (E element: this) elements[index++] = element;
@@ -4392,9 +4569,7 @@ public class NodableLinkedList<E>
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             if (array.length < size()) {
                 array = (T[]) java.lang.reflect.Array.newInstance(
                                         array.getClass().getComponentType(),size());
@@ -4449,7 +4624,7 @@ public class NodableLinkedList<E>
         @Override
         public ListIterator<E> listIterator(int index) {
             checkForModificationException();
-            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            if (index < 0) throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
             final NodableLinkedList<E>.LinkedSubNodes linkedSubNodes = linkedSubNodes();
             return list.new ElementListIterator(linkedSubNodes, index, IndexType.ABSOLUTE, linkedSubNodes.iGetNode(index));
         }
@@ -4512,13 +4687,12 @@ public class NodableLinkedList<E>
     private static class ReversedSubList<E> extends SubList<E> {
         
         /**
-         * The SubList this ReversedSubList reversed.
+         * The SubList that was reversed.
          */
         private final SubList<E> sublist;
         
         /**
-         * Constructs a new ReversedSubList and associates it with the SubList it
-         * reverses.
+         * Constructs a new ReversedSubList.
          * 
          * @param sublist The SubList that was reversed
          */
@@ -4576,8 +4750,8 @@ public class NodableLinkedList<E>
         private LinkNode<E> headSentinel;
         
         /**
-         * The LinkNode which represents the tail sentinel of this LinkedSubNodes. It
-         * can be null if the tail sentinel is unknown.
+         * The LinkNode which represents the tail sentinel of this LinkedSubNodes, or
+         * null if the tail sentinel is unknown.
          */
         private LinkNode<E> tailSentinel;
         
@@ -4608,7 +4782,7 @@ public class NodableLinkedList<E>
          *                     sentinel
          * @param tailSentinel The LinkNode which represents this LinkedSubNodes' tail
          *                     sentinel, or null if the tail sentinel is unknown
-         * @param sublist      The SubList this LinkedSubNodes backs
+         * @param subList      The SubList this LinkedSubNodes backs
          * @param parent       The LinkedSubNodes which contains this LinkedSubNodes if
          *                     this is a sublist of a sublist, otherwise, null
          * @param size         the number of nodes in this LinkedSubNodes, or -1 if the
@@ -4644,31 +4818,80 @@ public class NodableLinkedList<E>
             this.size = 0L;
         }
         
-        // protected int modCount inherited from class java.util.AbstractList
-        // modCount represents the expected modification count
+        /**
+         * Returns the protected int modCount inherited from class
+         * java.util.AbstractList, which represents the expected modification
+         * count.
+         * 
+         * @return returns the modCount
+         */
         int modCount() {
             return this.modCount;
         }
         
+        /**
+         * Set this LinkedSubNodes' (expected) modCount to the list's modCount. The
+         * modCount of the SubList this LinkedSubNodes backs, is also set.
+         */
         void updateModCount() {
-            // keep all modCounts in sync
             subList.setModCount(this.modCount = NodableLinkedList.this.modCount());
         }
         
+        /**
+         * Update the (expected) modCount and the modCount of any parent sublists.
+         */
         private void updateParentModCount() {
             if (parent() != null) parent().updateParentModCount();
             updateModCount();
         }            
         
-        private void updateSizeAndModCount(long sizeChange) {
-            if (sizeIsKnown()) setSize(iGetSize() + sizeChange);
+        /**
+         * Update the (expected) modCount and the size of this sublist.
+         * 
+         * @param sizeDelta the change in size
+         */
+        private void updateSizeAndModCount(long sizeDelta) {
+            if (sizeIsKnown()) setSize(iGetSize() + sizeDelta);
             updateModCount();
         }
         
+        /**
+         * Check if the expected modCount matches the list's modCount and throw a
+         * ConcurrentModificationException if they don't match. The protected int
+         * modCount inherited from class java.util.AbstractList represents the expected
+         * modCount.
+         * 
+         * @throws ConcurrentModificationException if the expected modCount does not
+         *                                         match the list's modCount.
+         */
         private void checkForModificationException() {
             if (this.modCount != NodableLinkedList.this.modCount()) {
                 throw new ConcurrentModificationException();
             }
+        }
+        
+        
+        /**
+         * Check if this sublist contains the specified Node.
+         * 
+         * @param node the Node to check
+         * @throws IllegalArgumentException if the specified Node is not contained by
+         *                                  this sublist
+         */
+        private void checkSubListContainsNode(Node<?> node) {
+            checkSubListContainsNode(node, "specified node is not part of this sublist");
+        }
+        
+        /**
+         * Check if this sublist contains the specified Node.
+         * 
+         * @param node the Node to check
+         * @param msg  the IllegalArgumentException message
+         * @throws IllegalArgumentException if the specified Node is not contained by
+         *                                  this sublist
+         */
+        private void checkSubListContainsNode(Node<?> node, String msg) {
+            if (!this.contains(node)) throw new IllegalArgumentException(msg);
         }
         
         /**
@@ -4703,22 +4926,45 @@ public class NodableLinkedList<E>
             return this.tailSentinel;
         }
         
+        /**
+         * Sets the head sentinel of this sublist.
+         * 
+         * @param headSentinel the sublist's head sentinel
+         */
         void setHeadSentinel(LinkNode<E> headSentinel) {
             this.headSentinel = headSentinel;
         }
         
+        /**
+         * Sets the tail sentinel of this sublist.
+         * 
+         * @param tailSentinel the sublist's tail sentinel
+         */
         void setTailSentinel(LinkNode<E> tailSentinel) {
             this.tailSentinel = tailSentinel;
         }
         
+        /**
+         * Returns the parent LinkedSubNodes of this sublist, or null if this sublist is
+         * not a sublist of a sublist.
+         * 
+         * @return the parent LinkedSubNodes of this sublist, or null if this sublist is
+         *         not a sublist of a sublist.
+         */
         LinkedSubNodes parent () {
             return this.parent;
         }
         
+        @Override
         long iGetSize() {
             return this.size;
         }
         
+        /**
+         * Sets the size of this sublist.
+         * 
+         * @param size the sublist's size
+         */
         void setSize(long size) {
             this.size = size;
         }
@@ -4749,10 +4995,25 @@ public class NodableLinkedList<E>
             return parent().iGetMyLinkedNodesTailSentinel();
         }
         
+        /**
+         * Returns true if the tail sentinel is known ({@code tailSentinel != null}).
+         * 
+         * @return true if the tail sentinel is known ({@code tailSentinel != null})
+         */
         private boolean tailSentinelIsKnown() {
             return this.iGetTailSentinel() != null;
         }
         
+        /**
+         * Returns the tail sentinel. If the tail sentinel is unknown, the routine will
+         * search the list to find the tail sentinel.
+         * <p>
+         * Note, an unconfirmed tail sentinel may be returned; one that hasn't been
+         * verified that the known tail sentinel actually comes after the head sentinel
+         * in the list. See {@link #getConfirmedTailSentinel()}.
+         * 
+         * @return the tail sentinel
+         */
         LinkNode<E> tailSentinel() {
             if (!tailSentinelIsKnown()) { // tailSentinel unknown?
                 //assert size >= 0 : "sublist size is unknown";
@@ -4771,6 +5032,13 @@ public class NodableLinkedList<E>
             return iGetTailSentinel();
         }
         
+        /**
+         * Returns the tail sentinel that has been confirmed it comes after the head
+         * sentinel in the list.
+         * 
+         * @return the tail sentinel that has been confirmed it comes after the head
+         *         sentinel in the list
+         */
         LinkNode<E> getConfirmedTailSentinel() {
             if (sizeIsKnown() & tailSentinelIsKnown()) return iGetTailSentinel();
             return iGetNode(longSize());
@@ -4778,24 +5046,20 @@ public class NodableLinkedList<E>
         
         @Override
         void iAddNodeFirst(LinkNode<E> node) {
-            //assert node != null && !node.isLinked() :
-            //    "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             iAddNodeAfter(node, iGetHeadSentinel());
         }
         
         @Override
         void iAddNodeLast(LinkNode<E> node) {
-            //assert node != null && !node.isLinked() :
-            //    "Node is null or already an element of a list";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
             iAddNodeBefore(node, getConfirmedTailSentinel());
         }
 
         @Override
         void iAddNodeAfter(LinkNode<E> node, LinkNode<E> afterThisNode) {
-            //assert node != null && !node.isLinked() :
-            //    "Node is null or already an element of a list";
-            //assert this.contains(afterThisNode) :
-            //    "Before Node is not an element of this sublist";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
+            //assert this.contains(afterThisNode) : "After Node is not an element of this sublist";
             if (parent() == null) linkedNodes().iAddNodeAfter(node, afterThisNode);
             else parent().iAddNodeAfter(node, afterThisNode);
             updateSizeAndModCount(1L);
@@ -4803,10 +5067,8 @@ public class NodableLinkedList<E>
 
         @Override
         void iAddNodeBefore(LinkNode<E> node, LinkNode<E> beforeThisNode) {
-            //assert node != null && !node.isLinked() :
-            //    "Node is null or already an element of a list";
-            //assert this.contains(beforeThisNode) :
-            //    "Before Node is not an element of this sublist";
+            //assert isUnLinkedNode(node) : nodeIsNotUnLinkedMsg();
+            //assert this.contains(beforeThisNode) : "Before Node is not an element of this sublist";
             if (parent() == null) linkedNodes().iAddNodeBefore(node, beforeThisNode);
             else parent().iAddNodeBefore(node, beforeThisNode);
             updateSizeAndModCount(1L);
@@ -4823,8 +5085,7 @@ public class NodableLinkedList<E>
         @Override
         void iReplaceNode(LinkNode<E> node, LinkNode<E> replacementNode) {
             //assert this.contains(node) : "Node is not an element of this sublist";
-            //assert replacementNode != null && !replacementNode.isLinked() :
-            //    "Replacement Node is null or is already an element of a list";
+            //assert isUnLinkedNode(replacementNode) : "replacement"+nodeIsNotUnLinkedMsg();
             if (parent() == null) linkedNodes().iReplaceNode(node, replacementNode);
             else parent().iReplaceNode(node, replacementNode);
             updateSizeAndModCount(0L);
@@ -4847,8 +5108,8 @@ public class NodableLinkedList<E>
         @Override
         boolean iHasNodeBefore(LinkNode<E> node) {
             //assert this.contains(node) || node == tailSentinel() : "Node is not an element of this sublist";
-            if (parent() == null) return (linkedNodes().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true;
-            return (parent().iGetNodeBeforeOrHeadSentinel(node) == iGetHeadSentinel()) ? false : true; 
+            if (parent() == null) return linkedNodes().iGetNodeBeforeOrHeadSentinel(node) != iGetHeadSentinel();
+            return parent().iGetNodeBeforeOrHeadSentinel(node) != iGetHeadSentinel(); 
         }
         
         @Override
@@ -4905,6 +5166,13 @@ public class NodableLinkedList<E>
             return parent().iGetNodeBefore(node);
         }
         
+        /**
+         * Swap node of a sublist. When a node of a sublist has been swapped it's
+         * possible its head or tail sentinels where swapped and need to be reset.
+         * 
+         * @param subSetNode  the sublist node that was swapped
+         * @param swappedNode the node the subSetNode was swapped with
+         */
         private void swappedNodes(LinkNode<E> subSetNode, LinkNode<E> swappedNode) {
             if (subSetNode.linkedNodes() == swappedNode.linkedNodes()) {
                 // both nodes are nodes of the same list, therefore,
@@ -4932,15 +5200,13 @@ public class NodableLinkedList<E>
          */
         private LinkNode<E> iGetNode(long index) {
             // Note, this routine returns the tailSentinel if index = longSize()
-            if (index < 0L) throw new IndexOutOfBoundsException("index=" + index);
+            if (index < 0L) throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
             LinkNode<E> node;
             long cursorIndex;
             if (sizeIsKnown() && tailSentinelIsKnown()) {
                 // both size and tailSentinel is known, therefore, we also know that
                 // the tailSentinel comes after the headSentinel in the list
-                if (index > longSize()) {
-                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                }
+                checkPositionIndex(index, longSize());
                 if (index <= ((longSize()) >> 1)) {
                     cursorIndex = 0L;
                     node = iGetNodeAfterOrTailSentinel(iGetHeadSentinel());
@@ -4952,9 +5218,7 @@ public class NodableLinkedList<E>
                 }
             } else if (sizeIsKnown()) {
                 // size is known, tailSentinel is unknown
-                if (index > longSize()) {
-                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + longSize());
-                }
+                checkPositionIndex(index, longSize());
                 cursorIndex = 0L;
                 node = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
                 while (cursorIndex < index) {
@@ -4972,7 +5236,7 @@ public class NodableLinkedList<E>
                     cursorIndex++;
                 }
                 if (cursorIndex < index) {
-                    throw new IndexOutOfBoundsException("index=" + index + " > size=" + cursorIndex);
+                    throw new IndexOutOfBoundsException(outOfBoundsMsg(index, cursorIndex));
                 }
                 if (node == iGetTailSentinel()) this.setSize(cursorIndex);
                 else if (iGetNodeAfterOrTailSentinel(node) == iGetTailSentinel()) this.setSize(cursorIndex + 1L);
@@ -4995,15 +5259,27 @@ public class NodableLinkedList<E>
             if (node.isSubListNode() && node.subList() != this.subList()) return -1;
             return iGetIndex(node.linkNode());
         }
-        private long iGetIndex(LinkNode<?> node) {
-            if (!linkedNodes().contains(node)) return -1;
+        
+        /**
+         * Returns the index of the specified LinkNode in this sublist, or -1 if this
+         * sublist does not contain the specified LinkNode.
+         * 
+         * @param linkNode {@code LinkNode} to search for
+         * @return the index of the specified LinkNode in this sublist, or -1 if this
+         *         sublist does not contain the specified LinkNode
+         * @throws IllegalStateException if end of list is reached unexpectedly; the
+         *                               sublist's last node most likely comes before
+         *                               the sublists's first node in the list
+         */
+        private long iGetIndex(LinkNode<?> linkNode) {
+            if (!linkedNodes().contains(linkNode)) return -1;
             long cursorIndex = 0L;
             LinkNode<E> cursorNode;
             if (sizeIsKnown() && tailSentinelIsKnown()) {
                 // both size and tailSentinel are known, therefore, we also know that
                 // the tailSentinel comes after the headSentinel in the list
                 cursorNode = iGetFirstNode();
-                while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
+                while ( cursorNode != null && !cursorNode.isEquivalentTo(linkNode)) {
                     cursorIndex++;
                 cursorNode = iGetNodeAfter(cursorNode);
                 }
@@ -5011,7 +5287,7 @@ public class NodableLinkedList<E>
             } else if (sizeIsKnown()) {
                 // size is known, tailSentinel is unknown
                 cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(iGetHeadSentinel());
-                while (cursorIndex < longSize() && !cursorNode.isEquivalentTo(node)) {
+                while (cursorIndex < longSize() && !cursorNode.isEquivalentTo(linkNode)) {
                     cursorIndex++;
                 cursorNode = iGetNodeAfterFromListWithKnownTailSentinel(cursorNode);
                 }
@@ -5025,7 +5301,7 @@ public class NodableLinkedList<E>
             } else {
                 // size is unknown, tailSentinel is known
                 cursorNode = iGetFirstNode();
-                while ( cursorNode != null && !cursorNode.isEquivalentTo(node)) {
+                while ( cursorNode != null && !cursorNode.isEquivalentTo(linkNode)) {
                     cursorIndex++;
                     cursorNode = iGetNodeAfter(cursorNode);
                 }
@@ -5037,6 +5313,11 @@ public class NodableLinkedList<E>
             return cursorIndex;
         }
         
+        /**
+         * Return true if the size of this sublist is known ({@code size >= 0}).
+         * 
+         * @return true if {@code size >= 0}
+         */
         private boolean sizeIsKnown() {
             return iGetSize() >= 0L;
         }
@@ -5110,9 +5391,7 @@ public class NodableLinkedList<E>
          */
         public void addNodeFirst(Node<E> node) {
             checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             iAddNodeFirst(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -5133,9 +5412,7 @@ public class NodableLinkedList<E>
          */
         public void addNodeLast(Node<E> node) {
             checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             iAddNodeLast(node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -5248,9 +5525,7 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if node is not linked to this sublist
          */
         public LinkNode<E> forwardLinkNode(Node<E> node) {
-            if (!this.contains(node)) {
-                throw new IllegalArgumentException("Specified node is not linked to this list");
-            }
+            checkSubListContainsNode(node);
             if (parent() == null) return linkedNodes().forwardLinkNode(node);
             return parent().forwardLinkNode(node);
         }
@@ -5343,12 +5618,10 @@ public class NodableLinkedList<E>
         public SubListNode<E> get(int index) {
             checkForModificationException();
             final long getIndex = index;
-            if (sizeIsKnown() && (getIndex < 0L || getIndex >= longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());        
-            }
+            if (sizeIsKnown()) checkNodeIndex(getIndex, longSize());
             LinkNode<E> node = iGetNode(index);
             if (node == iGetTailSentinel()) {
-                throw new IndexOutOfBoundsException("index=" + index + " = size=" + longSize());
+                throw new IndexOutOfBoundsException(outOfBoundsMsg(index, longSize()));
             }
             return new SubListNode<E>(node, this.subList());
         }
@@ -5371,12 +5644,8 @@ public class NodableLinkedList<E>
         @Override
         public void add(int index, Node<E> node) {
             checkForModificationException();
-            if (sizeIsKnown() && (index < 0L || index > longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Node is null or already an element of a list");
-            }
+            if (sizeIsKnown()) checkPositionIndex(index, longSize());
+            checkNodeIsUnLinked(node);
             iAddNodeBefore(node.linkNode(), iGetNode(index));
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -5398,9 +5667,7 @@ public class NodableLinkedList<E>
         @Override
         public SubListNode<E> remove(int index) {
             checkForModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            if (sizeIsKnown()) checkNodeIndex(index, longSize());
             final SubListNode<E> subListNode = get(index);
             iRemoveNode(subListNode.linkNode());
             return subListNode;
@@ -5484,12 +5751,8 @@ public class NodableLinkedList<E>
         @Override
         public SubListNode<E> set(int index, Node<E> node) {
             checkForModificationException();
-            if (sizeIsKnown() && (index < 0L || index >= longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Replacement Node is null or already an element of a list");           
-            }
+            if (sizeIsKnown()) checkNodeIndex(index, longSize());
+            checkNodeIsUnLinked(node);
             final SubListNode<E> originalNode = get(index);
             iReplaceNode(originalNode.linkNode(), node.linkNode());
             if (node.isSubListNode()) {
@@ -5525,9 +5788,7 @@ public class NodableLinkedList<E>
             final long initialSize = longSize();
             final LinkNode<E> tailSentinel = getConfirmedTailSentinel();
             for (Node<E> node: collection) {
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                }
+                checkNodeIsUnLinked(node, "Node in collection is null or already a node of a list");
                 iAddNodeBefore(node.linkNode(), tailSentinel);
                 if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -5576,16 +5837,12 @@ public class NodableLinkedList<E>
         @Override
         public boolean addAll(int index, Collection<? extends Node<E>> collection) {
             checkForModificationException();
-            if (sizeIsKnown() && (index < 0 || index > longSize())) {
-                throw new IndexOutOfBoundsException("index=" + index + ", size=" + longSize());
-            }
+            if (sizeIsKnown()) checkPositionIndex(index, longSize());
             boolean changed = false;            
-            final LinkNode<E> targetNode = iGetNode(index);
+            final LinkNode<E> beforeThisNode = iGetNode(index);
             for (Node<E> node: collection) {
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                }
-                iAddNodeBefore(node.linkNode(), targetNode);
+                checkNodeIsUnLinked(node, "Node in collection is null or already a node of a list");
+                iAddNodeBefore(node.linkNode(), beforeThisNode);
                 if (node.isSubListNode()) {
                     final SubListNode<E> subListNode = (SubListNode<E>)node;
                     subListNode.setSubList(this.subList());
@@ -5620,7 +5877,7 @@ public class NodableLinkedList<E>
          * modified while the operation is in progress. (Note that this will occur if
          * the specified collection is this sublist, and it's nonempty.)
          *
-         * @param targetNode {@code Node} the specified collection is to be inserted
+         * @param node {@code Node} the specified collection is to be inserted
          *                   before
          * @param collection collection containing {@code Nodes} to be added to this
          *                   sublist
@@ -5630,28 +5887,24 @@ public class NodableLinkedList<E>
          *                                  {@code null} or already a node of a list
          * @throws NullPointerException     if the specified collection is {@code null}
          */
-        public boolean addAll(Node<E> targetNode, Collection<? extends Node<E>> collection) {
+        public boolean addAll(Node<E> node, Collection<? extends Node<E>> collection) {
             checkForModificationException();
-            if (targetNode == null) return addAll(collection);
-            if (!this.contains(targetNode)) {
-                throw new IllegalArgumentException("specified targetNode is not part of this sublist");
-            }
-            final LinkNode<E> targetListNode = targetNode.linkNode();
+            if (node == null) return addAll(collection);
+            checkSubListContainsNode(node);
+            final LinkNode<E> beforeThisNode = node.linkNode();
             boolean changed = false;
-            for (Node<E> node : collection) {
-                if (node == null || node.isLinked()) {
-                    throw new IllegalArgumentException("Node in collection is null or already a node of a list");
-                }
-                iAddNodeBefore(node.linkNode(), targetListNode);
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>) node;
+            for (Node<E> collectionNode : collection) {
+                checkNodeIsUnLinked(collectionNode, "Node in collection is null or already a node of a list");
+                iAddNodeBefore(collectionNode.linkNode(), beforeThisNode);
+                if (collectionNode.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>) collectionNode;
                     subListNode.setSubList(this.subList());
                 }
                 changed = true;
             }
-            for (Node<E> node : collection) {
-                if (node.isSubListNode()) {
-                    final SubListNode<E> subListNode = (SubListNode<E>) node;
+            for (Node<E> collectionNode : collection) {
+                if (collectionNode.isSubListNode()) {
+                    final SubListNode<E> subListNode = (SubListNode<E>) collectionNode;
                     subListNode.updateExpectedModCount();
                 }
             }
@@ -5710,7 +5963,7 @@ public class NodableLinkedList<E>
                 }
                 return true;
             }
-            return (iGetIndex(node) < 0L) ? false : true;
+            return iGetIndex(node) >= 0L;
         }
         
         /**
@@ -5756,6 +6009,13 @@ public class NodableLinkedList<E>
             return newSubList(fromIndex, toIndex).linkedSubNodes;
         }
         
+        /**
+         * Returns a NodableLinkedList.SubList.
+         * 
+         * @param fromIndex low endpoint (inclusive) of the {@code SubList}
+         * @param toIndex   high endpoint (exclusive) of the {@code SubList}
+         * @return returns a NodableLinkedList.SubList
+         */
         private SubList<E> newSubList(int fromIndex, int toIndex) {
             checkForModificationException();
             if (fromIndex < 0L) throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
@@ -5821,6 +6081,16 @@ public class NodableLinkedList<E>
             return newSubList(firstNode, lastNode).linkedSubNodes;
         }
         
+        /**
+         * Returns a NodableLinkedList.SubList.
+         * 
+         * @param firstNode low endpoint (inclusive) of the {@code SubList}
+         * @param lastNode  high endpoint (inclusive) of the {@code SubList}
+         * @return returns a NodableLinkedList.SubList
+         * @throws IllegalArgumentException if any specified node is not linked to this
+         *                                  list or if the lastNode comes right before
+         *                                  the firstNode in this list.
+         */
         private SubList<E> newSubList(Node<E> firstNode, Node<E> lastNode) {
             checkForModificationException();
             if (firstNode == null && lastNode == null) {
@@ -5830,26 +6100,18 @@ public class NodableLinkedList<E>
                         iGetNodeBeforeOrHeadSentinel(tailSentinel), tailSentinel, subList, 0L);
             } else if (firstNode == null) {
                 // only the lastNode is specified
-                if (!contains(lastNode)) {
-                    throw new IllegalArgumentException("Specified last node is not linked to this sublist");
-                }
+                checkSubListContainsNode(lastNode, "Specified last node is not linked to this sublist");
                 return new SubList<E>(nodableLinkedList(),
                         iGetNodeBeforeOrHeadSentinel(lastNode.linkNode()), lastNode.linkNode(), subList, 0L);
             } else if (lastNode == null) {
                 // only the firstNode is specified
-                if (!contains(firstNode)) {
-                    throw new IllegalArgumentException("Specified first node is not linked to this sublist");
-                }
+                checkSubListContainsNode(firstNode, "Specified first node is not linked to this sublist");
                 return new SubList<E>(nodableLinkedList(),
                         firstNode.linkNode(), iGetNodeAfterOrTailSentinel(firstNode.linkNode()), subList, 0L);
             }
             // both firstNode and LastNode are specified
-            if (!linkedNodes().contains(firstNode)) {
-                throw new IllegalArgumentException("Specified first node is not linked to this list");
-            }
-            if (!linkedNodes().contains(lastNode)) {
-                throw new IllegalArgumentException("Specified last node is not linked to this list");
-            }
+            linkedNodes().checkListContainsNode(firstNode, "Specified first node is not linked to this list");
+            linkedNodes().checkListContainsNode(lastNode, "Specified last node is not linked to this list");
             LinkNode<E> node;
             long subListSize = 0;
             boolean foundFirstNode = false;
@@ -6021,9 +6283,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public Object[] toArray() {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             final Object[] nodes = new Object[(int) longSize()];
             int index = 0;
             for (Node<E> node: this) nodes[index++] = node;
@@ -6065,9 +6325,7 @@ public class NodableLinkedList<E>
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] array) {
-            if (longSize() > Integer.MAX_VALUE) {
-                throw new IllegalStateException("list size (" + longSize() + ") is too large to fit in an array");
-            }
+            checkListCanFitInAnArray(longSize());
             if (array.length < longSize()) {
                 array = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), (int) longSize());
             }
@@ -6123,7 +6381,7 @@ public class NodableLinkedList<E>
         @Override
         public ListIterator<Node<E>> listIterator(int index) {
             checkForModificationException();
-            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            if (index < 0) throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
             return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
         
@@ -6174,9 +6432,7 @@ public class NodableLinkedList<E>
                 return new SubListNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
             }
             final long index = iGetIndex(node);
-            if (index < 0) {
-                throw new IllegalArgumentException("specified node is not part of this sublist");
-            }
+            if (index < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
             return new SubListNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
         }
         
@@ -6231,7 +6487,7 @@ public class NodableLinkedList<E>
          */
         public ListIterator<Node<E>> linkNodeListIterator(int index) {
             checkForModificationException();
-            if (index < 0) throw new IndexOutOfBoundsException("index=" + index);
+            if (index < 0) throw new IndexOutOfBoundsException(outOfBoundsMsg(index));
             return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, iGetNode(index));
         }
         
@@ -6289,9 +6545,7 @@ public class NodableLinkedList<E>
                 return new LinkNodeListIterator(this, longSize(), IndexType.ABSOLUTE, getConfirmedTailSentinel());
             }
             final long index = iGetIndex(node);
-            if (index < 0) {
-                throw new IllegalArgumentException("specified node is not part of this sublist");
-            }
+            if (index < 0) throw new IllegalArgumentException("specified node is not part of this sublist");
             return new LinkNodeListIterator(this, index, IndexType.ABSOLUTE, node.linkNode());
         }            
         
@@ -6300,7 +6554,7 @@ public class NodableLinkedList<E>
     private class ReversedLinkedSubNodes extends LinkedSubNodes {
         
         /**
-         * The LinkedSubNodes of the SubList that was reversed.
+         * The LinkedSubNodes that was reversed.
          */
         private LinkedSubNodes linkedSubNodes;
         
@@ -6309,7 +6563,7 @@ public class NodableLinkedList<E>
          * 
          * @param sublist        The (Reversed.)SubList this ReversedLinkedSubNodes
          *                       backs
-         * @param linkedSubNodes The LinkedSubNodes of the SubList that was reversed
+         * @param linkedSubNodes The LinkedSubNodes that was reversed
          */
         private ReversedLinkedSubNodes(SubList<E> sublist, LinkedSubNodes linkedSubNodes) {
             super(sublist);
@@ -6328,10 +6582,14 @@ public class NodableLinkedList<E>
             super.updateModCount();
         }
         
-        // protected int modCount inherited from class java.util.AbstractList
-        // modCount represents the expected modification count
+        /**
+         * Set the protected int modCount inherited from class java.util.AbstractList to
+         * the modCount of the LinkedSubNodes that was reversed. The modCount represents the
+         * expected modification count. The modCount of the ReversedSubList that this
+         * ReversedLinkedSubNodes backs, is also updated.
+         */
         private void syncModCountWithBase() {
-            subList().setModCount(this.modCount = modCount()); // try to keep all modCounts in sync
+            subList().setModCount(this.modCount = modCount());
         }
         
         @Override
@@ -6497,9 +6755,41 @@ public class NodableLinkedList<E>
     } // ReversedLinkedSubNodes
 
     /**
-     * ListIterator index type: absolute or relative.
+     * Index type (ABSOLUTE or RELATIVE) used by the ListIterators.
+     * 
+     * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index specifies the exact
+     * position in a list, where the first node in the list has an index of zero. A
+     * RELATIVE index is relative to a specified node, where the specified node has
+     * an index of zero, all nodes that come before the specified node have a
+     * negative index, and all nodes that come after the specified node have a
+     * positive index.
      */
-    enum IndexType { ABSOLUTE, RELATIVE }
+    enum IndexType {
+        
+        /**
+         * The index specifies the exact position in a list, where the first node in a
+         * list has an index of zero. The ListIterator methods nextIndex() and
+         * previousIndex() return -1 if the {@code index > Integer_MAX_VALUE}. Also,
+         * ListIterator method nextIndex() returns longSize() if the ListIterator is
+         * positioned at the end of the list.
+         */
+        ABSOLUTE,
+        
+        /**
+         * The index is relative to a specified node in a list. The specified node has
+         * an index of zero. All nodes that come before the specified node in the list
+         * have a negative index, and all nodes that come after the specified node in
+         * the list have a positive index.
+         * 
+         * The ListIterator methods nextIndex() and previousIndex() return
+         * Integer.MIN_VALUE if the {@code index < Integer.MIN_VALUE} or
+         * Integer.MAX_VALUE if the {@code index > Integer.MAX_VALUE}. Also, the method
+         * nextIndex() returns longSize() if the ListIterator is positioned at the end
+         * of the list, and method previousIndex() returns -longSize() if the
+         * ListIterator is positioned at the beginning of the list.
+         */
+        RELATIVE
+    }
 
     /*
      * The ListIterator that all other ListIterators utilize.
@@ -6524,11 +6814,12 @@ public class NodableLinkedList<E>
          * is guaranteed to come after the headSentinel and before the tailSentinel,
          * assuming the tailSentinel comes before the headSentinel.
          * 
-         * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index is indexed from the
-         * the beginning of the list. A RELATIVE index is relative to the starting node
-         * where the starting node has an index of zero, all nodes that come before the
-         * starting node have a negative index, and all nodes that come after the
-         * starting code have a positive index.
+         * An index can be ABSOLUTE or RELATIVE. An ABSOLUTE index specifies a position
+         * in the list, where the first node in the list has an index of zero. A
+         * RELATIVE index is relative to the starting node, where the starting node has
+         * an index of zero, all nodes that come before the starting node have a
+         * negative index, and all nodes that come after the starting node have a
+         * positive index.
          * 
          * @param list      LinkedNodes or LinkedSubNodes to iterate over
          * @param index     the index of the starting node
@@ -6676,9 +6967,7 @@ public class NodableLinkedList<E>
         @Override
         public void add(Node<E> node) {
             checkForModificationException();
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             addNodeAfter(node.linkNode(), cursorNode);
             cursorIndex++;
             cursorNode = node.linkNode();
@@ -6707,9 +6996,7 @@ public class NodableLinkedList<E>
             if (targetNode == null) {
                 throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
             }
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified Node is null or already an element of a list");
-            }
+            checkNodeIsUnLinked(node);
             if (cursorNode == targetNode) cursorNode = node.linkNode();
             replaceNode(targetNode, node.linkNode());
             targetNode = node.linkNode();
@@ -7087,50 +7374,113 @@ public class NodableLinkedList<E>
      */
     public static class SubListNode<E> implements Node<E>, Comparable<Node<E>> {
         
-        private final LinkNode<E> linkNode; // never a ReverseLinkNode
+        /**
+         * The LinkNode backing this SubListNode. The LinkNode is never a
+         * ReverseLinkNode.
+         */
+        private final LinkNode<E> linkNode;
+        
+        /**
+         * The SubList this SubListNode is associated with.
+         */
         private SubList<E> subList;
         
+        /**
+         * The modification count when this SubListNode was last known to be associated
+         * with its SubList.
+         */
         private int expectedModCount;
         
-        private SubListNode() {
-            this.linkNode = null;
-            this.subList = null;
-        }
-        
+        /**
+         * Construct a SubListNode associated with the specified SubList and backed by
+         * the specified LinkNode.
+         * 
+         * @param linkNode the LinkNode which backs this SubListNode
+         * @param subList  the SubList associated with this SubListNode
+         */
         private SubListNode(LinkNode<E> linkNode, SubList<E> subList) {
             this.linkNode = (linkNode.isReversed()) ? linkNode.reversed() : linkNode;
             this.subList = subList;
             updateExpectedModCount();
         }
         
+        /**
+         * Construct the super SubListNode for a ReverseSubListNode.
+         */
+        private SubListNode() {
+            this.linkNode = null;
+            this.subList = null;
+        }
+        
+        /**
+         * Set The SubList this SubListNode is associated with.
+         * 
+         * @param subList the SubList to associated with this SubListNode
+         */
         void setSubList(SubList<E> subList) {
             this.subList = subList;
         }
         
+        /**
+         * Set the modification count when this SubListNode was last known to be
+         * associated with its SubList.
+         */
         void updateExpectedModCount() {
             this.expectedModCount = subList().nodableLinkedList().modCount();
         }
         
-        private boolean isExpectedModCount() {
+        /**
+         * Return true if the expected modCount matches the NodableLinkedList's
+         * modCount.
+         * 
+         * @return true if the expected modCount matches the NodableLinkedList's
+         *         modCount
+         */
+        boolean isExpectedModCount() {
             return expectedModCount == subList().nodableLinkedList().modCount();
         }
         
-        boolean isStillNodeOfSubList() {
+        /**
+         * Returns true if this SubListNode is still contained by its associated
+         * SubList.
+         * 
+         * @return true if this SubListNode is still contained by its associated SubList
+         */
+        private boolean isStillNodeOfSubList() {
             if (isExpectedModCount() && isLinked()) return true;
             if (!subList().linkedSubNodes().contains(linkNode())) return false;
             updateExpectedModCount();
             return true;
         }        
-                    
+        
+        /**
+         * Check if this SubListNode is still contained by its associated sublist
+         * and throw an IllegalStateException if not.
+         */
         private void checkIfStillNodeOfSubList() {
             if (!isStillNodeOfSubList()) {
                 throw new IllegalStateException("This SubListNode is no longer a node of its associated sublist");
             }
         }
         
+        /**
+         * Check if this SubListNode is still contained by its associated sublist
+         * and throw an IllegalArgumentException if not.
+         */
         private void checkIfArgStillNodeOfSubList() {
             if (!isStillNodeOfSubList()) {
                 throw new IllegalArgumentException("The specified subListNode is no longer a node of its associated sublist");
+            }
+        }
+        
+        /**
+         * Check if this Node is unlinked (not already linked).
+         * 
+         * @throws IllegalStateException if this Node is already linked
+         */
+        private void checkThisNodeIsUnLinked() {
+            if (this.isLinked()) {
+                throw new IllegalStateException("This node is already a node of a list");
             }
         }
         
@@ -7293,12 +7643,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addAfter(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or not a node of a list");
-            }
-            if (this.isLinked()) {
-                throw new IllegalStateException("This sublist node is already a node of a list");
-            }
+            checkNodeIsLinked(node);
+            checkThisNodeIsUnLinked();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
@@ -7334,12 +7680,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addBefore(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or not a node of a list");
-            }
-            if (this.isLinked()) {
-                throw new IllegalStateException("This sublist node is already a node of a list");
-            }
+            checkNodeIsLinked(node);
+            checkThisNodeIsUnLinked();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
@@ -7497,9 +7839,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public void replaceWith(Node<E> node) {
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or already a node of a list");
-            }
+            checkNodeIsUnLinked(node);
             subList().checkForModificationException();
             checkIfStillNodeOfSubList();
             subList().linkedSubNodes().iReplaceNode(linkNode(), node.linkNode());
@@ -7556,9 +7896,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public void swapWith(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("The specified node is null or not a node of a list");
-            }
+            checkNodeIsLinked(node);
             subList().checkForModificationException();
             checkIfStillNodeOfSubList();
             if (node.isSubListNode()) {
@@ -7664,8 +8002,16 @@ public class NodableLinkedList<E>
     
     private static class ReverseSubListNode<E> extends SubListNode<E> {
        
+       /**
+        * The SubListNode that was reversed.
+        */
        private final SubListNode<E> subListNode;
        
+       /**
+        * Construct a ReverseSubListNode.
+        * 
+        * @param subListNode the SubListNode that was reversed
+        */
        private ReverseSubListNode(SubListNode<E> subListNode) {
            super();
            this.subListNode = subListNode;
@@ -7687,13 +8033,8 @@ public class NodableLinkedList<E>
        }
        
        @Override
-       boolean isStillNodeOfSubList() {
-           return subListNode.isStillNodeOfSubList();
-       }
-       
-       @Override
-       public E element() {
-           return subListNode.element();
+       boolean isExpectedModCount() {
+           return subListNode.isExpectedModCount();
        }
 
        @Override
@@ -7797,10 +8138,25 @@ public class NodableLinkedList<E>
 
         private static final long serialVersionUID = 8645137994022899638L;
 
+        /**
+         * The element contained within this LinkNode.
+         */
         private E element;
 
+        /**
+         * The LinkNode which comes after this LinkNode in a list.
+         */
         private transient LinkNode<E> next = null;
-        private transient LinkNode<E> previous = null;		
+        
+        /**
+         * The LinkNode which comes before this LinkNode in a list.
+         */
+        private transient LinkNode<E> previous = null;
+
+        /**
+         * The LinkedNodes which contains this LinkNode, or null if this LinkNode is not
+         * linked.
+         */
         private transient NodableLinkedList<E>.LinkedNodes linkedNodes = null;
 
         /**
@@ -7838,24 +8194,70 @@ public class NodableLinkedList<E>
                 throw new AssertionError("Not Cloneable? "+e.getMessage(), e);
             }
         }
+        /**
+         * Check if this Node is linked.
+         * 
+         * @throws IllegalStateException if this Node is not linked
+         */
+        private void checkThisNodeIsLinked() {
+            if (!this.isLinked()) {
+                throw new IllegalStateException("This node is not a node of a list");
+            }
+        }
         
-        void setLinkedNodes(NodableLinkedList<E>.LinkedNodes linkedNodes) {
+        /**
+         * Check if this Node is unlinked (not already linked).
+         * 
+         * @throws IllegalStateException if this Node is already linked
+         */
+        private void checkThisNodeIsUnLinked() {
+            if (this.isLinked()) {
+                throw new IllegalStateException("This node is already a node of a list");
+            }
+        }
+        
+        /**
+         * Set the LinkedNodes this LinkNode belongs to.
+         * 
+         * @param linkedNodes the LinkedNodes this LinkNode belongs to
+         */
+        void iSetLinkedNodes(NodableLinkedList<E>.LinkedNodes linkedNodes) {
             this.linkedNodes = linkedNodes;
         }
         
-        LinkNode<E> getNext() {
+        /**
+         * Returns the 'next' field value.
+         * 
+         * @return the 'next' field value
+         */
+        LinkNode<E> iGetNext() {
             return this.next;
         }
         
-        LinkNode<E> getPrevious() {
+        /**
+         * Returns the 'previous' field value.
+         * 
+         * @return the 'previous' field value.
+         */
+        LinkNode<E> iGetPrevious() {
             return this.previous;
         }
         
-        void setNext(LinkNode<E> next) {
+        /**
+         * Sets the 'next' field to the specified value.
+         * 
+         * @param next the new value of the 'next' field
+         */
+        void iSetNext(LinkNode<E> next) {
             this.next = next;
         }
         
-        void setPrevious(LinkNode<E> previous) {
+        /**
+         * Sets the 'previous' field to the specified value.
+         * 
+         * @param previous the new value of the 'previous' field
+         */
+        void iSetPrevious(LinkNode<E> previous) {
             this.previous = previous;
         }
 
@@ -8008,12 +8410,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addAfter(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("Specified Node is null or not a node of a list");
-            }
-            if (this.isLinked()) {
-                throw new IllegalStateException("This node is already a node of a list");
-            }
+            checkNodeIsLinked(node);
+            checkThisNodeIsUnLinked();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
@@ -8047,12 +8445,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addBefore(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("Specified Node is null or not a node of a list");
-            }
-            if (this.isLinked()) {
-                throw new IllegalStateException("This node is already a node of a list");
-            }
+            checkNodeIsLinked(node);
+            checkThisNodeIsUnLinked();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
@@ -8078,9 +8472,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public boolean hasNext() {
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list"); 
-            }
+            checkThisNodeIsLinked();
             return linkedNodes().iHasNodeAfter(this);
         }
 
@@ -8098,9 +8490,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public boolean hasPrevious() {
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkThisNodeIsLinked();
             return linkedNodes().iHasNodeBefore(this);
         }
 
@@ -8142,9 +8532,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> next() {
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkThisNodeIsLinked();
             final LinkNode<E> linkNode = linkedNodes().iGetNodeAfter(this);
             return linkNode;
         }
@@ -8165,9 +8553,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public LinkNode<E> previous() {
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkThisNodeIsLinked();
             final LinkNode<E> linkNode = linkedNodes().iGetNodeBefore(this);
             return linkNode;
         }
@@ -8179,9 +8565,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public void remove() {
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkThisNodeIsLinked();
             linkedNodes().iRemoveNode(this);
         }
 
@@ -8197,12 +8581,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void replaceWith(Node<E> node) {
-            if (node == null || node.isLinked()) {
-                throw new IllegalArgumentException("Specified node is null or already a node of a list");
-            }
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkNodeIsUnLinked(node);
+            checkThisNodeIsLinked();
             linkedNodes().iReplaceNode(this, node.linkNode());			
         }
         
@@ -8248,12 +8628,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void swapWith(Node<E> node) {
-            if (node == null || !node.isLinked()) {
-                throw new IllegalArgumentException("The specified node is null or not a node of a list");
-            }
-            if (!this.isLinked()) {
-                throw new IllegalStateException("This node is not a node of a list");
-            }
+            checkNodeIsLinked(node);
+            checkThisNodeIsLinked();
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final SubList<E> thatSubList = subListNode.subList();
@@ -8266,9 +8642,17 @@ public class NodableLinkedList<E>
             }
         }
 
+        /**
+         * Swap the specified LinkNodes. The specified LinkNodes swap positions in their
+         * respective lists.
+         * 
+         * @param <T>   the specified LinkNodes' element type
+         * @param node1 the LinkNode to swap with node2
+         * @param node2 the LinkNode to swap with node1
+         */
         private static <T> void swapNodes(LinkNode<T> node1, LinkNode<T> node2) {
-            //assert node1 != null && node1.isLinked() : "node1 is null or not a node of a list";
-            //assert node2 != null && node2.isLinked() : "node2 is null or not a node of a list";
+            //assert isLinkedNode(node1) : "node1 is null or not a node of a list";
+            //assert isLinkedNode(node2) : "node2 is null or not a node of a list";
             if (node1 == node2) return;
             node1.linkedNodes().incrementModCount();
             if (node1.linkedNodes() != node2.linkedNodes()) {
@@ -8278,43 +8662,43 @@ public class NodableLinkedList<E>
                 NodableLinkedList<T>.LinkedNodes tempLinkedNodes;
                 // swap lists
                 tempLinkedNodes = node1.linkedNodes();
-                node1.setLinkedNodes(node2.linkedNodes());
-                node2.setLinkedNodes(tempLinkedNodes);
+                node1.iSetLinkedNodes(node2.linkedNodes());
+                node2.iSetLinkedNodes(tempLinkedNodes);
                 // swap next references
-                tempNode = node1.getNext();
-                node1.setNext(node2.getNext());
-                node2.setNext(tempNode);
+                tempNode = node1.iGetNext();
+                node1.iSetNext(node2.iGetNext());
+                node2.iSetNext(tempNode);
                 // swap previous references
-                tempNode = node1.getPrevious();
-                node1.setPrevious(node2.getPrevious());
-                node2.setPrevious(tempNode);
+                tempNode = node1.iGetPrevious();
+                node1.iSetPrevious(node2.iGetPrevious());
+                node2.iSetPrevious(tempNode);
             } else {
                 // nodes are linked in the same list
-                if (node1.getNext() == node2) {
+                if (node1.iGetNext() == node2) {
                     // node1 comes right before node2 in the list
-                    node1.setNext(node2.getNext()); node2.setNext(node1);
-                    node2.setPrevious(node1.getPrevious()); node1.setPrevious(node2);
-                } else if (node1.getPrevious() == node2) {
+                    node1.iSetNext(node2.iGetNext()); node2.iSetNext(node1);
+                    node2.iSetPrevious(node1.iGetPrevious()); node1.iSetPrevious(node2);
+                } else if (node1.iGetPrevious() == node2) {
                     // node1 comes right after node2 in the list
-                    node2.setNext(node1.getNext()); node1.setNext(node2);
-                    node1.setPrevious(node2.getPrevious()); node2.setPrevious(node1);
+                    node2.iSetNext(node1.iGetNext()); node1.iSetNext(node2);
+                    node1.iSetPrevious(node2.iGetPrevious()); node2.iSetPrevious(node1);
                 } else {
                     LinkNode<T> tempNode;
                     // swap next references
-                    tempNode = node1.getNext();
-                    node1.setNext(node2.getNext());
-                    node2.setNext(tempNode);
+                    tempNode = node1.iGetNext();
+                    node1.iSetNext(node2.iGetNext());
+                    node2.iSetNext(tempNode);
                     // swap previous references
-                    tempNode = node1.getPrevious();
-                    node1.setPrevious(node2.getPrevious());
-                    node2.setPrevious(tempNode);
+                    tempNode = node1.iGetPrevious();
+                    node1.iSetPrevious(node2.iGetPrevious());
+                    node2.iSetPrevious(tempNode);
                 }
             }
             // update the node's neighbors
-            node1.getPrevious().setNext(node1);
-            node1.getNext().setPrevious(node1);
-            node2.getPrevious().setNext(node2);
-            node2.getNext().setPrevious(node2);
+            node1.iGetPrevious().iSetNext(node1);
+            node1.iGetNext().iSetPrevious(node1);
+            node2.iGetPrevious().iSetNext(node2);
+            node2.iGetNext().iSetPrevious(node2);
         }        
 
         /**
@@ -8406,10 +8790,18 @@ public class NodableLinkedList<E>
 
     } // LinkNode
     
-     private static class ReverseLinkNode<E> extends LinkNode<E> implements java.io.Externalizable {
+    private static class ReverseLinkNode<E> extends LinkNode<E> implements java.io.Externalizable {
         
-        private final LinkNode<E> linkNode; // never a ReverseLinkNode
+        /**
+         * The LinkNode that was reversed.
+         */
+        private final LinkNode<E> linkNode;
         
+        /**
+         * Construct a ReverseLinkNode.
+         * 
+         * @param linkNode the LinkNode that was reversed
+         */
         private ReverseLinkNode(LinkNode<E> linkNode) {
             super();
             //assert !linkNode.isReversed() : "linkNode is reversed";
@@ -8417,35 +8809,35 @@ public class NodableLinkedList<E>
         }
         
         @Override
-        void setLinkedNodes(NodableLinkedList<E>.LinkedNodes linkedNodes) {
-            linkNode.setLinkedNodes(linkedNodes);
+        void iSetLinkedNodes(NodableLinkedList<E>.LinkedNodes linkedNodes) {
+            linkNode.iSetLinkedNodes(linkedNodes);
         }
         
         @Override
-        LinkNode<E> getNext() {
-            return linkNode.getNext();
+        LinkNode<E> iGetNext() {
+            return linkNode.iGetNext();
         }
         
         @Override
-        LinkNode<E> getPrevious() {
-            return linkNode.getPrevious();
+        LinkNode<E> iGetPrevious() {
+            return linkNode.iGetPrevious();
         }
         
         @Override
-        void setNext(LinkNode<E> next) {
-            linkNode.setNext(next);
+        void iSetNext(LinkNode<E> next) {
+            linkNode.iSetNext(next);
         }
         
         @Override
-        void setPrevious(LinkNode<E> previous) {
-            linkNode.setPrevious(previous);
+        void iSetPrevious(LinkNode<E> previous) {
+            linkNode.iSetPrevious(previous);
         }
         
         @Override
         public E element() {
             return linkNode.element();
         }
-
+    
         @Override
         public boolean isReversed() {
             return true;
@@ -8508,12 +8900,12 @@ public class NodableLinkedList<E>
         public LinkNode<E> reversed() {
             return linkNode;
         }
-
+    
         @Override
         public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
             throw new java.io.InvalidObjectException("not serializable");
         }
-
+    
         @Override
         public void writeExternal(ObjectOutput out) throws IOException {
             throw new java.io.InvalidObjectException("not serializable");
