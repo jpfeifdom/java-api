@@ -1806,7 +1806,7 @@ public class NodableLinkedList<E>
      */
     @Override
     public Spliterator<E> spliterator() {
-        return new ElementSpliterator(linkedNodes());
+        return new ElementSpliterator<E>(linkedNodes());
     }
     
     private static class ReversedNodableLinkedList<E>
@@ -3638,7 +3638,7 @@ public class NodableLinkedList<E>
          */
         @Override
         public Spliterator<Node<E>> spliterator() {
-            return new NodeSpliterator(this);
+            return new NodeSpliterator<E>(this);
         }
 
     } // LinkedNodes
@@ -7298,26 +7298,26 @@ public class NodableLinkedList<E>
         
     } // SubListNodeListIterator    
 
-    private class NodeSpliterator implements Spliterator<Node<E>> {
+    private static final class NodeSpliterator<E> implements Spliterator<Node<E>> {
 
         private static final int BATCH_INCREMENT = 1 << 10;
         private static final int MAX_BATCH_SIZE  = 1 << 25;
         
-        private final InternalLinkedList list;
+        private final NodableLinkedList<E>.LinkedNodes list;
 
         private LinkNode<E> cursor;
         private long remainingSize = -1L;
         private int batchSize = 0;
         private int expectedModCount;
 
-        private NodeSpliterator(InternalLinkedList list) {
+        private NodeSpliterator(NodableLinkedList<E>.LinkedNodes list) {
             this.list = list;
             this.cursor = list.iGetHeadSentinel();
         }
 
         private void bind() {
             this.remainingSize = list.iGetSize();
-            this.expectedModCount = NodableLinkedList.this.modCount();
+            this.expectedModCount = list.modCount();
         }
         
         private int batchSize() {
@@ -7325,7 +7325,7 @@ public class NodableLinkedList<E>
         }
         
         private void checkForModificationException() {
-            if (this.expectedModCount != NodableLinkedList.this.modCount()) {
+            if (this.expectedModCount != list.modCount()) {
                 throw new ConcurrentModificationException();
             }
         }
@@ -7400,14 +7400,14 @@ public class NodableLinkedList<E>
             return array;
         }            
 
-    } // LinkedNodesSpliterator
+    } // NodeSpliterator
 
-    private class ElementSpliterator implements Spliterator<E> {
+    private static final class ElementSpliterator<E> implements Spliterator<E> {
 
-        private final NodeSpliterator spliterator;
+        private final NodeSpliterator<E> spliterator;
         
-        private ElementSpliterator(InternalLinkedList list) {
-            this.spliterator = new NodeSpliterator(list);
+        private ElementSpliterator(NodableLinkedList<E>.LinkedNodes list) {
+            this.spliterator = new NodeSpliterator<E>(list);
         }
 
         @Override
@@ -7447,7 +7447,7 @@ public class NodableLinkedList<E>
                            Spliterator.ORDERED);
         }
 
-    } // NodableLinkedListSpliterator    
+    } // ElementSpliterator    
 
     /**
      * Node of a {@link NodableLinkedList.SubList}. A {@code SubListNode} represents
@@ -7864,10 +7864,6 @@ public class NodableLinkedList<E>
          * if this {@code SubListNode} does not belong to a {@code SubList} or the
          * {@code index > Integer.MAX_VALUE}.
          * <p>
-         * If this {@code SubListNode} is reversed, the index returned is relative from
-         * the end of the sublist (the last node has an index of zero, the second to
-         * last node has an index of 1, etc.).
-         * <p>
          * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
          * @return the index of this {@code SubListNode} in its {@code SubList}, or -1
@@ -8200,12 +8196,6 @@ public class NodableLinkedList<E>
        @Override
        public boolean hasPrevious() {
            return subListNode.hasNext();
-       }
-       
-       @Override
-       public int index() {
-           final int index = subListNode.index();
-           return (index < 0) ? index : (linkedNodes().size() - index) - 1;
        }
        
        @Override
@@ -8636,10 +8626,6 @@ public class NodableLinkedList<E>
          * {@code LinkNode} does not belong to a list or the
          * {@code index > Integer.MAX_VALUE}.
          * <p>
-         * If this {@code LinkNode} is reversed, the index returned is relative from the
-         * end of the list (the last node has an index of zero, the second to last node
-         * has an index of 1, etc.).
-         * <p>
          * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
          * @return the index of this {@code LinkNode} in a list, or -1 if this
@@ -9019,12 +9005,6 @@ public class NodableLinkedList<E>
         }
         
         @Override
-        public int index() {
-            final int index = linkNode.index();
-            return (index < 0) ? index : (linkedNodes().size() - index) - 1;
-        }
-        
-        @Override
         public LinkNode<E> next() {
             final LinkNode<E> node = linkNode.previous();
             return (node == null) ? null : node.reversed();
@@ -9242,10 +9222,6 @@ public class NodableLinkedList<E>
         /**
          * Returns the index of this {@code Node} in a list, or -1 if this {@code Node}
          * does not belong to a list or the {@code index > Integer.MAX_VALUE}.
-         * <p>
-         * If this {@code Node} is reversed, the index returned is relative from the end
-         * of the list (the last node has an index of zero, the second to last node has
-         * an index of 1, etc.).
          * <p>
          * <b>Performance Consideration:</b> This operation is performed in linear time.
          *
