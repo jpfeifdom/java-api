@@ -1733,8 +1733,8 @@ public class NodableLinkedList<E>
      * <pre>
      * {@code
      *     // list is a NodableLinkedList<Integer>
-     *     // make sure node is a forward traversing LinkNode
-     *     Node<Integer> linkNode = (node == null) ? null : list.linkedNodes().forwardLinkNode(node);
+     *     // make sure node is a forward traversing LinkNode of this list
+     *     Node<Integer> linkNode = (node == null) ? null : list.linkedNodes().forwardLinkNodeOf(node);
      *     while (linkNode != null) {
      *         System.out.println(linkNode.element());
      *         linkNode = linkNode.next();
@@ -2534,7 +2534,7 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if the specified node is not contained by
          *                                  this list
          */
-        public LinkNode<E> forwardLinkNode(Node<E> node) {
+        public LinkNode<E> forwardLinkNodeOf(Node<E> node) {
             checkListContainsNode(node);
             return node.linkNode();
         }
@@ -3565,8 +3565,8 @@ public class NodableLinkedList<E>
          * <pre>
          * {@code
          *     // list is a NodableLinkedList<Integer>.LinkedNodes
-         *     // make sure node is a forward traversing LinkNode
-         *     Node<Integer> linkNode = (node == null) ? null : list.forwardLinkNode(node);
+         *     // make sure node is a forward traversing LinkNode of this list
+         *     Node<Integer> linkNode = (node == null) ? null : list.forwardLinkNodeOf(node);
          *     while (linkNode != null) {
          *         System.out.println(linkNode.element());
          *         linkNode = linkNode.next();
@@ -3806,8 +3806,8 @@ public class NodableLinkedList<E>
         }
         
         @Override
-        public LinkNode<E> forwardLinkNode(Node<E> node) {
-            return linkedNodes.forwardLinkNode(node).reversed();
+        public LinkNode<E> forwardLinkNodeOf(Node<E> node) {
+            return linkedNodes.forwardLinkNodeOf(node).reversed();
         }
         
         @Override
@@ -5561,7 +5561,7 @@ public class NodableLinkedList<E>
          *    import net.pfeifdom.java.util.NodableLinkedList.Node;
          *    // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
          *    final Node<Integer> lastNode = sublist.getLastNode();
-         *    Node<Integer> linkNode = sublist.forwardLinkNode(node);
+         *    Node<Integer> linkNode = sublist.forwardLinkNodeOf(node);
          *    while (linkNode != null) {
          *       System.out.println(linkNode.element());
          *       if (linkNode.isEquivalentTo(lastNode)) break;
@@ -5577,10 +5577,10 @@ public class NodableLinkedList<E>
          * @throws IllegalArgumentException if the specified node is not contained by
          *                                  this sublist
          */
-        public LinkNode<E> forwardLinkNode(Node<E> node) {
+        public LinkNode<E> forwardLinkNodeOf(Node<E> node) {
             checkSubListContainsNode(node);
-            if (parent() == null) return linkedNodes().forwardLinkNode(node);
-            return parent().forwardLinkNode(node);
+            if (parent() == null) return linkedNodes().forwardLinkNodeOf(node);
+            return parent().forwardLinkNodeOf(node);
         }
 
         /**
@@ -6807,8 +6807,8 @@ public class NodableLinkedList<E>
         }
         
         @Override
-        public LinkNode<E> forwardLinkNode(Node<E> node) {
-            return linkedSubNodes.forwardLinkNode(node).reversed();
+        public LinkNode<E> forwardLinkNodeOf(Node<E> node) {
+            return linkedSubNodes.forwardLinkNodeOf(node).reversed();
         }
         
         @Override
@@ -7672,7 +7672,7 @@ public class NodableLinkedList<E>
          * 
          * <pre>
          * {@code
-         *     NodableLinkedList.LinkNode linkNode = subList().linkedSubNodes().forwardLinkNode(this);
+         *     NodableLinkedList.LinkNode linkNode = subList().linkedSubNodes().forwardLinkNodeOf(this);
          * }
          * </pre>
          * 
@@ -7764,12 +7764,12 @@ public class NodableLinkedList<E>
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
-                subList().linkedSubNodes().iAddNodeAfter(linkNode(), node.linkNode());
+                subListNode.subList().linkedSubNodes().iAddNodeAfter(linkNode(), node.linkNode());
                 subListNode.updateExpectedModCount();
                 this.setSubList(subListNode.subList());
                 updateExpectedModCount();
             } else {
-                subList().linkedSubNodes().iAddNodeAfter(linkNode(), node.linkNode()); 
+                node.linkedNodes().iAddNodeAfter(linkNode(), node.linkNode());
             }
         }
         
@@ -7802,12 +7802,12 @@ public class NodableLinkedList<E>
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
                 subListNode.checkIfArgStillNodeOfSubList();
-                subList().linkedSubNodes().iAddNodeBefore(linkNode(), node.linkNode());
+                subListNode.subList().linkedSubNodes().iAddNodeBefore(linkNode(), node.linkNode());
                 subListNode.updateExpectedModCount();
                 this.setSubList(subListNode.subList());
                 updateExpectedModCount();
             } else {
-                subList().linkedSubNodes().iAddNodeBefore(linkNode(), node.linkNode());  
+                node.linkedNodes().iAddNodeBefore(linkNode(), node.linkNode());
             }
         }
 
