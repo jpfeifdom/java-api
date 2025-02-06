@@ -1420,28 +1420,28 @@ public class NodableLinkedList<E>
                     NodableLinkedList<T>.InternalLinkedList list,
                     Comparator<? super Node<T>> comparator) {
         LinkNode<T> pNode, qNode, sortedNode, sortedLastNode;
-        int subListSize, nMerges, pSize, qSize;
-        subListSize = 1;
+        long subListSize, nMerges, pSize, qSize;
+        subListSize = 1L;
         while (true) {
             sortedLastNode = null;
-            nMerges = 0;
+            nMerges = 0L;
             pNode = list.iGetFirstNode();
             while (pNode != null) {
                 nMerges++;
                 qNode = pNode;
-                pSize = 0;
-                for (int i = 0; i < subListSize; i++) {
+                pSize = 0L;
+                for (long i = 0L; i < subListSize; i++) {
                     pSize++;
                     qNode = list.iGetNodeAfter(qNode);
                     if (qNode == null) break;
                 }
                 qSize = subListSize;
-                while (pSize > 0 || (qSize > 0 && qNode != null)) {
-                    if (pSize == 0) {
+                while (pSize > 0L || (qSize > 0L && qNode != null)) {
+                    if (pSize == 0L) {
                         sortedNode = qNode;
                         qNode = list.iGetNodeAfter(qNode);
                         qSize--;
-                    } else if (qSize == 0 || qNode == null) {
+                    } else if (qSize == 0L || qNode == null) {
                         sortedNode = pNode;
                         pNode = list.iGetNodeAfter(pNode);
                         pSize--;
@@ -1467,8 +1467,8 @@ public class NodableLinkedList<E>
                 }
                 pNode = qNode;
             }
-            if (nMerges <= 1) break;
-            subListSize *= 2;
+            if (nMerges <= 1L) break;
+            subListSize *= 2L;
         }
     } // mergeSort
     
@@ -4544,6 +4544,30 @@ public class NodableLinkedList<E>
             checkForModificationException();
             return linkedSubNodes.newSubList(firstNode, lastNode);
         }
+        
+        /**
+         * Returns a new unlinked {@code SubListNode} associated with this
+         * {@code SubList} and backed by a new {@code LinkNode} containing a null
+         * element.
+         * 
+         * @return an unlinked {@code SubListNode} containing a null element
+         */
+        public SubListNode<E> subListNode() {
+            return subListNode(null);
+        }
+        
+        /**
+         * Returns a new unlinked {@code SubListNode} associated with this
+         * {@code SubList} and backed by a new {@code LinkNode} containing the
+         * specified element which can be {@code null}.
+         * 
+         * @param element element to be contained within the returned
+         *                {@code SubListNode}
+         * @return an unlinked {@code SubListNode} containing the specified element
+         */
+        public SubListNode<E> subListNode(E element) {
+            return new SubListNode<E>(node(element), this);
+        }
 
         /**
          * Returns an array containing all of the elements in this {@code SubList} in
@@ -5607,6 +5631,8 @@ public class NodableLinkedList<E>
                     return -1;
                 }
                 node = ((SubListNode<?>)object).linkNode();
+            } else if (object instanceof Node) {
+                node = ((Node<?>)object).linkNode();
             } else {
                 return -1;
             }
@@ -5646,6 +5672,8 @@ public class NodableLinkedList<E>
                     return -1;
                 }
                 searchNode = ((SubListNode<?>) object).linkNode();
+            } else if (object instanceof Node) {
+                searchNode = ((Node<?>) object).linkNode();
             } else {
                 return -1;
             }
@@ -5748,6 +5776,8 @@ public class NodableLinkedList<E>
                 node = (LinkNode<E>)object;
             } else if (object instanceof SubListNode) {
                 node = ((SubListNode<E>)object).linkNode();
+            } else if (object instanceof Node) {
+                node = ((Node<E>)object).linkNode();
             } else {
                 return false;
             }
@@ -5994,6 +6024,8 @@ public class NodableLinkedList<E>
                 }
                 if (sublistnode.isExpectedModCount()) return true;
                 node = sublistnode.linkNode();
+            } else if (object instanceof Node) {
+                node = ((Node<?>)object).linkNode();
             } else {
                 return false;
             }
@@ -7455,7 +7487,8 @@ public class NodableLinkedList<E>
      * {@code SubList}. Any operation performed on a {@code SubListNode} is
      * performed on its associated {@code SubList}. A {@code SubListNode} can be
      * removed from its current {@code SubList} and added to a different
-     * {@code SubList}.
+     * {@code SubList}. Note, a {@code SubListNode} is always associated with a
+     * {@code SubList}, even when it is unlinked.
      * <p>
      * <b>Performance Consideration:</b> Unlike operations on a {@code LinkNode},
      * operations on a {@code SubListNode} are not necessarily performed in constant
@@ -7489,7 +7522,8 @@ public class NodableLinkedList<E>
         private final LinkNode<E> linkNode;
         
         /**
-         * The SubList this SubListNode is associated with.
+         * The SubList this SubListNode is associated with. A SubListNode is always
+         * associated with a SubList even if the SubListNode is unlinked.
          */
         private SubList<E> subList;
         
@@ -7555,7 +7589,8 @@ public class NodableLinkedList<E>
          * @return true if this SubListNode is still contained by its associated SubList
          */
         private boolean isStillNodeOfSubList() {
-            if (isExpectedModCount() && isLinked()) return true;
+            if (!isLinked()) return false;
+            if (isExpectedModCount()) return true;
             if (!subList().linkedSubNodes().contains(linkNode())) return false;
             updateExpectedModCount();
             return true;
@@ -7709,15 +7744,15 @@ public class NodableLinkedList<E>
         }        
 
         /**
-         * Returns the {@code NodableLinkedList.SubList} this {@code SubListNode}
-         * belongs to.
+         * Returns the {@code NodableLinkedList.SubList} that is associated with this
+         * {@code SubListNode}.
          * <p>
          * Note, even if this {@code SubListNode} is unlinked, this {@code SubListNode}
          * is still associated with a {@code NodableLinkedList.SubList}. In other words,
          * a {@code null} value is never returned.
          * 
-         * @return the {@code NodableLinkedList.SubList} this {@code SubListNode}
-         *         belongs to
+         * @return the {@code NodableLinkedList.SubList} that is associated with this
+         *         {@code SubListNode}
          */
         @Override
         public SubList<E> subList() {
@@ -7758,8 +7793,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addAfter(Node<E> node) {
-            checkNodeIsLinked(node);
             checkThisNodeIsUnLinked();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
@@ -7796,8 +7831,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addBefore(Node<E> node) {
-            checkNodeIsLinked(node);
             checkThisNodeIsUnLinked();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
@@ -8080,7 +8115,7 @@ public class NodableLinkedList<E>
             if (this.isLinked() && !subList.linkedSubNodes().contains(this.linkNode())) {
                 throw new IllegalStateException("This SubListNode's LinkNode is not a node of the specified subList");
             }
-            return new SubListNode<E>(this.linkNode(), subList());
+            return new SubListNode<E>(this.linkNode(), subList);
         }
 
         /**
@@ -8536,8 +8571,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addAfter(Node<E> node) {
-            checkNodeIsLinked(node);
             checkThisNodeIsUnLinked();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
@@ -8572,8 +8607,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addBefore(Node<E> node) {
-            checkNodeIsLinked(node);
             checkThisNodeIsUnLinked();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
@@ -8704,8 +8739,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void replaceWith(Node<E> node) {
-            checkNodeIsUnLinked(node);
             checkThisNodeIsLinked();
+            checkNodeIsUnLinked(node);
             linkedNodes().iReplaceNode(this, node.linkNode());			
         }
         
@@ -8754,8 +8789,8 @@ public class NodableLinkedList<E>
          */
         @Override
         public void swapWith(Node<E> node) {
-            checkNodeIsLinked(node);
             checkThisNodeIsLinked();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final SubList<E> thatSubList = subListNode.subList();
@@ -9336,12 +9371,15 @@ public class NodableLinkedList<E>
         public void swapWith(Node<E> node);
 
         /**
-         * Returns the {@code SubList} this {@code Node} belongs to.
+         * Returns the {@code SubList} that is associated with this {@code Node}.
          * 
-         * A {@code SubListNode} never returns a {@code null}, whereas, 
-         * a {@code LinkNode} always returns a  {@code null}.
+         * Note, a {@code SubListNode} is always associated with a {@code SubList},
+         * whereas, a {@code LinkNode} is never associated with a {@code SubList}.
+         * Therefore, a {@code SubListNode} never returns a {@code null}, and a
+         * {@code LinkNode} always returns a {@code null}.
          * 
-         * @return the {@code NodableLinkedList.SubList} this {@code Node} belongs to
+         * @return the {@code NodableLinkedList.SubList} that is associated with this
+         *         {@code Node}
          */
         public SubList<E> subList();       
 
