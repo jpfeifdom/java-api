@@ -197,7 +197,7 @@ import java.util.function.Function;
  *                     // e is the first node to be added to the merged list
  *                     list.addNodeFirst(e);
  *                 } else {
- *                     // add e after the last node in the merged list
+ *                     // add e after the last node of the merged list
  *                     e.addAfter(tail);
  *                 }
  *                 tail = e; // tail is the last node of the merged (sorted) list
@@ -209,7 +209,8 @@ import java.util.function.Function;
  *         } // loop to perform a merge of the next p and q sublists
  *           // until the entire list has been processed
  *          
- *         if (nMerges <= 1) break; // list is completely sorted if only one merge
+ *         if (nMerges <= 1) break; // list is completely sorted (or empty)
+ *                                  // if only one merge (or zero merges)
  *                                  // was performed on this pass
  *          
  *         subListSize *= 2; // make another pass with the p and q lists twice the size
@@ -236,7 +237,7 @@ import java.util.function.Function;
  *     // by rearranging the nodes in the list
  *     NodableLinkedList.Node<String> cursor = list.getFirstNode();
  *     for (NodableLinkedList.Node<String> sortedNode: sortedNodes) {
- *         cursor.swapWith(sortedNode);
+ *         cursor.swapWith(sortedNode); // move the sortedNode to its position in the list
  *         cursor = sortedNode.next(); // basically cursor = cursor.next() since
  *                                     // sortedNode has replaced cursor's position in the list
  *     }
@@ -247,7 +248,7 @@ import java.util.function.Function;
  * <strong>Note that this implementation is not synchronized.</strong> If
  * multiple threads access a linked list concurrently, and at least one of the
  * threads modifies the list structurally, it <i>must</i> be synchronized
- * externally. (A structural modification is any operation that adds or deletes
+ * externally (A structural modification is any operation that adds or deletes
  * one or more elements (or nodes); merely setting the value of an element is
  * not a structural modification.) This is typically accomplished by
  * synchronizing on some object that naturally encapsulates the list.
@@ -420,8 +421,8 @@ public class NodableLinkedList<E>
     }
 
     /**
-     * Returns a new {@code Node} containing a {@code null} element. The node will
-     * not be linked to any list.
+     * Returns a new {@code Node} containing a {@code null} element. The node is
+     * not linked to any list.
      * 
      * @param <T> type of element to be contained within the returned {@code Node}
      * @return an unlinked {@code LinkNode} containing a {@code null} element
@@ -432,7 +433,7 @@ public class NodableLinkedList<E>
 
     /**
      * Returns a new {@code Node} containing the specified element which can be
-     * {@code null}. The node will not be linked to any list.
+     * {@code null}. The node is not linked to any list.
      * 
      * @param <T>     type of element to be contained within the returned
      *                {@code Node}
@@ -764,8 +765,8 @@ public class NodableLinkedList<E>
     /**
      * Returns the index of the first occurrence of the specified object (element)
      * in this list, or -1 if there is no such index (this list does not contain the
-     * object (element) or the {@code index > Integer.MAX_VALUE}). More formally,
-     * returns the lowest index {@code i} such that
+     * element or the {@code index > Integer.MAX_VALUE}). More formally, returns the
+     * lowest index {@code i} such that
      * {@code (object==null ? get(i)==null : object.equals(get(i)))}, or -1 if there
      * is no such index.
      *
@@ -796,8 +797,8 @@ public class NodableLinkedList<E>
     /**
      * Returns the index of the last occurrence of the specified object (element) in
      * this list, or -1 if there is no such index (this list does not contain the
-     * object (element) or the {@code index > Integer.MAX_VALUE}). More formally,
-     * returns the highest index {@code i} such that
+     * element or the {@code index > Integer.MAX_VALUE}). More formally, returns the
+     * highest index {@code i} such that
      * {@code (object==null ? get(i)==null : object.equals(get(i)))}, or -1 if there
      * is no such index.
      *
@@ -1198,12 +1199,11 @@ public class NodableLinkedList<E>
 
     /**
      * Removes, if present, the first occurrence of the specified object (element)
-     * from this list. If this list does not contain the specified object (element),
-     * it is unchanged. More formally, removes the element with the lowest index
-     * {@code i} such that
-     * {@code (object==null ? get(i)==null : object.equals(get(i)))} (if such an
-     * element exists). Returns {@code true} if this list contained the specified
-     * object (element) (or equivalently, if this list changed as a result of the
+     * from this list. If this list does not contain the specified element, it is
+     * unchanged. More formally, removes the element with the lowest index {@code i}
+     * such that {@code (object==null ? get(i)==null : object.equals(get(i)))} (if
+     * such an element exists). Returns {@code true} if this list contained the
+     * specified element (or equivalently, if this list changed as a result of the
      * call).
      *
      * @param object {@code Object} (element) to be removed from this list, if
@@ -1218,7 +1218,7 @@ public class NodableLinkedList<E>
     /**
      * Removes the first occurrence of the specified object (element) in this list
      * (when traversing the list from head to tail). If the list does not contain
-     * the specified object (element), it is unchanged.
+     * the specified element, it is unchanged.
      *
      * @param object {@code Object} (element) to be removed from this list, if
      *               present
@@ -1249,7 +1249,7 @@ public class NodableLinkedList<E>
     /**
      * Removes the last occurrence of the specified object (element) in this list
      * (when traversing the list from head to tail). If the list does not contain
-     * the specified object (element), it is unchanged.
+     * the specified element, it is unchanged.
      *
      * @param object {@code Object} (element) to be removed from this list, if
      *               present
@@ -2552,9 +2552,9 @@ public class NodableLinkedList<E>
 
         /**
          * Returns the index of the specified object ({@code Node}) in this list, or -1
-         * if there is no such index (this list does not contain the specified object
-         * ({@code Node}) or the {@code index > Integer.MAX_VALUE}). The specified
-         * object must be a {@code Node}, otherwise, -1 is returned.
+         * if there is no such index (this list does not contain the specified
+         * {@code Node} or the {@code index > Integer.MAX_VALUE}). The specified object
+         * must be a {@code Node}, otherwise, -1 is returned.
          * <p>
          * Note that {@code indexOf} is identical in function to {@code lastIndexOf},
          * except {@code indexOf} traverses the list forwards from the beginning.
@@ -2574,9 +2574,9 @@ public class NodableLinkedList<E>
 
         /**
          * Returns the index of the specified object ({@code Node}) in this list, or -1
-         * if there is no such index (this list does not contain the object
-         * ({@code Node}) or the {@code index > Integer.MAX_VALUE}). The specified
-         * object must be a {@code Node}, otherwise, -1 is returned.
+         * if there is no such index (this list does not contain the {@code Node} or the
+         * {@code index > Integer.MAX_VALUE}). The specified object must be a
+         * {@code Node}, otherwise, -1 is returned.
          * <p>
          * Note that {@code lastIndexOf} is identical in function to {@code indexOf},
          * except {@code lastIndexOf} traverses the list backwards from the end of the
@@ -3038,8 +3038,7 @@ public class NodableLinkedList<E>
 
         /**
          * Removes, if present, the specified object ({@code Node}) from this list. If
-         * this list does not contain the specified object ({@code Node}), it is
-         * unchanged.
+         * this list does not contain the specified {@code Node}, it is unchanged.
          * <p>
          * This operation performs in constant time.
          *
@@ -3059,8 +3058,7 @@ public class NodableLinkedList<E>
 
         /**
          * Removes, if present, the specified object ({@code Node}) from this list. If
-         * this list does not contain the specified object ({@code Node}), it is
-         * unchanged.
+         * this list does not contain the specified {@code Node}, it is unchanged.
          * <p>
          * This operation performs in constant time.
          * <p>
@@ -3078,8 +3076,7 @@ public class NodableLinkedList<E>
 
         /**
          * Removes, if present, the specified object ({@code Node}) from this list. If
-         * this list does not contain the specified object ({@code Node}), it is
-         * unchanged.
+         * this list does not contain the specified {@code Node}, it is unchanged.
          * <p>
          * This operation performs in constant time.
          * <p>
@@ -4677,7 +4674,7 @@ public class NodableLinkedList<E>
          * {@code
          *     // sublist is a NodableLinkedList<Integer>.SubList
          *     Node<Integer> subListNode = sublist.linkedSubNodes().get(index);
-         *     // or sublist.getFirstNode();
+         *     //                       or sublist.getFirstNode();
          *     while (subListNode != null) {
          *         System.out.println(subListNode.element());
          *         subListNode = subListNode.next();
@@ -5441,6 +5438,9 @@ public class NodableLinkedList<E>
          * Appends the specified node to the end of this sublist. The specified node
          * must not already belong to a list.
          * <p>
+         * If the specified node is a {@code SubListNode}, after this operation is
+         * completed, it will be associated with this sublist.
+         * <p>
          * This method is equivalent to {@link #addNodeLast}.
          *
          * @param node {@code Node} to be appended to the end of this sublist
@@ -5574,8 +5574,8 @@ public class NodableLinkedList<E>
          * {@code LinkNode} to match the forward direction of this sublist. In other
          * words, returns a {@code LinkNode} which can be used to essentially traverse
          * this sublist from the specified node to this sublist's last node when making
-         * successive calls to the {@code LinkNode.next()} method. The specified
-         * {@code Node} must be contained by this sublist.
+         * successive calls to the returned LinkedNodes's {@code next()} method. The
+         * specified {@code Node} must be contained by this sublist.
          * <p>
          * As a reminder, a {@code LinkNode} traverses the base {@code LinkedNodes} and
          * not the sublist. For instance:
@@ -5764,7 +5764,8 @@ public class NodableLinkedList<E>
          * removed if the {@code SubListNode} is not associated with this sublist.
          * 
          * @param object {@code Node} to be removed from this sublist
-         * @return {@code true} if this sublist contained the specified {@code Node}
+         * @return {@code true} if this sublist contained the specified object
+         *         ({@code Node})
          */
         @SuppressWarnings("unchecked")
         @Override
@@ -6462,7 +6463,7 @@ public class NodableLinkedList<E>
          * {@code
          *     // sublist is a NodableLinkedList<Integer>.LinkedSubNodes
          *     Node<Integer> subListNode = sublist.get(index);
-         *     // or sublist.getFirstNode();
+         *     //                       or sublist.getFirstNode();
          *     while (subListNode != null) {
          *         System.out.println(subListNode.element());
          *         subListNode = subListNode.next();
@@ -7603,7 +7604,7 @@ public class NodableLinkedList<E>
          * @throws IllegalStateException if this SubListNode is no longer contained by
          *                               its associated sublist
          */
-        private void checkIfStillNodeOfSubList() {
+        private void checkThisIsStillNodeOfSubList() {
             if (!isStillNodeOfSubList()) {
                 throw new IllegalStateException("This SubListNode is no longer a node of its associated sublist");
             }
@@ -7616,7 +7617,7 @@ public class NodableLinkedList<E>
          * @throws IllegalStateException if this SubListNode is no longer contained by
          *                               its associated sublist
          */
-        private void checkIfArgStillNodeOfSubList() {
+        private void checkNodeIsStillNodeOfSubList() {
             if (!isStillNodeOfSubList()) {
                 throw new IllegalArgumentException("The specified subListNode is no longer a node of its associated sublist");
             }
@@ -7627,7 +7628,7 @@ public class NodableLinkedList<E>
          * 
          * @throws IllegalStateException if this Node is already linked
          */
-        private void checkThisNodeIsUnLinked() {
+        private void checkThisIsUnLinked() {
             if (this.isLinked()) {
                 throw new IllegalStateException("This node is already a node of a list");
             }
@@ -7793,12 +7794,12 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addAfter(Node<E> node) {
-            checkThisNodeIsUnLinked();
+            checkThisIsUnLinked();
             checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 subListNode.subList().linkedSubNodes().iAddNodeAfter(linkNode(), node.linkNode());
                 subListNode.updateExpectedModCount();
                 this.setSubList(subListNode.subList());
@@ -7831,12 +7832,12 @@ public class NodableLinkedList<E>
          */
         @Override
         public void addBefore(Node<E> node) {
-            checkThisNodeIsUnLinked();
+            checkThisIsUnLinked();
             checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 subListNode.subList().checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 subListNode.subList().linkedSubNodes().iAddNodeBefore(linkNode(), node.linkNode());
                 subListNode.updateExpectedModCount();
                 this.setSubList(subListNode.subList());
@@ -7866,7 +7867,7 @@ public class NodableLinkedList<E>
         @Override
         public boolean hasNext() {
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
             return subList().linkedSubNodes().iHasNodeAfter(linkNode());
         }
 
@@ -7890,7 +7891,7 @@ public class NodableLinkedList<E>
         @Override
         public boolean hasPrevious() {
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
             return subList().linkedSubNodes().iHasNodeBefore(linkNode());
         }
 
@@ -7933,7 +7934,7 @@ public class NodableLinkedList<E>
         @Override
         public SubListNode<E> next() {
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
             final LinkNode<E> node = subList().linkedSubNodes().iGetNodeAfter(linkNode());
             if (node == null) return null;
             final SubListNode<E> subListNode = new SubListNode<E>(node, subList());
@@ -7961,7 +7962,7 @@ public class NodableLinkedList<E>
         @Override
         public SubListNode<E> previous() {
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
             final LinkNode<E> node = subList().linkedSubNodes().iGetNodeBefore(linkNode());
             if (node == null) return null;
             final SubListNode<E> subListNode = new SubListNode<E>(node, subList());
@@ -7981,7 +7982,7 @@ public class NodableLinkedList<E>
         @Override
         public void remove() {
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
             subList().linkedSubNodes().iRemoveNode(linkNode());
         }
 
@@ -8002,9 +8003,9 @@ public class NodableLinkedList<E>
          */
         @Override
         public void replaceWith(Node<E> node) {
-            checkNodeIsUnLinked(node);
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
+            checkNodeIsUnLinked(node);
             subList().linkedSubNodes().iReplaceNode(linkNode(), node.linkNode());
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
@@ -8017,8 +8018,8 @@ public class NodableLinkedList<E>
          * Returns a {@code SubListNode} that can be used to traverse its associated
          * {@code SubList} in the reverse direction than this {@code SubListNode}.
          * Order-sensitive operations like {@code addAfter}, {@code addBefore},
-         * {@code hasNext}, {@code hasPrevious}, {@code next}, {@code previous}, and
-         * {@code index} also operate in a reverse way.
+         * {@code hasNext}, {@code hasPrevious}, {@code next}, and {@code previous} also
+         * operate in a reverse way.
          * <P>
          * Note, a {@code SubListNode} can be used to naturally traverse its associated
          * {@code SubList} in a forward direction (from the sublist's first {@code Node}
@@ -8062,14 +8063,14 @@ public class NodableLinkedList<E>
          */
         @Override
         public void swapWith(Node<E> node) {
-            checkNodeIsLinked(node);
             subList().checkForModificationException();
-            checkIfStillNodeOfSubList();
+            checkThisIsStillNodeOfSubList();
+            checkNodeIsLinked(node);
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final SubList<E> thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 LinkNode.swapNodes(this.linkNode(), subListNode.linkNode());
                 if (this.subList() == thatSubList) {
                     // sublist nodes are in the same sublist
@@ -8576,7 +8577,7 @@ public class NodableLinkedList<E>
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 subListNode.subList().linkedSubNodes().iAddNodeAfter(this, subListNode.linkNode());
                 subListNode.updateExpectedModCount();
             } else {
@@ -8612,7 +8613,7 @@ public class NodableLinkedList<E>
             if (node.isSubListNode()) {
                 final SubListNode<E> subListNode = (SubListNode<E>) node;
                 subListNode.subList().checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 subListNode.subList().linkedSubNodes().iAddNodeBefore(this, subListNode.linkNode());
                 subListNode.updateExpectedModCount();
             } else {
@@ -8748,8 +8749,8 @@ public class NodableLinkedList<E>
          * Returns a {@code LinkNode} that can be used to traverse the list it is linked
          * to, in the reverse direction than this {@code LinkNode}. Order-sensitive
          * operations like {@code addAfter}, {@code addBefore}, {@code hasNext},
-         * {@code hasPrevious}, {@code next}, {@code previous}, and {@code index} also
-         * operate in a reverse way.
+         * {@code hasPrevious}, {@code next}, and {@code previous} also operate in a
+         * reverse way.
          * <p>
          * A non-reversed {@code LinkNode} always traverses the base
          * {@code NodableLinkedList} in a forward direction (from the list's first node
@@ -8795,7 +8796,7 @@ public class NodableLinkedList<E>
                 final SubListNode<E> subListNode = (SubListNode<E>)node;
                 final SubList<E> thatSubList = subListNode.subList();
                 thatSubList.checkForModificationException();
-                subListNode.checkIfArgStillNodeOfSubList();
+                subListNode.checkNodeIsStillNodeOfSubList();
                 swapNodes(this, node.linkNode());
                 thatSubList.linkedSubNodes().swappedNodes(subListNode.linkNode(), this);
             } else {
@@ -9339,7 +9340,7 @@ public class NodableLinkedList<E>
          * Returns a {@code Node} that can be used to traverse a list in the reverse
          * direction than this {@code Node}. Order-sensitive operations like
          * {@code addAfter}, {@code addBefore}, {@code hasNext}, {@code hasPrevious},
-         * {@code next}, {@code previous}, and {@code index} also operate in a reverse
+         * {@code next}, and {@code previous} also operate in a reverse
          * way.
          * 
          * @return a {@code Node} that can be used to traverse a list in the reverse
