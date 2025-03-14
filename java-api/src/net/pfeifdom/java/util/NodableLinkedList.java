@@ -159,12 +159,12 @@ import java.util.function.Function;
  *              
  *             // find the start of the q list
  *             // which is 'subListSize' nodes from the start of the p list
- *             q = p; // set the start of the q list to the start of the p list
  *             pSize = 0;
+ *             q = p; // set the start of the q list to the start of the p list
  *             for (long i = 0; i < subListSize; i++) {
  *                 pSize++; // determine the exact size of the p list
  *                 q = q.next(); // move the start of the q list forward in the list
- *                 if (q == null) break; // quit if the end of the list has been reached
+ *                 if (q == null) break; // exit loop if the end of the list has been reached
  *             }
  *             qSize = subListSize; // assume the q list size is the maximum possible size
  *              
