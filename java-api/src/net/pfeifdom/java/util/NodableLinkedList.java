@@ -296,6 +296,7 @@ import java.util.function.Function;
  * @see java.util.LinkedList
  * @see List
  * @see Node
+ * @since 1.0.0
  * @since JDK 1.8
  */
 public class NodableLinkedList<E>
@@ -7120,7 +7121,8 @@ public class NodableLinkedList<E>
         public void remove() {
             checkForModificationException();
             if (targetNode == null) {
-                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                throw new IllegalStateException(
+                        "Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
             }
             if (cursorNode == targetNode) {
                 cursorIndex--;
@@ -7135,7 +7137,8 @@ public class NodableLinkedList<E>
         public void set(Node<E> node) {
             checkForModificationException();
             if (targetNode == null) {
-                throw new IllegalStateException("Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
+                throw new IllegalStateException(
+                        "Neither next nor previous have been called, or remove or add have been called after the last call to next or previous");
             }
             checkNodeIsUnLinked(node);
             if (cursorNode == targetNode) cursorNode = node.linkNode();
