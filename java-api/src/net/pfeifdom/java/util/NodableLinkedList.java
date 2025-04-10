@@ -3913,6 +3913,7 @@ public class NodableLinkedList<E>
      * detect bugs.</i>
      * 
      * @author James Pfeifer
+     * @param <E> the type of element held in this {@code SubList}
      *
      */
     public static class SubList<E> extends AbstractSequentialList<E> implements List<E> {
@@ -7516,6 +7517,7 @@ public class NodableLinkedList<E>
      * ({@code addAfter(Node)}, {@code addBefore(Node)}, etc.).
      * 
      * @author James Pfeifer
+     * @param <E> the type of element held in this {@code SubListNode}
      */
     public static class SubListNode<E> implements Node<E>, Comparable<Node<E>> {
         
@@ -8172,131 +8174,131 @@ public class NodableLinkedList<E>
     
     private static class ReverseSubListNode<E> extends SubListNode<E> {
        
-       /**
-        * The SubListNode that was reversed.
-        */
-       private final SubListNode<E> subListNode;
+        /**
+         * The SubListNode that was reversed.
+         */
+        private final SubListNode<E> subListNode;
        
-       /**
-        * Construct a ReverseSubListNode.
-        * 
-        * @param subListNode the SubListNode that was reversed
-        */
-       private ReverseSubListNode(SubListNode<E> subListNode) {
-           super();
-           this.subListNode = subListNode;
-       }
+        /**
+         * Construct a ReverseSubListNode.
+         * 
+         * @param subListNode the SubListNode that was reversed
+         */
+        private ReverseSubListNode(SubListNode<E> subListNode) {
+            super();
+            this.subListNode = subListNode;
+        }
        
-       @Override
-       public SubList<E> subList() {
-           return subListNode.subList();
-       }
+        @Override
+        public SubList<E> subList() {
+            return subListNode.subList();
+        }
        
-       @Override
-       void setSubList(SubList<E> subList) {
-           subListNode.setSubList(subList);
-       }
+        @Override
+        void setSubList(SubList<E> subList) {
+            subListNode.setSubList(subList);
+        }
        
-       @Override
-       void updateExpectedModCount() {
-           subListNode.updateExpectedModCount();
-       }
+        @Override
+        void updateExpectedModCount() {
+            subListNode.updateExpectedModCount();
+        }
        
-       @Override
-       boolean isExpectedModCount() {
-           return subListNode.isExpectedModCount();
-       }
+        @Override
+        boolean isExpectedModCount() {
+            return subListNode.isExpectedModCount();
+        }
+    
+        @Override
+        public boolean isReversed() {
+            return true;
+        }       
+       
+        @Override
+        public LinkNode<E> linkNode() {
+            return subListNode.linkNode();
+        }
+       
+        @Override
+        public void addAfter(Node<E> node) {
+            subListNode.addBefore(node);
+        }
+       
+        @Override
+        public void addBefore(Node<E> node) {
+            subListNode.addAfter(node);
+        }
+       
+        @Override
+        public boolean hasNext() {
+            return subListNode.hasPrevious();
+        }
+       
+        @Override
+        public boolean hasPrevious() {
+            return subListNode.hasNext();
+        }
+       
+        @Override
+        public SubListNode<E> next() {
+            final SubListNode<E> nextNode = subListNode.previous();
+            return (nextNode == null) ? null : nextNode.reversed();
+        }
+       
+        @Override
+        public SubListNode<E> previous() {
+            final SubListNode<E> previousNode = subListNode.next();
+            return (previousNode == null) ? null : previousNode.reversed();
+        }
+       
+        @Override
+        public SubListNode<E> reversed() {
+            return subListNode;
+        }
+       
+    } // ReverseSubListNode    
 
-       @Override
-       public boolean isReversed() {
-           return true;
-       }       
-       
-       @Override
-       public LinkNode<E> linkNode() {
-           return subListNode.linkNode();
-       }
-       
-       @Override
-       public void addAfter(Node<E> node) {
-           subListNode.addBefore(node);
-       }
-       
-       @Override
-       public void addBefore(Node<E> node) {
-           subListNode.addAfter(node);
-       }
-       
-       @Override
-       public boolean hasNext() {
-           return subListNode.hasPrevious();
-       }
-       
-       @Override
-       public boolean hasPrevious() {
-           return subListNode.hasNext();
-       }
-       
-       @Override
-       public SubListNode<E> next() {
-           final SubListNode<E> nextNode = subListNode.previous();
-           return (nextNode == null) ? null : nextNode.reversed();
-       }
-       
-       @Override
-       public SubListNode<E> previous() {
-           final SubListNode<E> previousNode = subListNode.next();
-           return (previousNode == null) ? null : previousNode.reversed();
-       }
-       
-       @Override
-       public SubListNode<E> reversed() {
-           return subListNode;
-       }
-       
-   } // ReverseSubListNode    
-
-   /**
-    * Node of a {@link NodableLinkedList}. Contains references to the previous and
-    * next {@code LinkNodes} in a doubly-linked list, and contains an element which
-    * can be {@code null}. Does not belong to any particular
-    * {@link NodableLinkedList} until the {@code LinkNode} is inserted/added. Once
-    * inserted, the {@code LinkNode} remains linked to a {@code NodableLinkedList}
-    * until removed. A {@code LinkNode} can belong to different lists, just not at
-    * the same time.
-    * <P>
-    * A {@code LinkNode} can only be used to traverse the base (initially created)
-    * {@code NodableLinkedList} in a forward direction (from the list's first node
-    * to the list's last node when making successive calls to the {@code next()}
-    * method). A reversed {@code LinkNode} can be created via the
-    * {@code reversed()} method, which can be used to traverse a list in the
-    * opposite direction. For instance, a reversed {@code LinkNode} can be used to
-    * traverse a non-reversed list from the list's last node to the list's first
-    * node when making successive calls to the {@code next()} method or it can be
-    * used to traverse a reversed list from the list's first node to the list's
-    * last node when making successive calls to the {@code next()} method. The
-    * reverse ordering affects all order-sensitive operations
-    * ({@code addAfter(Node)}, {@code addBefore(Node)}, etc.). List operations like
-    * {@code NodableLinkedList.getFirstNode()},
-    * {@code NodableLinkedList.getLastNode()}, {@code LinkedNodes.element()},
-    * {@code LinkedNodes.get(index)}, {@code LinkedNodes.getFirst()},
-    * {@code LinkedNodes.getLast()}, {@code LinkedNodes.peek()},
-    * {@code LinkedNodes.peekFirst()}, {@code LinkedNodes.peekLast()}, and
-    * {@code SubLinkedNodes.get(index)} will return a reversed {@code LinkNode} if
-    * the target list is reversed. Also methods {@code next()} and
-    * {@code previous()} always return a {@code LinkNode} which has the same
-    * traversal direction as the target {@code Node}.
-    * <p>
-    * All operations, except {@code index} and {@code subListNode}, are performed
-    * in constant time.
-    * 
-    * @serialData Only the element is serialized. the references to the next and
-    *             previous nodes in a list, are not serialized. When deserialized,
-    *             the node will not be linked to any list.
-    * 
-    * @author James Pfeifer
-    * @param <E> the type of element held in this {@code LinkNode}
-    */
+    /**
+     * Node of a {@link NodableLinkedList}. Contains references to the previous and
+     * next {@code LinkNodes} in a doubly-linked list, and contains an element which
+     * can be {@code null}. Does not belong to any particular
+     * {@link NodableLinkedList} until the {@code LinkNode} is inserted/added. Once
+     * inserted, the {@code LinkNode} remains linked to a {@code NodableLinkedList}
+     * until removed. A {@code LinkNode} can belong to different lists, just not at
+     * the same time.
+     * <P>
+     * A {@code LinkNode} can only be used to traverse the base (initially created)
+     * {@code NodableLinkedList} in a forward direction (from the list's first node
+     * to the list's last node when making successive calls to the {@code next()}
+     * method). A reversed {@code LinkNode} can be created via the
+     * {@code reversed()} method, which can be used to traverse a list in the
+     * opposite direction. For instance, a reversed {@code LinkNode} can be used to
+     * traverse a non-reversed list from the list's last node to the list's first
+     * node when making successive calls to the {@code next()} method or it can be
+     * used to traverse a reversed list from the list's first node to the list's
+     * last node when making successive calls to the {@code next()} method. The
+     * reverse ordering affects all order-sensitive operations
+     * ({@code addAfter(Node)}, {@code addBefore(Node)}, etc.). List operations like
+     * {@code NodableLinkedList.getFirstNode()},
+     * {@code NodableLinkedList.getLastNode()}, {@code LinkedNodes.element()},
+     * {@code LinkedNodes.get(index)}, {@code LinkedNodes.getFirst()},
+     * {@code LinkedNodes.getLast()}, {@code LinkedNodes.peek()},
+     * {@code LinkedNodes.peekFirst()}, {@code LinkedNodes.peekLast()}, and
+     * {@code SubLinkedNodes.get(index)} will return a reversed {@code LinkNode} if
+     * the target list is reversed. Also methods {@code next()} and
+     * {@code previous()} always return a {@code LinkNode} which has the same
+     * traversal direction as the target {@code Node}.
+     * <p>
+     * All operations, except {@code index} and {@code subListNode}, are performed
+     * in constant time.
+     * 
+     * @serialData Only the element is serialized. the references to the next and
+     *             previous nodes in a list, are not serialized. When deserialized,
+     *             the node will not be linked to any list.
+     * 
+     * @author James Pfeifer
+     * @param <E> the type of element held in this {@code LinkNode}
+     */
     public static class LinkNode<E>
         implements Node<E>, Serializable, Cloneable, Comparable<Node<E>> {
 
