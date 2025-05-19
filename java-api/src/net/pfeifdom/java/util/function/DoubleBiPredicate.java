@@ -42,13 +42,13 @@ import java.util.Objects;
 
 /**
  * Represents a predicate (boolean-valued function) of two {@code double}-valued
- * operands. This is the two-arity specialization of {@link Predicate}.
+ * operands. This is the two-arity specialization of {@link java.util.function.Predicate}.
  *
  * <p>
  * This is a functional interface whose functional method is
  * {@link #test(double, double)}.
  *
- * @see Predicate
+ * @see java.util.function.Predicate
  * @since 1.8
  * @since JDK 1.8
  */
