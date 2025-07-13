@@ -45,11 +45,13 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.function.LongBinaryOperator;
+import java.util.function.LongToIntFunction;
+import java.util.function.Predicate;
+import java.util.function.ToLongFunction;
 
 import net.pfeifdom.java.util.function.LongBiPredicate;
 
@@ -74,6 +76,37 @@ import net.pfeifdom.java.util.function.LongBiPredicate;
  * <p>
  * A {@code BitString} is not safe for multithreaded use without external
  * synchronization.
+ * <p>
+ * Methods in this class that do not otherwise have a value to return are
+ * specified to return the bit string upon which they are invoked. This allows
+ * method invocations to be chained.
+ * 
+ * <pre>
+ *              q
+ *          | 0 | 1 |
+ *       ===|=======|
+ *        0 | r | r |
+ *      p --|-------| r = p op q
+ *        1 | r | r |
+ *       ============
+ * 
+ * op:             and       andnot              nornot              xor       or
+ *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
+ *      | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 1 | | 0 | 1 | | 0 | 1 | | 0 | 1 |
+ *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
+ *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
+ *      ========= ========= ========= ========= ========= ========= ========= =========
+ *       clear                         set(p)              set(q)
+ * 
+ * op:   nor       xnor                ornot               nandnot   nand
+ *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
+ *      | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 1 | | 1 | 1 | | 1 | 1 | | 1 | 1 |
+ *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
+ *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
+ *      ========= ========= ========= ========= ========= ========= ========= =========
+ *                           set(~q)             set(~p)                       set
+ * 
+ * </pre> 
  * 
  * @author james
  * @since 1.1.0
@@ -86,30 +119,30 @@ public class BitString implements Cloneable, Serializable  {
      */
     private static final long serialVersionUID = 3661279563936726028L;
 
-    public static enum Bit {
-        
-        ZERO (  "zero", '0',    false,  0),
-        ONE  (  "one",  '1',    true,   1);
-        
-        private final String label;
-        private final char chr;
-        private final boolean bool;
-        private final int num;
-        
-        private Bit(String label, char chr, boolean bool, int num) {
-            this.label = label;
-            this.chr = chr;
-            this.bool = bool;
-            this.num = num;
-        }
-        public static Bit valueOf(boolean bool) { return bool ? ONE : ZERO; }
-        public static Bit valueOf(int num) { return num == 0 ? ZERO : ONE; }
-        
-        public String label() { return label; }
-        public char chr() { return chr; }
-        public boolean bool() { return bool; }
-        public int num() { return num; }
-    }
+//    public static enum Bit {
+//        
+//        ZERO (  "zero", '0',    false,  0),
+//        ONE  (  "one",  '1',    true,   1);
+//        
+//        private final String label;
+//        private final char chr;
+//        private final boolean bool;
+//        private final int num;
+//        
+//        private Bit(String label, char chr, boolean bool, int num) {
+//            this.label = label;
+//            this.chr = chr;
+//            this.bool = bool;
+//            this.num = num;
+//        }
+//        public static Bit valueOf(boolean bool) { return bool ? ONE : ZERO; }
+//        public static Bit valueOf(int num) { return num == 0 ? ZERO : ONE; }
+//        
+//        public String label() { return label; }
+//        public char chr() { return chr; }
+//        public boolean bool() { return bool; }
+//        public int num() { return num; }
+//    }
     
     /*
      * BitStrings are packed into arrays of "words."  Currently a word is
@@ -170,7 +203,8 @@ public class BitString implements Cloneable, Serializable  {
      * Creates a new bit string. All bits are initially {@code false}.
      */
     public BitString() {
-        initWords(0, BITS_PER_WORD);
+        this.stringLength = 0;
+        initWords(BITS_PER_WORD);
      }
 
     /**
@@ -178,13 +212,23 @@ public class BitString implements Cloneable, Serializable  {
      * represent bits with indices in the range {@code 0} through
      * {@code nBits-1}. All bits are initially {@code false}.
      *
-     * @param  nBits the initial size of the bit string
+     * @param  length the initial size of the bit string
      * @throws IllegalArgumentException if the specified initial size
      *         is negative
      */
-    public BitString(int nBits) {
-        checknBits(nBits);
-        initWords(nBits, nBits);
+    public BitString(int length) {
+        checknBits(length);
+        this.stringLength = length;
+        initWords(length);
+    }
+    
+    public BitString(int length, int capacity) {
+        checknBits(length);
+        if (capacity < length) {
+            throw new IllegalArgumentException("capacity (" + capacity + ") < length (" + length + ")");
+        }
+        this.stringLength = length;
+        initWords(capacity);
     }
     
     /**
@@ -195,10 +239,14 @@ public class BitString implements Cloneable, Serializable  {
         this.words = words;
     }
 
-    private void initWords(int length, int nBits) {
-        assert length <= nBits;
-        this.stringLength = length;
-        this.words = new long[wordIndex(nBits-1) + 1];
+    private void initWords(int capacity) {
+        this.words = new long[wordIndex(capacity-1) + 1];
+    }
+    
+    private void resizeWords(int capacity) {
+        final int newLength = wordIndex(capacity-1) + 1;
+        if (newLength == words.length) return;
+        words = Arrays.copyOf(words, newLength);
     }
     
     /**
@@ -375,37 +423,26 @@ public class BitString implements Cloneable, Serializable  {
     }
     
     public int capacity() {
-        return words.length > Integer.MAX_VALUE / BITS_PER_WORD ? Integer.MAX_VALUE : words.length * BITS_PER_WORD;
+        return words.length > (Integer.MAX_VALUE / BITS_PER_WORD)
+                ? Integer.MAX_VALUE
+                : words.length * BITS_PER_WORD;
     }
     
-    public int ensureCapacity(int bitsRequired) {
-        if (capacity() < bitsRequired) {
-            int newLength = (bitsRequired / BITS_PER_WORD) + ((bitsRequired % BITS_PER_WORD) > 0 ? 1 : 0);
-            words = Arrays.copyOf(words, newLength);
-        }
+    public int ensureCapacity(int capacity) {
+        if (capacity > capacity()) resizeWords(capacity);
         return capacity();
     }
     
-    private int ensureCapacity(long bitsRequired) {
-        if (bitsRequired > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("this operation would result in the length of this BitString being greater than "+Integer.MAX_VALUE+": "+bitsRequired);
-        }
-        return ensureCapacity((int)bitsRequired);
-    }
-    
-    public int trimToSize() {
-        final int minWordsLength = lastWordIndex()+1;
-        if (minWordsLength < words.length) {
-            if (isEmpty()) {
-                this.initWords(0, 0);
-            } else {
-                words = Arrays.copyOf(words, minWordsLength);
-            }
-        }
+    public int trimToLength() {
+        resizeWords(length());
         return capacity();
     }
     
     public int length() {
+        return this.stringLength;
+    }
+    
+    int baseLength() {
         return this.stringLength;
     }
     
@@ -424,7 +461,7 @@ public class BitString implements Cloneable, Serializable  {
     }
     
     // a Range of this BitString has changed its length by the specified delta at the specified bitIndex
-    void setLength(int delta, int bitIndex) {
+    void setRangeLength(int delta, int bitIndex) {
         if (delta == 0) return;
         final long newLength = length() + delta;
         assert newLength > 0;
@@ -820,19 +857,6 @@ public class BitString implements Cloneable, Serializable  {
         return word;
     }
     
-//    void fillUnUsedBits(boolean fill) {
-//        final int nUnUsedBits = (this.capacity() - this.length()) % BITS_PER_WORD ;
-//        if (nUnUsedBits == 0) return;
-//        final int firstWordWithUnUsedBitsIndex = wordIndex(bitIndex(this.length()));
-//        long word = getWord(firstWordWithUnUsedBitsIndex);
-//        if (fill) {
-//            word = (word | (WORD_MASK >>> (BITS_PER_WORD-nUnUsedBits)));
-//        } else {
-//            word = (word & (WORD_MASK << nUnUsedBits));
-//        }
-//        setWord(firstWordWithUnUsedBitsIndex, word);
-//    }
-    
     /**
      * Fill the margins of the specified word with the specified fill value.
      * 
@@ -888,7 +912,7 @@ public class BitString implements Cloneable, Serializable  {
             int firstWordIndex, int leftMarginSize) {
         if (leftMarginSize > 0) {
             setWord(firstWordIndex,
-                    (originalFirstWord & (WORD_MASK << BITS_PER_WORD-leftMarginSize))
+                    (originalFirstWord & (WORD_MASK << (BITS_PER_WORD - leftMarginSize)))
                   | (getWord(firstWordIndex) & (WORD_MASK >>> leftMarginSize)));
         }
     }
@@ -897,7 +921,7 @@ public class BitString implements Cloneable, Serializable  {
             int lastWordIndex, int rightMarginSize) {
         if (rightMarginSize > 0) {
             setWord(lastWordIndex,
-                    (originalLastWord & (WORD_MASK >>> BITS_PER_WORD-rightMarginSize))
+                    (originalLastWord & (WORD_MASK >>> (BITS_PER_WORD - rightMarginSize)))
                   | (getWord(lastWordIndex) & (WORD_MASK << rightMarginSize)));
         }
     }
@@ -937,8 +961,20 @@ public class BitString implements Cloneable, Serializable  {
         return temp;
     }
     
+    private static boolean isValidRelativeOffset(int offset, int length) {
+        return offset == 0 || offset > 0 && offset < length;
+    }
+    
+    private static void checkRelativeOffset(int offset, int length) {
+        if (!isValidRelativeOffset(offset, length)) {
+            throw new StringIndexOutOfBoundsException(
+                    "specified offset is negative, or greater than or equal to the length; offset=" + offset + ", length=" + length);
+        }
+    }
+    
     private boolean isValidOffset(int offset) {
-        return offset == 0 || offset > 0 && offset < this.length();
+        return isValidRelativeOffset(offset, this.length());
+        //return offset == 0 || offset > 0 && offset < this.length();
     }
     
     private void checkThisOffset(int offset) {
@@ -1002,10 +1038,16 @@ public class BitString implements Cloneable, Serializable  {
         }
     }
     
+    private void checkBaseLength(long length) {
+        if ((long)baseLength() + length > Integer.MAX_VALUE) {
+            throw new UnsupportedOperationException("the operation would result in the length of the base BitString exceeding the maximum of "+Integer.MAX_VALUE+": "+length);
+        }
+    }
+    
     void iAppend(BitString that, int thatOffset, int thatLength) {
         assert that.isValidOffset(thatOffset);
         assert that.isValidLength(thatOffset, thatLength);
-        ensureCapacity((long)this.length() + thatLength);
+        ensureCapacity(this.length() + thatLength);
         setLength(this.length() + thatLength);
         iCopyFromFrontOf(this.length(), thatLength, that, thatOffset, thatLength);
     }
@@ -1014,7 +1056,7 @@ public class BitString implements Cloneable, Serializable  {
         assert isValidOffset(bitIndex);
         assert isValidLength(bitIndex, length);
         if (length > 0) {
-            iShiftLeft(length, ZERO_FILL, bitIndex, length()-bitIndex);
+            iShiftLeft(length, ZERO_FILL, bitIndex, length() - bitIndex);
             setLength(length() - length);
         }
     }
@@ -1025,9 +1067,9 @@ public class BitString implements Cloneable, Serializable  {
         assert that.isValidLength(thatOffset, thatLength);
         if (thatLength == 0) return;
         if (position == this.length()) { iAppend(that, thatOffset, thatLength); return; }
-        ensureCapacity((long)this.length() + thatLength);
+        ensureCapacity(this.length() + thatLength);
         setLength(this.length() + thatLength);
-        iShiftRight(thatLength, ZERO_FILL, position, this.length()-position);
+        iShiftRight(thatLength, ZERO_FILL, position, this.length() - position);
         iCopyFromFrontOf(position, thatLength, that, thatOffset, thatLength);
     }
     
@@ -1036,79 +1078,333 @@ public class BitString implements Cloneable, Serializable  {
         assert this.isValidLength(thisBitIndex, thisLength);
         assert that.isValidOffset(thatOffset);
         assert that.isValidLength(thatOffset, thatLength);
-        ensureCapacity((long)this.length() - thisLength + thatLength);
+        ensureCapacity(this.length() - thisLength + thatLength);
         final int newLength = this.length() - thisLength + thatLength;
         final int shift = thatLength - thisLength;
         if (newLength > length()) setLength(newLength);
-        iShiftRight(shift, ZERO_FILL, thisBitIndex, this.length()-thisBitIndex);
+        iShiftRight(shift, ZERO_FILL, thisBitIndex, this.length() - thisBitIndex);
         if (newLength < length()) setLength(newLength);
         iCopyFromFrontOf(thisBitIndex, thatLength, that, thatOffset, thatLength);
     }
     
     /**
-     * Perform an <b>AND</b> operation on this BitString and the specified BitString.
+     * <pre>
+     *          q
+     *      | 0 | 1 |
+     *   ===|=======|
+     *    0 | r | r |
+     *  p --|-------| r = p op q
+     *    1 | r | r |
+     *   ============
+     *             
+     *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
+     *      | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 1 | | 0 | 1 | | 0 | 1 | | 0 | 1 |
+     *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
+     *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
+     *      ========= ========= ========= ========= ========= ========= ========= =========
+     * op:  clear     and       andnot    set(p)    nornot    set(q)    xor       or
+     *             
+     *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
+     *      | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 1 | | 1 | 1 | | 1 | 1 | | 1 | 1 |
+     *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
+     *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
+     *      ========= ========= ========= ========= ========= ========= ========= =========
+     * op:  nor       xnor      set(~q)   ornot     set(~p)   nandnot   nand      set
      * 
-     * @param thisOffset the position of the first bit in this BitString to be ANDed
-     * @param length     the number of bits involved in the AND operation
-     * @param that       the BitString to AND with this BitString
-     * @param thatOffset the position of the first bit in the specified BitString to
-     *                   be ANDed
+     * </pre> 
+     */
+    
+    /**
+     * Perform an <b>AND</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 0 | 0 |
+     *         bit ---|-------|
+     *       value  1 | 0 | 1 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
      */
     private void iAnd(int thisOffset, int length, BitString that, int thatOffset) {
-        iOp( (lArg, rArg) -> { return lArg & rArg; }, ONE_FILL,
-                thisOffset, length, that, thatOffset);
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return lArg & rArg; });
     }
     
+    /**
+     * Perform an <b>ANDNOT</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 0 | 0 |
+     *         bit ---|-------|
+     *       value  1 | 1 | 0 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
     private void iAndNot(int thisOffset, int length, BitString that, int thatOffset) {
-        iOp( (lArg, rArg) -> { return lArg & ~rArg; }, ZERO_FILL,
-                thisOffset, length, that, thatOffset);
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return lArg & ~rArg; });
     }
     
     private void iClear(int offset, int length) {
-        iOp( (lArg, rArg) -> { return lArg & rArg; }, ONE_FILL,
-                offset, length, ZEROS, offset);
+        iBitwiseOp(offset, length, ZEROS, offset,
+                (lArg, rArg) -> { return rArg; });
     }
     
-    private void iFlip(int offset, int length) {
-        iOp( (lArg, rArg) -> { return lArg ^ rArg; }, ZERO_FILL,
-                offset, length, ONES, offset);
+    private void iCopy(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return rArg; });
+    }
+    
+    private void iCopyNot(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~rArg; });
+    }
+    
+    /**
+     * Perform an <b>NAND</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 1 | 1 |
+     *         bit ---|-------|
+     *       value  1 | 1 | 0 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iNand(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~(lArg & rArg); });
+    }
+    
+    /**
+     * Perform an <b>NANDNOT</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 1 | 1 |
+     *         bit ---|-------|
+     *       value  1 | 0 | 1 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iNandNot(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~lArg | rArg; });
+             // (lArg, rArg) -> { return ~(lArg & ~rArg); });
+    }
+    
+    /**
+     * Perform an <b>NOR</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 1 | 0 |
+     *         bit ---|-------|
+     *       value  1 | 0 | 0 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iNor(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~(lArg | rArg); });
+    }
+    
+    /**
+     * Perform an <b>NORNOT</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 0 | 1 |
+     *         bit ---|-------|
+     *       value  1 | 0 | 0 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iNorNot(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~lArg & rArg; });
+             // (lArg, rArg) -> { return ~(lArg | !rArg); });
+    }
+    
+    private void iNot(int offset, int length) {
+        //iBitwiseOp(offset, length, ONES, offset,
+        //        (lArg, rArg) -> { return lArg ^ rArg; });
+        iBitwiseOp(offset, length, ZEROS, offset,
+                (lArg, rArg) -> { return ~lArg; });
+    }
+    
+    /**
+     * Perform an <b>OR</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 0 | 1 |
+     *         bit ---|-------|
+     *       value  1 | 1 | 1 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iOr(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return lArg | rArg; });
+    }
+    
+    /**
+     * Perform an <b>ORNOT</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
+     * 
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 1 | 0 |
+     *         bit ---|-------|
+     *       value  1 | 1 | 1 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
+     */
+    private void iOrNot(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return lArg | ~rArg; });
     }
     
     private void iSet(int offset, int length) {
-        iOp( (lArg, rArg) -> { return lArg | rArg; }, ZERO_FILL,
-                offset, length, ONES, offset);
+        iBitwiseOp(offset, length, ONES, offset,
+                (lArg, rArg) -> { return rArg; });
     }
     
     /**
-     * Perform an <b>OR</b> operation on this BitString and the specified BitString.
+     * Perform an <b>XNOR</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
      * 
-     * @param thisOffset the position of the first bit in this BitString to be ORed
-     * @param length     the number of bits involved in the OR operation
-     * @param that       the BitString to OR with this BitString
-     * @param thatOffset the position of the first bit in the specified BitString to
-     *                   be ORed
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 1 | 0 |
+     *         bit ---|-------|
+     *       value  1 | 0 | 1 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
      */
-    private void iOr(int thisOffset, int length, BitString that, int thatOffset) {
-        iOp( (lArg, rArg) -> { return lArg | rArg; }, ZERO_FILL,
-                thisOffset, length, that, thatOffset);
+    private void iXnor(int thisOffset, int length, BitString that, int thatOffset) {
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return ~(lArg ^ rArg); });
     }
     
     /**
-     * Perform an <b>XOR</b> operation on this BitString and the specified BitString.
+     * Perform an <b>XOR</b> operation on a substring of this BitString and a
+     * substring the specified BitString (that).
      * 
-     * @param thisOffset the position of the first bit in this BitString to be XORed
-     * @param length     the number of bits involved in the XOR operation
-     * @param that       the BitString to XOR with this BitString
-     * @param thatOffset the position of the first bit in the specified BitString to
-     *                   be XORed
+     * <pre>
+     *                 that bit
+     *                  value
+     *                | 0 | 1 |
+     *             ===|=======|
+     *        this  0 | 0 | 1 |
+     *         bit ---|-------|
+     *       value  1 | 1 | 0 |
+     *             ============
+     * </pre>
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length     the length of the substrings
+     * @param that       the argument bit string
+     * @param thatOffset the offset of that substring
      */
     private void iXor(int thisOffset, int length, BitString that, int thatOffset) {
-        iOp( (lArg, rArg) -> { return lArg ^ rArg; }, ZERO_FILL,
-                thisOffset, length, that, thatOffset);
+        iBitwiseOp(thisOffset, length, that, thatOffset,
+                (lArg, rArg) -> { return lArg ^ rArg; });
     }
     
-    void iOp(LongBinaryOperator op, boolean fill,
-            int thisOffset, int length, BitString that, int thatOffset) {
+    /**
+     * Perform the specified bitwise operation (op) on a substring of this {@code BitString}
+     * and a substring of the specified bit string (that).
+     * 
+     * @param thisOffset the offset of this substring
+     * @param length the length of the substrings
+     * @param that the argument bit string
+     * @param thatOffset the offset of that substring
+     * @param op the bitwise operation to perform
+     */
+    private void iBitwiseOp(int thisOffset, int length, BitString that, int thatOffset,
+            LongBinaryOperator op) {
         
         assert (((long)thisOffset + length) <= this.length());
         assert (((long)thatOffset + length) <= that.length());
@@ -1118,34 +1414,43 @@ public class BitString implements Cloneable, Serializable  {
         final int thisLastWordIndex = this.lastWordIndex(thisOffset, length);
         final int thatFirstWordIndex = that.firstWordIndex(thatOffset);
         final int thatLastWordIndex = that.lastWordIndex(thatOffset, length);
-        final int thatShift = this.firstWordBitIndex(thisOffset) - that.firstWordBitIndex(thatOffset);
         final int thisLeftMarginSize = this.leftMarginSize(thisOffset);
         final int thisRightMarginSize = this.rightMarginSize(thisOffset, length);
         final int thatLeftMarginSize = that.leftMarginSize(thatOffset);
         final int thatRightMarginSize = that.rightMarginSize(thatOffset, length);
         
+        final long thisOriginalFirstWord = that.getWord(thisFirstWordIndex);
+        final long thisOriginalLastWord = that.getWord(thisLastWordIndex);
+        
         long arg;
+        int thatShift = this.firstWordBitIndex(thisOffset) - that.firstWordBitIndex(thatOffset);
         for (int thisWordCursor = thisFirstWordIndex, thatWordCursor = thatFirstWordIndex;
                 thisWordCursor <= thisLastWordIndex;
                 thisWordCursor++, thatWordCursor++) {
             
             if (thatWordCursor > thatLastWordIndex) {
-                final int shift = -(that.firstWordBitIndex(thatOffset)+this.lastWordBitIndex(thisOffset, length)+1);
-                arg = that.shiftWord(shift, fill, thatLastWordIndex,
-                        thatFirstWordIndex, thatLastWordIndex,
-                        thatLeftMarginSize, thatRightMarginSize);
-            } else {
-                arg = that.shiftWord(thatShift, fill, thatWordCursor,
-                        thatFirstWordIndex, thatLastWordIndex,
-                        thatLeftMarginSize, thatRightMarginSize);
+                // This situation occurs if thisWord spans across two words,
+                // but thatWord, before it is shifted into place,
+                // is contained wholly within the first word.
+                // The portion of the last thatWord that is shifted into
+                // the next word, needs to be shifted into place.
+                assert thisWordCursor == thisLastWordIndex;
+                thatShift = this.lastWordBitIndex(thisOffset, length) - that.lastWordBitIndex(thatOffset, length);
+                thatWordCursor = thatLastWordIndex;
             }
-            arg = fillMargins(fill, arg, thisWordCursor,
-                    thisFirstWordIndex, thisLastWordIndex,
-                    thisLeftMarginSize, thisRightMarginSize);
+            
+            // Shift that substring (the argument) so that it aligns up with this substring.
+            arg = that.shiftWord(thatShift, ZERO_FILL, thatWordCursor,
+                    thatFirstWordIndex, thatLastWordIndex,
+                    thatLeftMarginSize, thatRightMarginSize);
             
             setWord(thisWordCursor, op.applyAsLong(getWord(thisWordCursor), arg));
             
         }
+        
+        restoreMargins(thisOriginalFirstWord, thisOriginalLastWord,
+                thisFirstWordIndex, thisLastWordIndex,
+                thisLeftMarginSize, thisRightMarginSize);
         
     }
     
@@ -1161,7 +1466,7 @@ public class BitString implements Cloneable, Serializable  {
                 thisOffset, length, that, thatOffset);
     }
     
-    boolean iPredicate(LongBiPredicate op, boolean dflt, boolean fill,
+    private boolean iPredicate(LongBiPredicate op, boolean dflt, boolean fill,
             int thisOffset, int length, BitString that, int thatOffset) {
         
         assert (((long)thisOffset + length) <= this.length());
@@ -1180,47 +1485,53 @@ public class BitString implements Cloneable, Serializable  {
         
     }
     
-    void iCopyFromFrontOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
+    private void iCopyFromFrontOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         assert this.isValidOffset(thisOffset);
         assert this.isValidLength(thisOffset, thisLength);
         assert that.isValidOffset(thatOffset);
         assert that.isValidLength(thatOffset, thatLength);
         if (thisLength == 0) return;
         
-        final int thisFirstWordIndex = this.firstWordIndex(thisOffset);
-        final int thisLastWordIndex = this.lastWordIndex(thisOffset, thisLength);
-        final int thisLeftMarginSize = this.leftMarginSize(thisOffset);
-        final int thisRightMarginSize = this.rightMarginSize(thisOffset, thisLength);
+//        final int thisFirstWordIndex = this.firstWordIndex(thisOffset);
+//        final int thisLastWordIndex = this.lastWordIndex(thisOffset, thisLength);
+//        final int thisLeftMarginSize = this.leftMarginSize(thisOffset);
+//        final int thisRightMarginSize = this.rightMarginSize(thisOffset, thisLength);
       
-        final long thisOriginalLastWord = this.getWord(thisLastWordIndex);
+//        final long thisOriginalLastWord = this.getWord(thisLastWordIndex);
         
-        // copy bits from the front of that BitString into this BitString.
-        // insert the copied bits from the the front to the back of this BitString.
-        // if that  BitString is shorter than this BitString, pad this BitString with zeros.
-        long thatWord;
-        final int[] thatIterator = that.getIterator(thatOffset, thatLength);
-        for (int thisWordIndex = thisFirstWordIndex; thisWordIndex <= thisLastWordIndex; thisWordIndex++) {
-            if (that.hasNextIteratorWord(thatIterator)) {
-                thatWord = that.getNextIteratorFullWord(thatIterator);
-            } else {
-                thatWord = 0L;
-            }
-            if (thisLeftMarginSize > 0) {
-                this.setWord(thisWordIndex,
-                        (thatWord >>> thisLeftMarginSize)
-                      | (this.getWord(thisWordIndex) & (WORD_MASK << BITS_PER_WORD - thisLeftMarginSize)));
-                if (thisWordIndex+1 <= thisLastWordIndex) {
-                    this.setWord(thisWordIndex-1, (thatWord << BITS_PER_WORD - thisLeftMarginSize)); 
-                }
-            } else {
-                this.setWord(thisWordIndex, thatWord);
-            }
-        }
+        final int copyLength = Math.min(thisLength, thatLength);
+        final int clearLength = thisLength - copyLength;
         
-        this.restoreRightMargin(thisOriginalLastWord, thisLastWordIndex, thisRightMarginSize);
+        iCopy(thisOffset, copyLength, that, thatOffset);
+        if (clearLength > 0) iClear(thisOffset + copyLength, clearLength);
+        
+//        // copy bits from the front of that BitString into this BitString.
+//        // insert the copied bits from the the front to the back of this BitString.
+//        // if that  BitString is shorter than this BitString, pad this BitString with zeros.
+//        long thatWord;
+//        final int[] thatIterator = that.getIterator(thatOffset, thatLength);
+//        for (int thisWordIndex = thisFirstWordIndex; thisWordIndex <= thisLastWordIndex; thisWordIndex++) {
+//            if (that.hasNextIteratorWord(thatIterator)) {
+//                thatWord = that.getNextIteratorFullWord(thatIterator);
+//            } else {
+//                thatWord = 0L;
+//            }
+//            if (thisLeftMarginSize > 0) {
+//                this.setWord(thisWordIndex,
+//                        (thatWord >>> thisLeftMarginSize)
+//                      | (this.getWord(thisWordIndex) & (WORD_MASK << BITS_PER_WORD - thisLeftMarginSize)));
+//                if (thisWordIndex+1 <= thisLastWordIndex) {
+//                    this.setWord(thisWordIndex+1, (thatWord << BITS_PER_WORD - thisLeftMarginSize)); 
+//                }
+//            } else {
+//                this.setWord(thisWordIndex, thatWord);
+//            }
+//        }
+//        
+//        this.restoreRightMargin(thisOriginalLastWord, thisLastWordIndex, thisRightMarginSize);
     }
     
-    void iCopyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
+    private void iCopyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         assert this.isValidOffset(thisOffset);
         assert this.isValidLength(thisOffset, thisLength);
         assert that.isValidOffset(thatOffset);
@@ -1260,7 +1571,7 @@ public class BitString implements Cloneable, Serializable  {
         this.restoreLeftMargin(thisOriginalFirstWord, thisFirstWordIndex, thisLeftMarginSize);
     }
     
-    void iReverse(int offset, int length) {
+    private void iReverse(int offset, int length) {
         assert isValidOffset(offset);
         assert isValidLength(offset, length);
         if (length == 0) return;
@@ -1367,7 +1678,7 @@ public class BitString implements Cloneable, Serializable  {
         }
     }
     
-    void iRotateLeft(int nBits, int offset, int length) {
+    private void iRotateLeft(int nBits, int offset, int length) {
         assert isValidOffset(offset);
         assert isValidLength(offset, length);
         if (nBits == 0 || length == 0) return;
@@ -1390,7 +1701,7 @@ public class BitString implements Cloneable, Serializable  {
         //iCopyFromFrontOf(offset+length-shift, shift, spill, 0, shift);
     }
     
-    void iRotateLeft(int nBits, int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
+    private void iRotateLeft(int nBits, int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         assert this.isValidOffset(thisOffset);
         assert this.isValidLength(thisOffset, thisLength);
         assert that.isValidOffset(thatOffset);
@@ -1435,7 +1746,7 @@ public class BitString implements Cloneable, Serializable  {
         spill.iShiftLeft(thisShift, ZERO_FILL, 0, shift, this, thisOffset+thisLength-thisShift, thisShift);
     }
     
-    void iRotateRight(int nBits, int offset, int length) {
+    private void iRotateRight(int nBits, int offset, int length) {
         assert isValidOffset(offset);
         assert isValidLength(offset, length);
         if (nBits == 0 || length == 0) return;
@@ -1458,7 +1769,7 @@ public class BitString implements Cloneable, Serializable  {
         //iCopyFromFrontOf(offset, shift, spill, 0, shift);
     }
     
-    void iRotateRight(int nBits, int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
+    private void iRotateRight(int nBits, int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         assert this.isValidOffset(thisOffset);
         assert this.isValidLength(thisOffset, thisLength);
         assert that.isValidOffset(thatOffset);
@@ -1503,7 +1814,7 @@ public class BitString implements Cloneable, Serializable  {
         spill.iShiftRight(thisShift, ZERO_FILL, 0, shift, this, thisOffset, thisShift);
     }
     
-    void iShiftLeft(int nBits, boolean fill, int offset, int length) {
+    private void iShiftLeft(int nBits, boolean fill, int offset, int length) {
         assert isValidOffset(offset);
         assert isValidLength(offset, length);
         if (nBits == 0 || length == 0) return;
@@ -1567,7 +1878,7 @@ public class BitString implements Cloneable, Serializable  {
                 leftMarginSize, rightMarginSize);
     }
     
-    void iShiftLeft(int nBits, boolean fill,
+    private void iShiftLeft(int nBits, boolean fill,
             int thisOffset, int thisLength,
             BitString that, int thatOffset, int thatLength) {
         assert this.isValidOffset(thisOffset);
@@ -1630,7 +1941,7 @@ public class BitString implements Cloneable, Serializable  {
         this.iShiftLeft(nBits, fill, thisOffset, thisLength);
     }
     
-    void iShiftRight(int nBits, boolean fill, int offset, int length) {
+    private void iShiftRight(int nBits, boolean fill, int offset, int length) {
         assert nBits != Integer.MIN_VALUE;
         assert isValidOffset(offset);
         assert isValidLength(offset, length);
@@ -1695,7 +2006,7 @@ public class BitString implements Cloneable, Serializable  {
                 leftMarginSize, rightMarginSize);
     }
     
-    void iShiftRight(int nBits, boolean fill,
+    private void iShiftRight(int nBits, boolean fill,
             int thisOffset, int thisLength,
             BitString that, int thatOffset, int thatLength) {
         assert nBits != Integer.MIN_VALUE;
@@ -1759,7 +2070,7 @@ public class BitString implements Cloneable, Serializable  {
         this.iShiftRight(nBits, fill, thisOffset, thisLength);
     }
     
-    long iGetPrimitive(int offset, int size, String name) {
+    private long iGetPrimitive(int offset, int size, String name) {
         assert isValidOffset(offset);
         assert size <= BITS_PER_WORD;
         final int space = length() - offset;
@@ -1774,7 +2085,7 @@ public class BitString implements Cloneable, Serializable  {
         return word >> (BITS_PER_WORD - size);
     }
     
-    void iPutPrimitive(int offset, int size, String name, BitString primitiveBits) {
+    private void iPutPrimitive(int offset, int size, String name, BitString primitiveBits) {
         assert isValidOffset(offset);
         assert size <= BITS_PER_WORD;
         final int space = length() - offset;
@@ -1786,44 +2097,214 @@ public class BitString implements Cloneable, Serializable  {
         iCopyFromFrontOf(offset, size, primitiveBits, 0, size);
     }
     
+    /**
+     * Returns the number of leading {@code ONES} of the specified substring of this
+     * {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of leading {@code ONES} of the substring
+     */
+    private int iNumberOfLeadingOnes(int offset, int length) {
+        return iNumberOfLeadingOrTrailingOnesOrZeros(offset, length,
+                iterator -> { return hasNextIteratorWord(iterator); },
+                iterator -> { return ~getNextIteratorFullWord(iterator, ZERO_FILL); },
+                word -> { return Long.numberOfLeadingZeros(word); });
+    }
+    
+    /**
+     * Returns the number of leading {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of leading {@code ZEROS} of the substring
+     */
+    private int iNumberOfLeadingZeros(int offset, int length) {
+        return iNumberOfLeadingOrTrailingOnesOrZeros(offset, length,
+                iterator -> { return hasNextIteratorWord(iterator); },
+                iterator -> { return getNextIteratorFullWord(iterator, ONE_FILL); },
+                word -> { return Long.numberOfLeadingZeros(word); });
+    }
+    
+    /**
+     * Returns the number of trailing {@code ONES} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of trailing {@code ONES} of the substring
+     */
+    private int iNumberOfTrailingOnes(int offset, int length) {
+        return iNumberOfLeadingOrTrailingOnesOrZeros(offset, length,
+                iterator -> { return hasPreviousIteratorWord(iterator); },
+                iterator -> { return ~getPreviousIteratorFullWord(iterator, ZERO_FILL); },
+                word -> { return Long.numberOfTrailingZeros(word); });
+    }
+    
+    /**
+     * Returns the number of trailing {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of trailing {@code ZEROS} of the substring
+     */
+    private int iNumberOfTrailingZeros(int offset, int length) {
+        return iNumberOfLeadingOrTrailingOnesOrZeros(offset, length,
+                iterator -> { return hasPreviousIteratorWord(iterator); },
+                iterator -> { return getPreviousIteratorFullWord(iterator, ONE_FILL); },
+                word -> { return Long.numberOfTrailingZeros(word); });
+    }
+
+    /**
+     * Returns the number of leading/trailing {@code ONES}/{@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @param hasIteratorWord a predicate that indicates if there exists a next or previous word
+     * @param getIteratorFullWord a function that returns the next or previous full word
+     * @param numberOfLeadingOrTrailingZeros a function that counts the number of leading or trailing Zeros of a word
+     * @return the number of leading/trailing {@code ONES}/{@code ZEROS} of the substring
+     */
+    private int iNumberOfLeadingOrTrailingOnesOrZeros(int offset, int length,
+            Predicate<int[]> hasIteratorWord,
+            ToLongFunction<int[]> getIteratorFullWord,
+            LongToIntFunction numberOfLeadingOrTrailingZeros) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        int count = 0;
+        final int[] iterator = getIterator(offset, length);
+        while (hasIteratorWord.test(iterator)) {
+            final long word = getIteratorFullWord.applyAsLong(iterator);
+            if (word != 0L) {
+                count += numberOfLeadingOrTrailingZeros.applyAsInt(word);
+                break;
+            }
+            count += BITS_PER_WORD;
+        }
+        return count;
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no bits in the
+     * substring are set to {@code ONE}, -1 is returned. The returned offset is
+     * relative to the start of the substring.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the first {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     */
+    private int iOffsetOfFirstOne(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return -1;
+        final int count = iNumberOfLeadingZeros(offset, length);
+        return (count == length) ? -1 : count;
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ZERO} that occurs
+     * within the specified substring of this {@code BitString}. If no bits in the
+     * substring are set to {@code ZERO}, -1 is returned. The returned offset is
+     * relative to the start of the substring.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the first {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     */
+    private int iOffsetOfFirstZero(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return -1;
+        final int count = iNumberOfLeadingOnes(offset, length);
+        return (count == length) ? -1 : count;
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no bits in the
+     * substring are set to {@code ONE}, -1 is returned. The returned offset is
+     * relative to the start of the substring.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the last {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     */
+    private int iOffsetOfLastOne(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        return length - iNumberOfTrailingZeros(offset, length) - 1;
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ZERO} that occurs
+     * within the specified substring of this {@code BitString}. If no bits in the
+     * substring are set to {@code ZERO}, -1 is returned. The returned offset is
+     * relative to the start of the substring.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the last {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     */
+    private int iOffsetOfLastZero(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        return length - iNumberOfTrailingOnes(offset, length) - 1;
+    }
+    
     public BitString append(BitString that, int thatOffset, int thatLength) {
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
+        checkBaseLength(thatLength);
         iAppend(that, thatOffset, thatLength);
         return this;
     }
     
     public BitString appendByte(byte primitive) {
+        checkBaseLength(Byte.SIZE);
         iAppend(temp(primitive), 0, Byte.SIZE);
         return this;
     }
     
     public BitString appendChar(byte primitive) {
+        checkBaseLength(Character.SIZE);
         iAppend(temp(primitive), 0, Character.SIZE);
         return this;
     }
     
     public BitString appendDouble(double primitive) {
+        checkBaseLength(Long.SIZE);
         iAppend(temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
         return this;
     }
     
     public BitString appendFloat(float primitive) {
+        checkBaseLength(Integer.SIZE);
         iAppend(temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
         return this;
     }
     
     public BitString appendInt(int primitive) {
+        checkBaseLength(Integer.SIZE);
         iAppend(temp(primitive), 0, Integer.SIZE);
         return this;
     }
     
     public BitString appendLong(long primitive) {
+        checkBaseLength(Long.SIZE);
         iAppend(temp(primitive), 0, Long.SIZE);
         return this;
     }
     
     public BitString appendShort(short primitive) {
+        checkBaseLength(Short.SIZE);
         iAppend(temp(primitive), 0, Short.SIZE);
         return this;
     }
@@ -1839,48 +2320,56 @@ public class BitString implements Cloneable, Serializable  {
         checkThisPosition(position);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
+        checkBaseLength(thatLength);
         iInsert(bitIndex(position), that, thatOffset, thatLength);
         return this;
     }
     
     public BitString insertByte(int position, byte primitive) {
         checkThisPosition(position);
+        checkBaseLength(Byte.SIZE);
         iInsert(bitIndex(position), temp(primitive), 0, Byte.SIZE);
         return this;
     }
     
     public BitString insertChar(int position, byte primitive) {
         checkThisPosition(position);
+        checkBaseLength(Character.SIZE);
         iInsert(bitIndex(position), temp(primitive), 0, Character.SIZE);
         return this;
     }
     
     public BitString insertDouble(int position, double primitive) {
         checkThisPosition(position);
+        checkBaseLength(Long.SIZE);
         iInsert(bitIndex(position), temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
         return this;
     }
     
     public BitString insertFloat(int position, float primitive) {
         checkThisPosition(position);
+        checkBaseLength(Integer.SIZE);
         iInsert(bitIndex(position), temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
         return this;
     }
     
     public BitString insertInt(int position, int primitive) {
         checkThisPosition(position);
+        checkBaseLength(Integer.SIZE);
         iInsert(bitIndex(position), temp(primitive), 0, Integer.SIZE);
         return this;
     }
     
     public BitString insertLong(int position, long primitive) {
         checkThisPosition(position);
+        checkBaseLength(Long.SIZE);
         iInsert(bitIndex(position), temp(primitive), 0, Long.SIZE);
         return this;
     }
     
     public BitString insertShort(int position, short primitive) {
         checkThisPosition(position);
+        checkBaseLength(Short.SIZE);
         iInsert(bitIndex(position), temp(primitive), 0, Short.SIZE);
         return this;
     }
@@ -1890,6 +2379,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisLength(thisOffset, thisLength);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
+        checkBaseLength(thatLength - thisLength);
         iReplace(firstBitIndex(thisOffset), thisLength, that, thatOffset, thatLength);
         return this;
     }
@@ -1917,7 +2407,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString clear(int offset) {
         checkThisOffset(offset);
-        iClear(offset, length()-offset);
+        iClear(offset, length() - offset);
         return this;
     }
     
@@ -1959,16 +2449,34 @@ public class BitString implements Cloneable, Serializable  {
     /**
      * Sets the bit at the specified offset to {@code ZERO}.
      * 
-     * @param offset the offset of the bit to set
+     * @param bitOffset the offset of the bit to set
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
      */
-    public BitString clearBit(int offset) {
-        checkThisOffset(offset);
-        int wordIndex = wordIndex(bitIndex(offset));
-        setWord(wordIndex, getWord(wordIndex) & ~(BIT_MASK >>> wordBitIndex(bitIndex(offset))));
+    public BitString clearBit(int bitOffset) {
+        checkThisOffset(bitOffset);
+        final int bitIndex = bitIndex(bitOffset);
+        int wordIndex = wordIndex(bitIndex);
+        setWord(wordIndex, getWord(wordIndex) & ~(BIT_MASK >>> wordBitIndex(bitIndex)));
         return this;
+    }
+    
+    public BitString clearBit(int bitOffset, int offset) {
+        checkThisOffset(offset);
+        checkRelativeOffset(bitOffset, length() - offset);
+        return clearBit(offset + bitOffset);
+    }
+    
+    public BitString clearBit(int bitOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkRelativeOffset(bitOffset, length);
+        return clearBit(offset + bitOffset);
+    }
+    
+    public BitString clearBit(int bitOffset, Field field) {
+        return clearBit(bitOffset, field.offset(), field.length());
     }
     
     
@@ -1979,7 +2487,7 @@ public class BitString implements Cloneable, Serializable  {
      * @return this {@code BitString}
      */
     public BitString flip() {
-        iFlip(0, length());
+        iNot(0, length());
         return this;
     }
     
@@ -1997,7 +2505,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString flip(int offset) {
         checkThisOffset(offset);
-        iFlip(offset, length()-offset);
+        iNot(offset, length() - offset);
         return this;
     }
     
@@ -2019,7 +2527,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString flip(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
-        iFlip(offset, length);
+        iNot(offset, length);
         return this;
     }
     
@@ -2075,7 +2583,7 @@ public class BitString implements Cloneable, Serializable  {
      */    
     public BitString get(int offset) {
         checkThisOffset(offset);
-        return get(offset, this.length()-offset);
+        return get(offset, this.length() - offset);
     }
     
     /**
@@ -2117,21 +2625,33 @@ public class BitString implements Cloneable, Serializable  {
     /**
      * Returns the bit at the specified offset.
      * 
-     * @param offset the offset of the bit to get
+     * @param bitOffset the offset of the bit to get
      * @return the bit at the specified offset
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      */
-    public Bit getBit(int offset) {
+    public boolean getBit(int bitOffset) {
+        checkThisOffset(bitOffset);
+        final int bitIndex = bitIndex(bitOffset);
+        return (getWord(wordIndex(bitIndex)) & (BIT_MASK >>> wordBitIndex(bitIndex))) != 0L;
+    }
+    
+    public boolean getBit(int bitOffset, int offset) {
         checkThisOffset(offset);
-        return Bit.valueOf(getBoolean(offset));
+        final int length = length() - offset;
+        checkRelativeOffset(bitOffset, length);
+        return getBit(offset + bitOffset);
+    }
+    
+    public boolean getBit(int bitOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkRelativeOffset(bitOffset, length);
+        return getBit(offset + bitOffset);
     }
     
     public boolean getBoolean(int offset) {
-        checkThisOffset(offset);
-        final int bitIndex = bitIndex(offset);
-        //return iGetPrimitive(offset, 1, "boolean") == 1L;
-        return (getWord(wordIndex(bitIndex)) & (BIT_MASK >>> wordBitIndex(bitIndex))) != 0L;
+        return getBit(offset);
     }
     
     public byte getByte(int offset) {
@@ -2169,10 +2689,9 @@ public class BitString implements Cloneable, Serializable  {
         return (short)(iGetPrimitive(offset, Short.SIZE, "short"));
     }
     
-//    public BitString putBoolean(int offset, boolean primitive) {
-//        checkThisOffset(offset);
-//        return setBit(offset, primitive);
-//    }
+    public BitString putBoolean(int offset, boolean primitive) {
+        return setBit(primitive, offset);
+    }
     
     public BitString putByte(int offset, byte primitive) {
         checkThisOffset(offset);
@@ -2239,7 +2758,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString set(int offset) {
         checkThisOffset(offset);
-        iSet(offset, length()-offset);
+        iSet(offset, length() - offset);
         return this;
     }
     
@@ -2286,11 +2805,6 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString set(boolean bit) {
         return bit ? set() : clear();
-//        if (bit.bool()) {
-//            return set();
-//        } else {
-//            return clear();
-//        }
     }
     
     /**
@@ -2308,11 +2822,6 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString set(boolean bit, int offset) {
         return bit ? set(offset) : clear(offset);
-//        if (bit.bool()) {
-//            return set(offset);
-//        } else {
-//            return clear(offset);
-//        }
     }
     
     /**
@@ -2333,11 +2842,6 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString set(boolean bit, int offset, int length) {
         return bit ? set(offset, length) : clear(offset, length);
-//        if (bit.bool()) {
-//            return set(offset, length);
-//        } else {
-//            return clear(offset, length);
-//        }
     }
     
     /**
@@ -2359,34 +2863,59 @@ public class BitString implements Cloneable, Serializable  {
     /**
      * Sets the bit at the specified offset to {@code ONE}.
      * 
-     * @param offset the offset of the bit to set
+     * @param bitOffset the offset of the bit to set
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
      */
-    public BitString setBit(int offset) {
-        checkThisOffset(offset);
-        int wordIndex = wordIndex(bitIndex(offset));
-        setWord(wordIndex, getWord(wordIndex) | (BIT_MASK >>> wordBitIndex(bitIndex(offset))));
+    public BitString setBit(int bitOffset) {
+        checkThisOffset(bitOffset);
+        final int bitIndex = bitIndex(bitOffset);
+        int wordIndex = wordIndex(bitIndex);
+        setWord(wordIndex, getWord(wordIndex) | (BIT_MASK >>> wordBitIndex(bitIndex)));
         return this;
     }
     
+    public BitString setBit(int bitOffset, int offset) {
+        checkThisOffset(offset);
+        checkRelativeOffset(bitOffset, length() - offset);
+        return setBit(offset + bitOffset);
+    }
+    
+    public BitString setBit(int bitOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkRelativeOffset(bitOffset, length);
+        return setBit(offset + bitOffset);
+    }
+    
+    public BitString setBit(int bitOffset, Field field) {
+        return setBit(bitOffset, field.offset(), field.length());
+    }
+    
     /**
-     * Sets the bit at the specified offset to the value of the specified Bit.
+     * Sets the bit at the specified offset to the specified bit.
      * 
-     * @param offset the offset of the bit to set
-     * @param bit    the Bit the bit at the specified offset is set to
+     * @param bit       the bit at the specified offset is set to this bit
+     * @param bitOffset the offset of the bit to set
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
      */
-    public BitString setBit(int offset, boolean bit) {
-        return bit ? setBit(offset) : clearBit(offset);
-//        if (bit.bool()) {
-//            return setBit(offset);
-//        } else {
-//            return clearBit(offset);
-//        }
+    public BitString setBit(boolean bit, int bitOffset) {
+        return bit ? setBit(bitOffset) : clearBit(bitOffset);
+    }
+    
+    public BitString setBit(boolean bit, int bitOffset, int offset) {
+        return bit ? setBit(bitOffset, offset) : clearBit(bitOffset, offset);
+    }
+    
+    public BitString setBit(boolean bit, int bitOffset, int offset, int length) {
+        return bit ? setBit(bitOffset, offset, length) : clearBit(bitOffset, offset, length);
+    }
+    
+    public BitString setBit(boolean bit, int bitOffset, Field field) {
+        return bit ? setBit(bitOffset, field) : clearBit(bitOffset, field);
     }
     
     /**
@@ -2402,6 +2931,17 @@ public class BitString implements Cloneable, Serializable  {
      * {@code ONE}. In other words, the value of each bit in this {@code BitString},
      * whose corresponding bit in the argument has the value {@code ZERO}, is set to
      * {@code ZERO}, otherwise, it is left unchanged.
+     * 
+     * <pre>
+     *            arg bit
+     *             value
+     *           | 0 | 1 |
+     *        ===|=======|
+     *   this  0 | 0 | 0 |
+     *    bit ---|-------|
+     *  value  1 | 0 | 1 |
+     *        ============
+     * </pre>
      *
      * @param arg bit string argument
      * @return this {@code BitString} with the results of the operation
@@ -2432,7 +2972,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString and(BitString arg, int argOffset) {
         arg.checkArgOffset(argOffset);
-        iAnd(0, Math.min(this.length(), arg.length()-argOffset), arg, argOffset);
+        iAnd(0, Math.min(this.length(), arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -2456,7 +2996,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString and(BitString arg, int argOffset, int argLength) {
         arg.checkArgOffset(argOffset);
@@ -2481,7 +3021,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString and(BitString arg, Field argField) {
         return and(arg, argField.offset(), argField.length());
@@ -2508,7 +3048,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString and(int thisOffset, BitString arg) {
         checkThisOffset(thisOffset);
-        iAnd(thisOffset, Math.min(this.length()-thisOffset, arg.length()), arg, 0);
+        iAnd(thisOffset, Math.min(this.length() - thisOffset, arg.length()), arg, 0);
         return this;
     }
     
@@ -2540,7 +3080,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString and(int thisOffset, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
-        iAnd(thisOffset, Math.min(this.length()-thisOffset, arg.length()-argOffset), arg, argOffset);
+        iAnd(thisOffset, Math.min(this.length() - thisOffset, arg.length( ) - argOffset), arg, argOffset);
         return this;
     }
     
@@ -2570,13 +3110,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString and(int thisOffset, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
         arg.checkArgLength(argOffset, argLength);
-        iAnd(thisOffset, Math.min(this.length()-thisOffset, argLength), arg, argOffset);
+        iAnd(thisOffset, Math.min(this.length( ) - thisOffset, argLength), arg, argOffset);
         return this;
     }
     
@@ -2602,7 +3142,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      *
      */
     public BitString and(int thisOffset, BitString arg, Field argField) {
@@ -2629,7 +3169,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      * 
      */
     public BitString and(int thisOffset, int thisLength, BitString arg) {
@@ -2665,13 +3205,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString and(int thisOffset, int thisLength, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         arg.checkArgOffset(argOffset);
-        iAnd(thisOffset, Math.min(thisLength, arg.length()-argOffset), arg, argOffset);
+        iAnd(thisOffset, Math.min(thisLength, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -2702,9 +3242,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString and(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
@@ -2738,9 +3278,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString and(int thisOffset, int thisLength, BitString arg, Field argField) {
         return and(thisOffset, thisLength, arg, argField.offset(), argField.length());
@@ -2762,7 +3302,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString and(Field thisField, BitString arg) {
         return and(thisField.offset(), thisField.length(), arg);
@@ -2790,7 +3330,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString and(Field thisField, BitString arg, int argOffset) {
         return and(thisField.offset(), thisField.length(), arg, argOffset);
@@ -2819,9 +3359,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString and(Field thisField, BitString arg, int argOffset, int argLength) {
         return and(thisField.offset(), thisField.length(), arg, argOffset, argLength);
@@ -2846,9 +3386,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString and(Field thisField, BitString arg, Field argField) {
         return and(thisField.offset(), thisField.length(), arg, argField.offset(), argField.length());
@@ -2897,7 +3437,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString andNot(BitString arg, int argOffset) {
         arg.checkArgOffset(argOffset);
-        iAndNot(0, Math.min(this.length(), arg.length()-argOffset), arg, argOffset);
+        iAndNot(0, Math.min(this.length(), arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -2921,7 +3461,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString andNot(BitString arg, int argOffset, int argLength) {
         arg.checkArgOffset(argOffset);
@@ -2946,7 +3486,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString andNot(BitString arg, Field argField) {
         return andNot(arg, argField.offset(), argField.length());
@@ -2973,7 +3513,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString andNot(int thisOffset, BitString arg) {
         checkThisOffset(thisOffset);
-        iAndNot(thisOffset, Math.min(this.length()-thisOffset, arg.length()), arg, 0);
+        iAndNot(thisOffset, Math.min(this.length() - thisOffset, arg.length()), arg, 0);
         return this;
     }
     
@@ -3005,7 +3545,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString andNot(int thisOffset, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
-        iAndNot(thisOffset, Math.min(this.length()-thisOffset, arg.length()-argOffset), arg, argOffset);
+        iAndNot(thisOffset, Math.min(this.length() - thisOffset, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3035,13 +3575,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString andNot(int thisOffset, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
         arg.checkArgLength(argOffset, argLength);
-        iAndNot(thisOffset, Math.min(this.length()-thisOffset, argLength), arg, argOffset);
+        iAndNot(thisOffset, Math.min(this.length() - thisOffset, argLength), arg, argOffset);
         return this;
     }
     
@@ -3067,7 +3607,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offseargField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      *
      */
     public BitString andNot(int thisOffset, BitString arg, Field argField) {
@@ -3094,7 +3634,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      * 
      */
     public BitString andNot(int thisOffset, int thisLength, BitString arg) {
@@ -3130,13 +3670,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString andNot(int thisOffset, int thisLength, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         arg.checkArgOffset(argOffset);
-        iAndNot(thisOffset, Math.min(thisLength, arg.length()-argOffset), arg, argOffset);
+        iAndNot(thisOffset, Math.min(thisLength, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3167,9 +3707,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString andNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
@@ -3203,9 +3743,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString andNot(int thisOffset, int thisLength, BitString arg, Field argField) {
         return andNot(thisOffset, thisLength, arg, argField.offset(), argField.length());
@@ -3227,7 +3767,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString andNot(Field thisField, BitString arg) {
         return andNot(thisField.offset(), thisField.length(), arg);
@@ -3255,7 +3795,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString andNot(Field thisField, BitString arg, int argOffset) {
         return andNot(thisField.offset(), thisField.length(), arg, argOffset);
@@ -3284,9 +3824,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString andNot(Field thisField, BitString arg, int argOffset, int argLength) {
         return andNot(thisField.offset(), thisField.length(), arg, argOffset, argLength);
@@ -3311,9 +3851,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString andNot(Field thisField, BitString arg, Field argField) {
         return andNot(thisField.offset(), thisField.length(), arg, argField.offset(), argField.length());
@@ -3362,7 +3902,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString or(BitString arg, int argOffset) {
         arg.checkArgOffset(argOffset);
-        iOr(0, Math.min(this.length(), arg.length()-argOffset), arg, argOffset);
+        iOr(0, Math.min(this.length(), arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3386,7 +3926,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString or(BitString arg, int argOffset, int argLength) {
         arg.checkArgOffset(argOffset);
@@ -3411,7 +3951,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code rgField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString or(BitString arg, Field argField) {
         return or(arg, argField.offset(), argField.length());
@@ -3438,7 +3978,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString or(int thisOffset, BitString arg) {
         checkThisOffset(thisOffset);
-        iOr(thisOffset, Math.min(this.length()-thisOffset, arg.length()), arg, 0);
+        iOr(thisOffset, Math.min(this.length() - thisOffset, arg.length()), arg, 0);
         return this;
     }
     
@@ -3470,7 +4010,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString or(int thisOffset, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
-        iOr(thisOffset, Math.min(this.length()-thisOffset, arg.length()-argOffset), arg, argOffset);
+        iOr(thisOffset, Math.min(this.length() - thisOffset, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3500,13 +4040,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString or(int thisOffset, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
         arg.checkArgLength(argOffset, argLength);
-        iOr(thisOffset, Math.min(this.length()-thisOffset, argLength), arg, argOffset);
+        iOr(thisOffset, Math.min(this.length() - thisOffset, argLength), arg, argOffset);
         return this;
     }
     
@@ -3532,7 +4072,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      *
      */
     public BitString or(int thisOffset, BitString arg, Field argField) {
@@ -3559,7 +4099,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      * 
      */
     public BitString or(int thisOffset, int thisLength, BitString arg) {
@@ -3595,13 +4135,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString or(int thisOffset, int thisLength, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         arg.checkArgOffset(argOffset);
-        iOr(thisOffset, Math.min(thisLength, arg.length()-argOffset), arg, argOffset);
+        iOr(thisOffset, Math.min(thisLength, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3632,9 +4172,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString or(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
@@ -3668,9 +4208,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString or(int thisOffset, int thisLength, BitString arg, Field argField) {
         return or(thisOffset, thisLength, arg, argField.offset(), argField.length());
@@ -3692,7 +4232,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString or(Field thisField, BitString arg) {
         return or(thisField.offset(), thisField.length(), arg);
@@ -3720,7 +4260,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString or(Field thisField, BitString arg, int argOffset) {
         return or(thisField.offset(), thisField.length(), arg, argOffset);
@@ -3749,9 +4289,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString or(Field thisField, BitString arg, int argOffset, int argLength) {
         return or(thisField.offset(), thisField.length(), arg, argOffset, argLength);
@@ -3776,9 +4316,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString or(Field thisField, BitString arg, Field argField) {
         return or(thisField.offset(), thisField.length(), arg, argField.offset(), argField.length());
@@ -3832,7 +4372,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString xor(BitString arg, int argOffset) {
         arg.checkArgOffset(argOffset);
-        iXor(0, Math.min(this.length(), arg.length()-argOffset), arg, argOffset);
+        iXor(0, Math.min(this.length(), arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3856,7 +4396,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString xor(BitString arg, int argOffset, int argLength) {
         arg.checkArgOffset(argOffset);
@@ -3881,7 +4421,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString xor(BitString arg, Field argField) {
         return xor(arg, argField.offset(), argField.length());
@@ -3908,7 +4448,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString xor(int thisOffset, BitString arg) {
         checkThisOffset(thisOffset);
-        iXor(thisOffset, Math.min(this.length()-thisOffset, arg.length()), arg, 0);
+        iXor(thisOffset, Math.min(this.length() - thisOffset, arg.length()), arg, 0);
         return this;
     }
     
@@ -3940,7 +4480,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString xor(int thisOffset, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
-        iXor(thisOffset, Math.min(this.length()-thisOffset, arg.length()-argOffset), arg, argOffset);
+        iXor(thisOffset, Math.min(this.length() - thisOffset, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -3970,13 +4510,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString xor(int thisOffset, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
         arg.checkArgOffset(argOffset);
         arg.checkArgLength(argOffset, argLength);
-        iXor(thisOffset, Math.min(this.length()-thisOffset, argLength), arg, argOffset);
+        iXor(thisOffset, Math.min(this.length() - thisOffset, argLength), arg, argOffset);
         return this;
     }
     
@@ -4002,7 +4542,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      *
      */
     public BitString xor(int thisOffset, BitString arg, Field argField) {
@@ -4029,7 +4569,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      * 
      */
     public BitString xor(int thisOffset, int thisLength, BitString arg) {
@@ -4065,13 +4605,13 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString xor(int thisOffset, int thisLength, BitString arg, int argOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         arg.checkArgOffset(argOffset);
-        iXor(thisOffset, Math.min(thisLength, arg.length()-argOffset), arg, argOffset);
+        iXor(thisOffset, Math.min(thisLength, arg.length() - argOffset), arg, argOffset);
         return this;
     }
     
@@ -4102,9 +4642,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString xor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength) {
         checkThisOffset(thisOffset);
@@ -4138,9 +4678,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString xor(int thisOffset, int thisLength, BitString arg, Field argField) {
         return xor(thisOffset, thisLength, arg, argField.offset(), argField.length());
@@ -4162,7 +4702,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString xor(Field thisField, BitString arg) {
         return xor(thisField.offset(), thisField.length(), arg);
@@ -4190,7 +4730,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString xor(Field thisField, BitString arg, int argOffset) {
         return xor(thisField.offset(), thisField.length(), arg, argOffset);
@@ -4219,9 +4759,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argOffset < 0 || argOffset > 0 && argOffset >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argLength < 0 || argLength > arg.length()-argOffset}
+     *                                         {@code argLength < 0 || argLength > arg.length() - argOffset}
      */
     public BitString xor(Field thisField, BitString arg, int argOffset, int argLength) {
         return xor(thisField.offset(), thisField.length(), arg, argOffset, argLength);
@@ -4246,51 +4786,22 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code argField.offset() > 0 && argField.offset() >= arg.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code argField.length() > arg.length()-argField.offset()}
+     *                                         {@code argField.length() > arg.length() - argField.offset()}
      */
     public BitString xor(Field thisField, BitString arg, Field argField) {
         return xor(thisField.offset(), thisField.length(), arg, argField.offset(), argField.length());
     }
     
     /**
-     * Returns the number of one-bits in this {@code BitString}.
-     *
-     * @return the number of one-bits in this {@code BitString}
-     */
-    public int bitCount() {
-        return bitCount(0);
-    }
-    
-    public int bitCount(int offset) {
-        checkThisOffset(offset);
-        return bitCount(offset, this.length()-offset);
-    }
-    
-    public int bitCount(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        int sum = 0;
-        final int[] iterator = getIterator(offset, length);
-        while (hasNextIteratorWord(iterator)) {
-            sum += Long.bitCount(getNextIteratorWord(iterator));
-        }
-        return sum;
-    }
-    
-    public int bitCount(Field field) {
-        return bitCount(field.offset(), field.length());
-    }
-    
-    /**
      * Copy bits from the specified bit string (that) into this {@code BitString}.
-     * The bits are copied starting at the front of the specified bit string, and are
-     * inserted into this {@code BitString} from front to back.
-     * if the specified bit string is shorter in length than this {@code BitString},
-     * this {@code BitString} is padded with {@code ZEROS}. If the specified bit string
-     * is longer in length than this {@code BitString}, the copy from the specified bit string is
-     * truncated to fit in this {@code BitString}. 
+     * 
+     * The bits are copied from front to back. if the specified bit string is
+     * shorter in length than this {@code BitString}, this {@code BitString} is
+     * padded (on the right) with {@code ZEROS}. If the specified bit string is
+     * longer in length than this {@code BitString}, the copy is truncated to fit
+     * this {@code BitString}.
      * 
      * @param that the bit string to copy
      * @return this {@code BitString}
@@ -4300,12 +4811,51 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this {@code BitString}, this {@code BitString} is padded (on the
+     * right) with {@code ZEROS}. If that substring is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public BitString copyFrom(BitString that, int thatOffset) {
         that.checkArgOffset(thatOffset);
-        iCopyFromFrontOf(0, this.length(), that, thatOffset, that.length()-thatOffset);
+        iCopyFromFrontOf(0, this.length(), that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this {@code BitString}, this {@code BitString} is padded (on the
+     * right) with {@code ZEROS}. If that substring is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFrom(BitString that, int thatOffset, int thatLength) {
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
@@ -4313,35 +4863,165 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from a Field of the specified bit string (that) into this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that Field is shorter in length
+     * than this {@code BitString}, this {@code BitString} is padded (on the right)
+     * with {@code ZEROS}. If that Field is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * @param that      the bit string to copy
+     * @param thatField a Field of the that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFrom(BitString that, Field thatField) {
         return copyFrom(that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the specified bit string (that) into a substring of this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that bit string is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that bit string is longer in length than this substring,
+     * the copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     */
     public BitString copyFrom(int thisOffset, BitString that) {
         checkThisOffset(thisOffset);
-        iCopyFromFrontOf(thisOffset, this.length()-thisOffset, that, 0, that.length());
+        iCopyFromFrontOf(thisOffset, this.length() - thisOffset, that, 0, that.length());
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public BitString copyFrom(int thisOffset, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
-        iCopyFromFrontOf(thisOffset, this.length()-thisOffset, that, thatOffset, that.length()-thatOffset);
+        iCopyFromFrontOf(thisOffset, this.length() - thisOffset, that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFrom(int thisOffset, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
-        iCopyFromFrontOf(thisOffset, this.length()-thisOffset, that, thatOffset, thatLength);
+        iCopyFromFrontOf(thisOffset, this.length() - thisOffset, that, thatOffset, thatLength);
         return this;
     }
     
+    /**
+     * Copy bits from a Field of the specified bit string (that) into a substring of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that Field is shorter in length
+     * than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that Field is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatField  a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFrom(int thisOffset, BitString that, Field thatField) {
         return copyFrom(thisOffset, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the specified bit string (that) into a substring of this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that bit string is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that bit string is longer in length than this substring,
+     * the copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public BitString copyFrom(int thisOffset, int thisLength, BitString that) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -4349,14 +5029,71 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public BitString copyFrom(int thisOffset, int thisLength, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         that.checkArgOffset(thatOffset);
-        iCopyFromFrontOf(thisOffset, thisLength, that, thatOffset, that.length()-thatOffset);
+        iCopyFromFrontOf(thisOffset, thisLength, that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFrom(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -4366,35 +5103,149 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from a Field of the specified bit string (that) into a substring of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that Field is shorter in length
+     * than this substring, this substring is padded (on the right) with
+     * {@code ZEROS}. If that Field is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatField  a Field of that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFrom(int thisOffset, int thisLength, BitString that, Field thatField) {
         return copyFrom(thisOffset, thisLength, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the specified bit string (that) into a Field of this
+     * {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that bit string is shorter in
+     * length than this Field, this Field is padded (on the right) with
+     * {@code ZEROS}. If that bit string is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public BitString copyFrom(Field thisField, BitString that) {
         return copyFrom(thisField.offset(), thisField.length(), that);
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a Field of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this Field, this Field is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public BitString copyFrom(Field thisField, BitString that, int thatOffset) {
         return copyFrom(thisField.offset(), thisField.length(), that, thatOffset);
     }
     
+    /**
+     * Copy bits from a substring of the specified bit string (that) into a Field of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that substring is shorter in
+     * length than this Field, this Field is padded (on the right) with
+     * {@code ZEROS}. If that substring is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFrom(Field thisField, BitString that, int thatOffset, int thatLength) {
         return copyFrom(thisField.offset(), thisField.length(), that, thatOffset, thatLength);
     }
     
+    /**
+     * Copy bits from a Field of the specified bit string (that) into a Field of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from front to back. if that Field is shorter in length
+     * than this Field, this Field is padded (on the right) with {@code ZEROS}.
+     * If that Field is longer in length than this Field, the copy is truncated to
+     * fit this Field.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      the bit string to copy
+     * @param thatField a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFrom(Field thisField, BitString that, Field thatField) {
         return copyFrom(thisField.offset(), thisField.length(), that, thatField.offset(), thatField.length());
     }
     
-    
     /**
-     * Copy bits from the back of the specified bit string (that) into this {@code BitString}.
-     * The bits are copied starting at the back of the specified bit string, and are
-     * inserted into this {@code BitString} from back to front.
-     * if the specified bit string is shorter in length than this {@code BitString},
-     * this {@code BitString} is padded (on the left) with {@code ZEROS}. If the specified bit string
-     * is longer in length than this {@code BitString}, the copy from the specified bit string is
-     * truncated to fit in this {@code BitString}. 
+     * Copy bits from the back of the specified bit string (that) into this
+     * {@code BitString}.
+     * 
+     * The bits are copied from back to front. if the specified
+     * bit string is shorter in length than this {@code BitString}, this
+     * {@code BitString} is padded (on the left) with {@code ZEROS}. If the
+     * specified bit string is longer in length than this {@code BitString}, the
+     * copy is truncated to fit this {@code BitString}.
      * 
      * @param that the bit string to copy
      * @return this {@code BitString}
@@ -4404,12 +5255,51 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this {@code BitString}, this {@code BitString} is padded (on the
+     * left) with {@code ZEROS}. If that substring is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public BitString copyFromBackOf(BitString that, int thatOffset) {
         that.checkArgOffset(thatOffset);
-        iCopyFromBackOf(0, this.length(), that, thatOffset, that.length()-thatOffset);
+        iCopyFromBackOf(0, this.length(), that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this {@code BitString}, this {@code BitString} is padded (on the
+     * left) with {@code ZEROS}. If that substring is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFromBackOf(BitString that, int thatOffset, int thatLength) {
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
@@ -4417,35 +5307,165 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from the back of a Field of the specified bit string (that) into
+     * this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that Field is shorter in length
+     * than this {@code BitString}, this {@code BitString} is padded (on the left)
+     * with {@code ZEROS}. If that Field is longer in length than this
+     * {@code BitString}, the copy is truncated to fit this {@code BitString}.
+     * 
+     * @param that      the bit string to copy
+     * @param thatField a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFromBackOf(BitString that, Field thatField) {
         return copyFromBackOf(that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the back of the specified bit string (that) into a substring
+     * of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that nit string is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that bit string is longer in length than this substring,
+     * the copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     */
     public BitString copyFromBackOf(int thisOffset, BitString that) {
         checkThisOffset(thisOffset);
-        iCopyFromBackOf(thisOffset, this.length()-thisOffset, that, 0, that.length());
+        iCopyFromBackOf(thisOffset, this.length() - thisOffset, that, 0, that.length());
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public BitString copyFromBackOf(int thisOffset, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
-        iCopyFromBackOf(thisOffset, this.length()-thisOffset, that, thatOffset, that.length()-thatOffset);
+        iCopyFromBackOf(thisOffset, this.length() - thisOffset, that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFromBackOf(int thisOffset, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
-        iCopyFromBackOf(thisOffset, this.length()-thisOffset, that, thatOffset, thatLength);
+        iCopyFromBackOf(thisOffset, this.length() - thisOffset, that, thatOffset, thatLength);
         return this;
     }
     
+    /**
+     * Copy bits from the back of a Field of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that Field is shorter in length
+     * than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that Field is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to copy
+     * @param thatField  a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFromBackOf(int thisOffset, BitString that, Field thatField) {
          return copyFromBackOf(thisOffset, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the back of the specified bit string (that) into a substring
+     * of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that bit string is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that bit stringg is longer in length than this substring,
+     * the copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -4453,14 +5473,71 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         that.checkArgOffset(thatOffset);
-        iCopyFromBackOf(thisOffset, thisLength, that, thatOffset, that.length()-thatOffset);
+        iCopyFromBackOf(thisOffset, thisLength, that, thatOffset, that.length() - thatOffset);
         return this;
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -4470,199 +5547,955 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Copy bits from the back of a Field of the specified bit string (that) into a
+     * substring of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that Field is shorter in length
+     * than this substring, this substring is padded (on the left) with
+     * {@code ZEROS}. If that Field is longer in length than this substring, the
+     * copy is truncated to fit this substring.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to copy
+     * @param thatField  a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that, Field thatField) {
         return copyFromBackOf(thisOffset, thisLength, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Copy bits from the back of the specified bit string (that) into a Field of
+     * this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that bit string is shorter in
+     * length than this Field, this Field is padded (on the left) with
+     * {@code ZEROS}. If that bit string is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      the bit string to copy
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public BitString copyFromBackOf(Field thisField, BitString that) {
         return copyFromBackOf(thisField.offset(), thisField.length(), that);
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a Field of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this Field, this Field is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public BitString copyFromBackOf(Field thisField, BitString that, int thatOffset) {
         return copyFromBackOf(thisField.offset(), thisField.length(), that, thatOffset);
     }
     
+    /**
+     * Copy bits from the back of a substring of the specified bit string (that)
+     * into a Field of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that substring is shorter in
+     * length than this Field, this Field is padded (on the left) with
+     * {@code ZEROS}. If that substring is longer in length than this Field, the
+     * copy is truncated to fit this Field.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to copy
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString copyFromBackOf(Field thisField, BitString that, int thatOffset, int thatLength) {
         return copyFromBackOf(thisField.offset(), thisField.length(), that, thatOffset, thatLength);
     }
     
+    /**
+     * Copy bits from the back of a Field of the specified bit string (that) into a
+     * Field of this {@code BitString}.
+     * 
+     * The bits are copied from back to front. if that Field is shorter in length
+     * than this Field, this Field is padded (on the left) with {@code ZEROS}. If
+     * that Field is longer in length than this Field, the copy is truncated to fit
+     * this Field.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      the bit string to copy
+     * @param thatField a Field of that bit string
+     * @return this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString copyFromBackOf(Field thisField, BitString that, Field thatField) {
         return copyFromBackOf(thisField.offset(), thisField.length(), that, thatField.offset(), thatField.length());
     }
 
     /**
-     * Compares this bit string against the specified object.
-     * The result is {@code true} if and only if the argument is
-     * not {@code null} and is a {@code BitString} object that has
-     * exactly the same set of bits set to {@code true} as this bit
-     * string. That is, for every nonnegative {@code int} index {@code k},
-     * <pre>((BitString)obj).get(k) == this.get(k)</pre>
-     * must be true. The current sizes of the two bit sets are not compared.
+     * Returns {@code true} if this {@code BitString} and the specified object (obj)
+     * are equal. This {@code BitString} and the object are equal if and only if the
+     * object is a {@code BitString} that has the the same length as this
+     * {@code BitString} and has the same set of bits set to {@code ONE} as this
+     * {@code BitString}. That is, for every nonnegative {@code int} index {@code k}
+     * less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k) == ((BitString) obj).getBit(k)
+     * </pre>
+     * 
+     * must be true.
      *
-     * @param  obj the object to compare with
-     * @return {@code true} if the objects are the same;
-     *         {@code false} otherwise
+     * @param obj the object to compare against
+     * @return {@code true} if this {@code BitString} and the object are equal
      */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
         if (!(obj instanceof BitString)) return false;
         return equals((BitString)obj);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} and the specified bit string
+     * (that) are equal. The two bit strings are equal if and only if both bit
+     * strings have the the same length, and both bit strings have the same set of
+     * bits set to {@code ONE}. That is, for every nonnegative {@code int} offset
+     * {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k) == that.getBit(k)
+     * </pre>
+     * 
+     * must be true.
+     *
+     * @param that the bit string to compare against
+     * @return {@code true} if this {@code BitString} and that bit string are equal
+     */
     public boolean equals(BitString that) {
+        if (that == null) return false;
+        if (this == that) return true;
         if (this.length() != that.length()) return false;
         return iEquals(0, this.length(), that, 0);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} and a substring of the
+     * specified bit string (that) are equal. This {@code BitString} and that
+     * substring are equal if and only if both this {@code BitString} and that
+     * substring have the same length, and both have the same set of bits set to
+     * {@code ONE}. That is, for every nonnegative {@code int} offset {@code k} less
+     * than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k) == that.getBit(k, thatOffset)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public boolean equals(BitString that, int thatOffset) {
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         if (this.length() != (that.length() - thatOffset)) return false;
         return iEquals(0, this.length(), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} and a substring of the
+     * specified bit string (that) are equal. This {@code BitString} and that
+     * substring are equal if and only if both this {@code BitString} and that
+     * substring have the same length, and both have the same set of bits set to
+     * {@code ONE}. That is, for every nonnegative {@code int} offset {@code k} less
+     * than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k) == that.getBit(k, thatOffset, thatLength)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean equals(BitString that, int thatOffset, int thatLength) {
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
         if (this.length() != thatLength) return false;
         return iEquals(0, this.length(), that, thatOffset);
     }
     
-    public boolean equals(BitString that, Field field) {
-        return equals(that, field.offset(), field.length());
+    
+    /**
+     * Returns {@code true} if this {@code BitString} and a Field of the
+     * specified bit string (that) are equal. This {@code BitString} and that
+     * field are equal if and only if both this {@code BitString} and that
+     * field have the same length, and both have the same set of bits set to
+     * {@code ONE}. That is, for every nonnegative {@code int} offset {@code k} less
+     * than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k) == that.getBit(k, field)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * @param that       the bit string to compare against
+     * @param thatField a Field of that bit string
+     * @return {@code true} if this substring and that field are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
+    public boolean equals(BitString that, Field thatField) {
+        return equals(that, thatField.offset(), thatField.length());
     } 
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and the
+     * specified bit string (that) are equal. This substring and that bit string are
+     * equal if and only if both this substring and that bit string have the the
+     * same length, and both have the same set of bits set to {@code ONE}. That is,
+     * for every nonnegative {@code int} offset {@code k} less than the length of
+     * the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset) == that.getBit(k)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to compare against
+     * @return {@code true} if this substring and that bit string are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     */
     public boolean equals(int thisOffset, BitString that) {
         checkThisOffset(thisOffset);
+        if (that == null) return false;
         if ((this.length() - thisOffset) != that.length()) return false;
         return iEquals(thisOffset, this.length(), that, 0);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a substring
+     * of the specified bit string (that) are equal. The two substrings are equal if
+     * and only if both substrings have the the same length, and both substrings
+     * have the same set of bits set to {@code ONE}. That is, for every nonnegative
+     * {@code int} offset {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset) == that.getBit(k, thatOffset)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public boolean equals(int thisOffset, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         if ((this.length() - thisOffset) != (that.length() - thatOffset)) return false;
         return iEquals(thisOffset, this.length(), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a substring
+     * of the specified bit string (that) are equal. The two substrings are equal if
+     * and only if both substrings have the the same length, and both substrings have
+     * the same set of bits set to {@code ONE}. That is, for every nonnegative
+     * {@code int} offset {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset) == that.getBit(k, thatOffset, thatLength)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean equals(int thisOffset, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
         if ((this.length() - thisOffset) != thatLength) return false;
         return iEquals(thisOffset, this.length(), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a Field of
+     * the specified bit string (that) are equal. This substring and that field are
+     * equal if and only if both this substring and that field have the the same
+     * length, and both have the same set of bits set to {@code ONE}. That is, for
+     * every nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset) == that.getBit(k, thatield)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       the bit string to compare against
+     * @param thatField  a Field of that bit string
+     * @return {@code true} if this substring and that field are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean equals(int thisOffset, BitString that, Field thatField) {
         return equals(thisOffset, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and the
+     * specified bit string (that) are equal. This substring and that bit string are
+     * equal if and only if both this substring and that bit string have the same
+     * length, and both have the same set of bits set to {@code ONE}. That is, for
+     * every nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset, thisLength) == that.getBit(k)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to compare against
+     * @return {@code true} if this substring and that bit string are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public boolean equals(int thisOffset, int thisLength, BitString that) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
+        if (that == null) return false;
         if (thisLength != that.length()) return false;
         return iEquals(thisOffset, thisLength, that, 0);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a substring
+     * of the specified bit string (that) are equal. The two substrings are equal if
+     * and only if both substrings have the the same length, and both substrings have
+     * the same set of bits set to {@code ONE}. That is, for every nonnegative
+     * {@code int} offset {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset, thisLength) == that.getBit(k, thatOffset)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public boolean equals(int thisOffset, int thisLength, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         if (thisLength != (that.length() - thatOffset)) return false;
         return iEquals(thisOffset, thisLength, that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a substring
+     * of the specified bit string (that) are equal. The two substrings are equal if
+     * and only if both substrings have the the same length, and both substrings have
+     * the same set of bits set to {@code ONE}. That is, for every nonnegative
+     * {@code int} offset {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset, thisLength) == that.getBit(k, thatOffset, thatLength)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean equals(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
+        if (that == null) return false;
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
         if (thisLength != thatLength) return false;
         return iEquals(thisOffset, thisLength, that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} and a Field of
+     * the specified bit string (that) are equal. This substring and that field are
+     * equal if and only if both this substring and that field have the the same
+     * length, and both have the same set of bits set to {@code ONE}. That is, for
+     * every nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisOffset, thisLength) == that.getBit(k, thatField)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       the bit string to compare against
+     * @param thatField  a Field of that bit string
+     * @return {@code true} if this substring and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean equals(int thisOffset, int thisLength, BitString that, Field thatField) {
         return equals(thisOffset, thisLength, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} and the specified
+     * bit string (that) are equal. This field and that bit string are equal if and
+     * only if both this field and that bit string have the the same length, and
+     * both have the same set of bits set to {@code ONE}. That is, for every
+     * nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisField) == that.getBit(k)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      the bit string to compare against
+     * @return {@code true} if this field and that bit string are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public boolean equals(Field thisField, BitString that) {
         return equals(thisField.offset(), thisField.length(), that);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} and a substring of
+     * the specified bit string (that) are equal. This field and that substring are
+     * equal if and only if both this field and that substring have the the same
+     * length, and both have the same set of bits set to {@code ONE}. That is, for
+     * every nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisField) == that.getBit(k, thatOffset)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @return {@code true} if this field and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public boolean equals(Field thisField, BitString that, int thatOffset) {
         return equals(thisField.offset(), thisField.length(), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} and a substring of
+     * the specified bit string (that) are equal. This field and that substring are
+     * equal if and only if both this field and that substring have the the same
+     * length, and both have the same set of bits set to {@code ONE}. That is, for
+     * every nonnegative {@code int} offset {@code k} less than the length of the
+     * comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisField) == that.getBit(k, thatOffset, thatLength)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       the bit string to compare against
+     * @param thatOffset the start of the that substring
+     * @param thatLength the length of the that substring
+     * @return {@code true} if this field and that substring are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean equals(Field thisField, BitString that, int thatOffset, int thatLength) {
         return equals(thisField.offset(), thisField.length(), that, thatOffset, thatLength);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} and a Field
+     * of the specified bit string (that) are equal. The two fields are equal if
+     * and only if both fields have the the same length, and both fields have
+     * the same set of bits set to {@code ONE}. That is, for every nonnegative
+     * {@code int} offset {@code k} less than the length of the comparison,
+     * 
+     * <pre>
+     * this.getBit(k, thisField) == that.getBit(k, thatField)
+     * </pre>
+     * 
+     * must be true.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that       the bit string to compare against
+     * @param thatField a Field of that bit string
+     * @return {@code true} if this field and that field are equal
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean equals(Field thisField, BitString that, Field thatField) {
         return equals(thisField.offset(), thisField.length(), that, thatField.offset(), thatField.length());
     }
     
     /**
-     * Returns true if the specified {@code BitString} has any bits set to
-     * {@code true} that are also set to {@code true} in this {@code BitString}.
+     * Returns {@code true} if this {@code BitString} intersects with the specified
+     * bit string (that). The two bit strings intersect if they have any bits, at
+     * the same offset, that are set to {@code ONE}.
      *
-     * @param that {@code BitString} to intersect with
-     * @return boolean indicating whether this {@code BitString} intersects the
-     *         specified {@code BitString}
+     * @param that bit string
+     * @return {@code true} if this {@code BitString} intersects with the specified
+     *         bit string
      */
     public boolean intersects(BitString that) {
         return iIntersects(0, Math.min(this.length(), that.length()), that, 0);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} intersects with a substring of
+     * the specified bit string (that). This {@code BitString} and that substring
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of the specified bit string.
+     * 
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @return {@code true} if this {@code BitString} intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public boolean intersects(BitString that, int thatOffset) {
         that.checkArgOffset(thatOffset);
-        return iIntersects(0, Math.min(this.length(), that.length()-thatOffset), that, thatOffset);
+        return iIntersects(0, Math.min(this.length(), that.length() - thatOffset), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} intersects with a substring of
+     * the specified bit string (that). This {@code BitString} and that substring
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @param thatLength the length of that substring
+     * @return {@code true} if this {@code BitString} intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean intersects(BitString that, int thatOffset, int thatLength) {
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
         return iIntersects(0, Math.min(this.length(), thatLength), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if this {@code BitString} intersects with a Field of the
+     * specified bit string (that). This {@code BitString} and that field intersect
+     * if they have any bits, at the same offset, that are set to {@code ONE}.
+     * 
+     * @param that      that bit string
+     * @param thatField a Field of that bit string
+     * @return {@code true} if this {@code BitString} intersects with that field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength > that.length() - thatField.offset()}
+     */
     public boolean intersects(BitString that, Field thatField) {
         return intersects(that, thatField.offset(), thatField.length());
     } 
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * the specified bit string (that). This substring and that bit string intersect
+     * if they have any bits, at the same offset, that are set to {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       that bit string
+     * @return {@code true} if this substring intersects with that bit string
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     */
     public boolean intersects(int thisOffset, BitString that) {
         checkThisOffset(thisOffset);
-        return iIntersects(thisOffset, Math.min(this.length()-thisOffset, that.length()), that, 0);
+        return iIntersects(thisOffset, Math.min(this.length() - thisOffset, that.length()), that, 0);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a substring of the specified bit string (that). The two bit substrings
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of that bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @return {@code true} if this substring intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     */
     public boolean intersects(int thisOffset, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
-        return iIntersects(thisOffset, Math.min(this.length()-thisOffset, that.length()-thatOffset), that, thatOffset);
+        return iIntersects(thisOffset, Math.min(this.length() - thisOffset, that.length() - thatOffset), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a substring of the specified bit string (that). The two bit substrings
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @param thatLength the length of that substring
+     * @return {@code true} if this substring intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean intersects(int thisOffset, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
-        return iIntersects(thisOffset, Math.min(this.length()-thisOffset, thatLength), that, thatOffset);
+        return iIntersects(thisOffset, Math.min(this.length() - thisOffset, thatLength), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a substring of the specified bit string (that). The two bit substrings
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param that       that bit string
+     * @param thatField  a Field of that bit string
+     * @return {@code true} if this substring intersects with that field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean intersects(int thisOffset, BitString that, Field thatField) {
         return intersects(thisOffset, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * the specified bit string (that). This substring and that bit string intersect
+     * if they have any bits, at the same offset, that are set to {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       that bit string
+     * @return {@code true} if this substring intersects with that bit string
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public boolean intersects(int thisOffset, int thisLength, BitString that) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         return iIntersects(thisOffset, Math.min(thisLength, that.length()), that, 0);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a substring of the specified bit string (that). The two bit substrings
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of that bit string.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @return {@code true} if this substring intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     */
     public boolean intersects(int thisOffset, int thisLength, BitString that, int thatOffset) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         that.checkArgOffset(thatOffset);
-        return iIntersects(thisOffset, Math.min(thisLength, that.length()-thatOffset), that, thatOffset);
+        return iIntersects(thisOffset, Math.min(thisLength, that.length() - thatOffset), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a substring of the specified bit string (that). The two bit substrings
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @param thatLength the length of that substring
+     * @return {@code true} if this substring intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean intersects(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -4671,182 +6504,1218 @@ public class BitString implements Cloneable, Serializable  {
         return iIntersects(thisOffset, Math.min(thisLength, thatLength), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a substring of this {@code BitString} intersects with
+     * a Field of the specified bit string (that). this substring and that field
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * This substring starts at offset 'thisOffset' of this {@code BitString} and
+     * has a length of 'thisLength'.
+     * 
+     * @param thisOffset the start of this substring
+     * @param thisLength the length of this substring
+     * @param that       that bit string
+     * @param thatField  a Field of that bit string
+     * @return {@code true} if this substring intersects with that field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean intersects(int thisOffset, int thisLength, BitString that, Field thatField) {
         return intersects(thisOffset, thisLength, that, thatField.offset(), thatField.length());
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} intersects with the
+     * specified bit string (that). This field and that bit string intersect if they
+     * have any bits, at the same offset, that are set to {@code ONE}.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      that bit string
+     * @return {@code true} if this field intersects with that bit string
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public boolean intersects(Field thisField, BitString that) {
         return intersects(thisField.offset(), thisField.length(), that);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} intersects with a
+     * substring of the specified bit string (that). This field and that substring
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * extends to the end of that bit string.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @return {@code true} if this field intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     */
     public boolean intersects(Field thisField, BitString that, int thatOffset) {
         return intersects(thisField.offset(), thisField.length(), that, thatOffset);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} intersects with a
+     * substring of the specified bit string (that). This field and that substring
+     * intersect if they have any bits, at the same offset, that are set to
+     * {@code ONE}.
+     * 
+     * That substring starts at offset 'thatOffset' of the specified bit string and
+     * has a length of 'thatLength'.
+     * 
+     * @param thisField  a Field of this {@code BitString}
+     * @param that       that bit string
+     * @param thatOffset the start of that substring
+     * @param thatLength the length of that substring
+     * @return {@code true} if this field intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public boolean intersects(Field thisField, BitString that, int thatOffset, int thatLength) {
         return intersects(thisField.offset(), thisField.length(), that, thatOffset, thatLength);
     }
     
+    /**
+     * Returns {@code true} if a Field of this {@code BitString} intersects with a
+     * Field of the specified bit string (that). The fields intersect if they have
+     * any bits, at the same offset, that are set to {@code ONE}.
+     * 
+     * @param thisField a Field of this {@code BitString}
+     * @param that      that bit string
+     * @param thatField a Field of that bit string
+     * @return {@code true} if this field intersects with that substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
+     *                                         or
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public boolean intersects(Field thisField, BitString that, Field thatField) {
         return intersects(thisField.offset(), thisField.length(), that, thatField.offset(), thatField.length());
     }
     
     /**
-     * Returns the index of the first bit that is set to {@code false}
-     * that occurs on or after the specified starting index.
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the next clear bit
-     * @throws IndexOutOfBoundsException if the specified index is negative
+     * Returns the number of leading {@code ONES} of this {@code BitString}.
+     * 
+     * @return the number of leading {@code ONES} of this {@code BitString}
      */
-    public int nextClearBit(int fromIndex) {
-        checkThisOffset(fromIndex);
-        return nextClearBit(fromIndex, this.length()-fromIndex);
+    public int numberOfLeadingOnes() {
+        return iNumberOfLeadingOnes(0, length());
     }
     
-    public int nextClearBit(int fromIndex, Field field) {
-        field.checkOffset(fromIndex);
-        return nextClearBit(field.offset()+fromIndex, field.length()-fromIndex);
+    /**
+     * Returns the number of leading {@code ONES} of the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of leading {@code ONES} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfLeadingOnes(int offset) {
+        checkThisOffset(offset);
+        return iNumberOfLeadingOnes(offset, length() - offset);
     }
     
-    public int nextClearBit(int fromIndex, int length) {
-        checkThisOffset(fromIndex);
-        checkThisLength(fromIndex, length);
-        long word;
-        int index = fromIndex;
-        final int[] iterator = getIterator(fromIndex, length);
+    /**
+     * Returns the number of leading {@code ONES} of the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of leading {@code ONES} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfLeadingOnes(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iNumberOfLeadingOnes(offset, length);
+    }
+    
+    /**
+     * Returns the number of leading {@code ONES} of the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of leading {@code ONES} of the field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int numberOfLeadingOnes(Field field) {
+        return numberOfLeadingOnes(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the number of leading {@code ZEROS} of this {@code BitString}.
+     * 
+     * @return the number of leading {@code ZEROS} of this {@code BitString}
+     */
+    public int numberOfLeadingZeros() {
+        return iNumberOfLeadingZeros(0, length());
+    }
+    
+    /**
+     * Returns the number of leading {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of leading {@code ZEROS} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfLeadingZeros(int offset) {
+        checkThisOffset(offset);
+        return iNumberOfLeadingZeros(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the number of leading {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of leading {@code ZEROS} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfLeadingZeros(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iNumberOfLeadingZeros(offset, length);
+    }
+    
+    /**
+     * Returns the number of leading {@code ZEROS} of the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of leading {@code ZEROS} of the field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int numberOfLeadingZeros(Field field) {
+        return numberOfLeadingZeros(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the number of {@code ONES} in this {@code BitString}.
+     *
+     * @return the number of {@code ONES} in this {@code BitString}
+     */
+    public int numberOfOnes() {
+        return numberOfOnes(0, length());
+    }
+    
+    /**
+     * Returns the number of {@code ONES} in the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of {@code ONES} in the specified substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfOnes(int offset) {
+        checkThisOffset(offset);
+        return numberOfOnes(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the number of {@code ONES} in the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of {@code ONES} in the specified substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfOnes(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        int sum = 0;
+        final int[] iterator = getIterator(offset, length);
         while (hasNextIteratorWord(iterator)) {
-            word = ~getNextIteratorFullWord(iterator, ONE_FILL);
-            if (word != 0L) {
-                index += Long.numberOfLeadingZeros(word);
-                return index;
-            }
-            index += BITS_PER_WORD;
+            sum += Long.bitCount(getNextIteratorFullWord(iterator));
         }
-        return -1;
+        return sum;
     }
     
     /**
-     * Returns the index of the first bit that is set to {@code true}
-     * that occurs on or after the specified starting index.
-     *
-     * @param  fromIndex the index to start checking from (inclusive)
-     * @return the index of the next set bit
-     * @throws IndexOutOfBoundsException if the specified index is negative
+     * Returns the number of {@code ONES} in the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of {@code ONES} in the specified field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
      */
-    public int nextSetBit(int fromIndex) {
-        checkThisOffset(fromIndex);
-        return nextSetBit(fromIndex, this.length()-fromIndex);
+    public int numberOfOnes(Field field) {
+        return numberOfOnes(field.offset(), field.length());
     }
     
-    public int nextSetBit(int fromIndex, Field field) {
-        field.checkOffset(fromIndex);
-        return nextSetBit(field.offset()+fromIndex, field.length()-fromIndex);
+    /**
+     * Returns the number of trailing {@code ONES} of this {@code BitString}.
+     * 
+     * @return the number of trailing {@code ONES} of this {@code BitString}
+     */
+    public int numberOfTrailingOnes() {
+         return iNumberOfTrailingOnes(0, length());
     }
     
-    public int nextSetBit(int fromIndex, int length) {
-        checkThisOffset(fromIndex);
-        checkThisLength(fromIndex, length);
-        long word;
-        int index = fromIndex;
-        final int[] iterator = getIterator(fromIndex, length);
+    /**
+     * Returns the number of trailing {@code ONES} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of trailing {@code ONES} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfTrailingOnes(int offset) {
+        checkThisOffset(offset);
+        return iNumberOfTrailingOnes(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the number of trailing {@code ONES} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of trailing {@code ONES} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfTrailingOnes(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iNumberOfTrailingOnes(offset, length);
+    }
+    
+    /**
+     * Returns the number of trailing {@code ONES} of the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of trailing {@code ONES} of the field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int numberOfTrailingOnes(Field field) {
+        return numberOfTrailingOnes(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the number of trailing {@code ZEROS} of this {@code BitString}.
+     * 
+     * @return the number of trailing {@code ZEROS} of this {@code BitString}
+     */
+    public int numberOfTrailingZeros() {
+        return iNumberOfTrailingZeros(0, length());
+    }
+    
+    /**
+     * Returns the number of trailing {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of trailing {@code ZEROS} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfTrailingZeros(int offset) {
+        checkThisOffset(offset);
+        return iNumberOfTrailingZeros(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the number of trailing {@code ZEROS} of the specified substring of
+     * this {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of trailing {@code ZEROS} of the substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfTrailingZeros(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iNumberOfTrailingZeros(offset, length);
+    }
+    
+    /**
+     * Returns the number of trailing {@code ZEROS} of the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of trailing {@code ZEROS} of the field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int numberOfTrailingZeros(Field field) {
+        return numberOfTrailingZeros(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the number of {@code ZEROS} in this {@code BitString}.
+     *
+     * @return the number of {@code ZEROS} in this {@code BitString}
+     */
+    public int numberOfZeros() {
+        return numberOfZeros(0, length());
+    }
+    
+    /**
+     * Returns the number of {@code ZEROS} in the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the number of {@code ZEROS} in the specified substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int numberOfZeros(int offset) {
+        checkThisOffset(offset);
+        return numberOfZeros(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the number of {@code ZEROS} in the specified substring of this
+     * {@code BitString}.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the number of {@code ZEROS} in the specified substring
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int numberOfZeros(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        int sum = 0;
+        final int[] iterator = getIterator(offset, length);
         while (hasNextIteratorWord(iterator)) {
-            word = getNextIteratorFullWord(iterator, ZERO_FILL);
-            if (word != 0L) {
-                index += Long.numberOfLeadingZeros(word);
-                return index;
-            }
-            index += BITS_PER_WORD;
+            sum += Long.SIZE - Long.bitCount(getNextIteratorFullWord(iterator));
         }
-        return -1;
+        return sum;
     }
     
     /**
-     * Returns the index of the nearest bit that is set to {@code false} that occurs
-     * on or before the specified starting index. If no such bit exists, or if
-     * {@code -1} is given as the starting index, then {@code -1} is returned.
-     *
-     * @param fromIndex the index to start checking from (inclusive)
-     * @return the index of the previous clear bit, or {@code -1} if there is no
-     *         such bit
-     * @throws IndexOutOfBoundsException if the specified index is less than
-     *                                   {@code -1}
+     * Returns the number of {@code ZEROS} in the specified Field of this
+     * {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the number of {@code ZEROS} in the specified field
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
      */
-    public int previousClearBit(int fromIndex) {
-        checkThisOffset(fromIndex);
-        return previousClearBit(fromIndex, fromIndex+1);
-    }
-    
-    public int previousClearBit(int fromIndex, Field field) {
-        field.checkOffset(fromIndex);
-        return previousClearBit(field.offset()+fromIndex, field.length()-fromIndex);
-    }
-    
-    public int previousClearBit(int fromIndex, int length) {
-        checkThisOffset(fromIndex);
-        if (length > fromIndex+1) {
-            throw new IllegalArgumentException("specified length exceeds offset+length of this BitString; length="
-                    + length + " specified BitString's offset=" + fromIndex + " length=" + this.length());
-        }
-        long word;
-        int index = fromIndex;
-        //final int[] iterator = getIterator(fromIndex, length);
-        final int[] iterator = getIterator(fromIndex-length+1, length);
-        while (hasPreviousIteratorWord(iterator)) {
-            word = ~getPreviousIteratorFullWord(iterator, ONE_FILL);
-            if (word != 0L) {
-                index -= Long.numberOfTrailingZeros(word);
-                return index;
-            }
-            index -= BITS_PER_WORD;
-        }
-        return -1;
+    public int numberOfZeros(Field field) {
+        return numberOfZeros(field.offset(), field.length());
     }
     
     /**
-     * Returns the index of the nearest bit that is set to {@code true} that occurs
-     * on or before the specified starting index. If no such bit exists, or if
-     * {@code -1} is given as the starting index, then {@code -1} is returned.
-     *
-     * @param fromIndex the index to start checking from (inclusive)
-     * @return the index of the previous set bit, or {@code -1} if there is no
-     *         such bit
-     * @throws IndexOutOfBoundsException if the specified index is less than
-     *                                   {@code -1}
+     * Returns the offset of the first bit that is set to {@code ONE} that occurs
+     * within this {@code BitString}. If no such bit exists, -1 is returned. The
+     * returned offset is relative to the start of this {@code BitString}.
+     * 
+     * @return the offset of the first {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
      */
-    public int previousSetBit(int fromIndex) {
-        checkThisOffset(fromIndex);
-        return previousSetBit(fromIndex, fromIndex+1);
-    }
-  
-      public int previousSetBit(int fromIndex, Field field) {
-          field.checkOffset(fromIndex);
-          return previousSetBit(field.offset()+fromIndex, field.length()-fromIndex);
+    public int offsetOfFirstOne() {
+        return iOffsetOfFirstOne(0, length());
     }
     
-    public int previousSetBit(int fromIndex, int length) {
-        checkThisOffset(fromIndex);
-        if (length > fromIndex+1) {
-            throw new IllegalArgumentException("specified length exceeds offset+length of this BitString; length="
-                    + length + " specified BitString's offset=" + fromIndex + " length=" + this.length());
-        }
-        long word;
-        int index = fromIndex;
-          final int[] iterator = getIterator(fromIndex-length+1, length);
-          while (hasPreviousIteratorWord(iterator)) {
-              word = getPreviousIteratorFullWord(iterator, ZERO_FILL);
-              if (word != 0L) {
-                  index -= Long.numberOfTrailingZeros(word);
-                  return index;
-              }
-              index -= BITS_PER_WORD;
-        }
-        return -1;
+    /**
+     * Returns the offset of the first bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the offset of the first {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int offsetOfFirstOne(int offset) {
+        checkThisOffset(offset);
+        return iOffsetOfFirstOne(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the first {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfFirstOne(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iOffsetOfFirstOne(offset, length);
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ONE} that occurs
+     * within the specified Field of this {@code BitString}. If no such bit exists,
+     * -1 is returned. The returned offset is relative to the start of the field.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the offset of the first {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfFirstOne(Field field) {
+        return offsetOfFirstOne(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ZERO} that occurs
+     * within this {@code BitString}. If no such bit exists, -1 is returned. The
+     * returned offset is relative to the start of this {@code BitString}.
+     * 
+     * @return the offset of the first {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     */
+    public int offsetOfFirstZero() {
+        return iOffsetOfFirstZero(0, length());
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ZERO} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the offset of the first {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int offsetOfFirstZero(int offset) {
+        checkThisOffset(offset);
+        return iOffsetOfFirstZero(offset, length() - offset);
+     }
+    
+     /**
+      * Returns the offset of the first bit that is set to {@code ZERO} that occurs
+      * within the specified substring of this {@code BitString}. If no such bit
+      * exists, -1 is returned. The returned offset is relative to the start of the
+      * substring.
+      * 
+      * The specified substring starts at offset 'offset' of this {@code BitString}
+      * and has a length of 'length'.
+      * 
+      * @param offset the start of the substring
+      * @param length the length of the substring
+      * @return the offset of the first {@code ZERO} bit or -1 if no bits are set to
+      *         {@code ZERO}
+      * @throws StringIndexOutOfBoundsException if
+      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+      * @throws IllegalArgumentException        if
+      *                                         {@code length < 0 || length > length() - offset}
+      */
+    public int offsetOfFirstZero(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iOffsetOfFirstZero(offset, length);
+    }
+    
+    /**
+     * Returns the offset of the first bit that is set to {@code ZERO} that occurs
+     * within the specified Field of this {@code BitString}. If no such bit exists,
+     * -1 is returned. The returned offset is relative to the start of the field.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the offset of the first {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfFirstZero(Field field) {
+        return offsetOfFirstZero(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ONE} that occurs
+     * within this {@code BitString}. If no such bit exists, -1 is returned. The
+     * returned offset is relative to the start of this {@code BitString}.
+     * 
+     * @return the offset of the last {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     */
+    public int offsetOfLastOne() {
+        return iOffsetOfLastOne(0, length());
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the offset of the last {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int offsetOfLastOne(int offset) {
+        checkThisOffset(offset);
+        return iOffsetOfLastOne(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ONE} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the last {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfLastOne(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iOffsetOfLastOne(offset, length);
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ONE} that occurs
+     * within the specified Field of this {@code BitString}. If no such bit exists,
+     * -1 is returned. The returned offset is relative to the start of the field.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the offset of the last {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfLastOne(Field field) {
+        return offsetOfLastOne(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ZERO} that occurs
+     * within this {@code BitString}. If no such bit exists, -1 is returned. The
+     * returned offset is relative to the start of this {@code BitString}.
+     * 
+     * @return the offset of the last {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     */
+    public int offsetOfLastZero() {
+        return iOffsetOfLastZero(0, length());
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ZERO} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param offset the start of the substring
+     * @return the offset of the last {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */
+    public int offsetOfLastZero(int offset) {
+        checkThisOffset(offset);
+        return iOffsetOfLastZero(offset, length() - offset);
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ZERO} that occurs
+     * within the specified substring of this {@code BitString}. If no such bit
+     * exists, -1 is returned. The returned offset is relative to the start of the
+     * substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param offset the start of the substring
+     * @param length the length of the substring
+     * @return the offset of the last {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfLastZero(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return iOffsetOfLastZero(offset, length);
+    }
+    
+    /**
+     * Returns the offset of the last bit that is set to {@code ZERO} that occurs
+     * within the specified Field of this {@code BitString}. If no such bit exists,
+     * -1 is returned. The returned offset is relative to the start of the field.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return the offset of the last {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfLastZero(Field field) {
+        return offsetOfLastZero(field.offset(), field.length());
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ONE} that occurs on
+     * or after the specified start offset within this {@code BitString}. If no such
+     * bit exists, or {@code startOffset == length()}, -1 is returned. The start
+     * offset and the returned offset are relative to the start of this
+     * {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @return the offset of the next {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code startOffset < 0 || startOffset > length()}
+     */
+    public int offsetOfNextOne(int startOffset) {
+        if (startOffset == length()) return -1;
+        checkRelativeOffset(startOffset, length());
+        final int bitOffset = iOffsetOfFirstOne(startOffset, length() - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ONE} that occurs on
+     * or after the specified start offset within the specified substring of this
+     * {@code BitString}. If no such bit exists, or
+     * {@code startOffset == length() - offset}, -1 is returned. The start offset
+     * and the returned offset are relative to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @return the offset of the next {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > length() - offset}
+     */
+    public int offsetOfNextOne(int startOffset, int offset) {
+        checkThisOffset(offset);
+        final int length = length() - offset;
+        if (startOffset == length) return -1;
+        checkRelativeOffset(startOffset, length);
+        final int bitOffset = iOffsetOfFirstOne(offset + startOffset, length - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ONE} that occurs on
+     * or after the specified start offset within the specified substring of this
+     * {@code BitString}. If no such bit exists, or {@code startOffset == length},
+     * -1 is returned. The start offset and the returned offset are relative to the
+     * start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @param length      the length of the substring
+     * @return the offset of the next {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > length}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfNextOne(int startOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        if (startOffset == length) return -1;
+        checkRelativeOffset(startOffset, length);
+        final int bitOffset = iOffsetOfFirstOne(offset + startOffset, length - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ONE} that occurs on
+     * or after the specified start offset within the specified Field of this
+     * {@code BitString}. If no such bit exists, or
+     * {@code startOffset == field.length()}, -1 is returned. The start offset and
+     * the returned offset are relative to the start of the field.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param field       a Field of this {@code BitString}
+     * @return the offset of the next {@code ONE} bit or -1 if no bits are set to
+     *         {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > field.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfNextOne(int startOffset, Field field) {
+        checkThisOffset(field.offset());
+        checkThisLength(field.offset(), field.length());
+        if (startOffset == field.length()) return -1;
+        checkRelativeOffset(startOffset, field.length());
+        final int bitOffset = iOffsetOfFirstOne(field.offset() + startOffset, field.length() - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ZERO} that occurs on
+     * or after the specified start offset within this {@code BitString}. If no such
+     * bit exists, or {@code startOffset == length()}, -1 is returned. The start
+     * offset and the returned offset are relative to the start of this
+     * {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @return the offset of the next {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code startOffset < 0 || startOffset > length()}
+     */
+    public int offsetOfNextZero(int startOffset) {
+        if (startOffset == length()) return -1;
+        checkRelativeOffset(startOffset, length());
+        final int bitOffset = iOffsetOfFirstZero(startOffset, length() - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ZERO} that occurs on
+     * or after the specified start offset within the specified substring of this
+     * {@code BitString}. If no such bit exists, or
+     * {@code startOffset == length() - offset}, -1 is returned. The start offset
+     * and the returned offset are relative to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @return the offset of the next {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > length() - offset}
+     */
+    public int offsetOfNextZero(int startOffset, int offset) {
+        checkThisOffset(offset);
+        final int length = length() - offset;
+        if (startOffset == length) return -1;
+        checkRelativeOffset(startOffset, length);
+        final int bitOffset = iOffsetOfFirstZero(offset + startOffset, length - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ZERO} that occurs on
+     * or after the specified start offset within the specified substring of this
+     * {@code BitString}. If no such bit exists, or {@code startOffset == length},
+     * -1 is returned. The start offset and the returned offset are relative to the
+     * start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @param length      the length of the substring
+     * @return the offset of the next {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > length}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfNextZero(int startOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        if (startOffset == length) return -1;
+        checkRelativeOffset(startOffset, length);
+        final int bitOffset = iOffsetOfFirstZero(offset + startOffset, length - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the next bit that is set to {@code ZERO} that occurs on
+     * or after the specified start offset within the specified Field of this
+     * {@code BitString}. If no such bit exists, or
+     * {@code startOffset == field.length()}, -1 is returned. The start offset and
+     * the returned offset are relative to the start of the field.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param field       a Field of this {@code BitString}
+     * @return the offset of the next {@code ZERO} bit or -1 if no bits are set to
+     *         {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     *                                         or
+     *                                         {@code startOffset < 0 || startOffset > field.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfNextZero(int startOffset, Field field) {
+        checkThisOffset(field.offset());
+        checkThisLength(field.offset(), field.length());
+        if (startOffset == field.length()) return -1;
+        checkRelativeOffset(startOffset, field.length());
+        final int bitOffset = iOffsetOfFirstZero(field.offset() + startOffset, field.length() - startOffset);
+        return (bitOffset == -1) ? -1 : startOffset + bitOffset;
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ONE} that occurs
+     * on or before the specified start offset within this {@code BitString}. If no
+     * such bit exists, or -1 if given as the start offset, -1 is returned. The
+     * start offset and the returned offset are relative to the start of this
+     * {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @return the offset of the previous {@code ONE} bit or -1 if no bits are set
+     *         to {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code startOffset < -1 || startOffset > 0 && offset >= length()}
+     */
+    public int offsetOfPreviousOne(int startOffset) {
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length());
+        //if (startOffset < 0 || startOffset >= length()) throw new IllegalArgumentException();
+        return iOffsetOfLastOne(0, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ONE} that occurs
+     * on or before the specified start offset within the specified substring of
+     * this {@code BitString}. If no such bit exists, or -1 if given as the start
+     * offset, -1 is returned. The start offset and the returned offset are relative
+     * to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @return the offset of the previous {@code ONE} bit or -1 if no bits are set
+     *         to {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= length() - offset}
+     */
+    public int offsetOfPreviousOne(int startOffset, int offset) {
+        checkThisOffset(offset);
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length() - offset);
+        //if (startOffset < 0 || startOffset >= length() - offset) throw new IllegalArgumentException();
+        return iOffsetOfLastOne(offset, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ONE} that occurs
+     * on or before the specified start offset within the specified substring of
+     * this {@code BitString}. If no such bit exists, or -1 if given as the start
+     * offset, -1 is returned. The start offset and the returned offset are relative
+     * to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @param length      the length of the substring
+     * @return the offset of the previous {@code ONE} bit or -1 if no bits are set
+     *         to {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= length}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfPreviousOne(int startOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length);
+        //if (startOffset < 0 || startOffset >= length) throw new IllegalArgumentException();
+        return iOffsetOfLastOne(offset, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ONE} that occurs
+     * on or before the specified start offset within the specified Field of this
+     * {@code BitString}. If no such bit exists, or -1 if given as the start offset,
+     * -1 is returned. The start offset and the returned offset are relative to the
+     * start of the field.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param field       a Field of this {@code BitString}
+     * @return the offset of the previous {@code ONE} bit or -1 if no bits are set
+     *         to {@code ONE}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= field.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfPreviousOne(int startOffset, Field field) {
+        checkThisOffset(field.offset());
+        checkThisLength(field.offset(), field.length());
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, field.length());
+        //if (startOffset < 0 || startOffset >= field.length()) throw new IllegalArgumentException();
+        return iOffsetOfLastOne(field.offset(), startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ZERO} that occurs
+     * on or before the specified start offset within this {@code BitString}. If no
+     * such bit exists, or -1 if given as the start offset, -1 is returned. The
+     * start offset and the returned offset are relative to the start of this
+     * {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @return the offset of the previous {@code ZERO} bit or -1 if no bits are set
+     *         to {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code startOffset < -1 || startOffset > 0 && offset >= length()}
+     */
+    public int offsetOfPreviousZero(int startOffset) {
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length());
+        return iOffsetOfLastZero(0, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ZERO} that occurs
+     * on or before the specified start offset within the specified substring of
+     * this {@code BitString}. If no such bit exists, or -1 if given as the start
+     * offset, -1 is returned. The start offset and the returned offset are relative
+     * to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and extends to the end of this {@code BitString}.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @return the offset of the previous {@code ZERO} bit or -1 if no bits are set
+     *         to {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= length() - offset}
+     */
+    public int offsetOfPreviousZero(int startOffset, int offset) {
+        checkThisOffset(offset);
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length() - offset);
+        return iOffsetOfLastZero(offset, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ZERO} that occurs
+     * on or before the specified start offset within the specified substring of
+     * this {@code BitString}. If no such bit exists, or -1 if given as the start
+     * offset, -1 is returned. The start offset and the returned offset are relative
+     * to the start of the substring.
+     * 
+     * The specified substring starts at offset 'offset' of this {@code BitString}
+     * and has a length of 'length'.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param offset      the start of the substring
+     * @param length      the length of the substring
+     * @return the offset of the previous {@code ZERO} bit or -1 if no bits are set
+     *         to {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= length}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
+    public int offsetOfPreviousZero(int startOffset, int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, length);
+        return iOffsetOfLastZero(offset, startOffset+1);
+    }
+    
+    /**
+     * Returns the offset of the previous bit that is set to {@code ZERO} that occurs
+     * on or before the specified start offset within the specified Field of this
+     * {@code BitString}. If no such bit exists, or -1 if given as the start offset,
+     * -1 is returned. The start offset and the returned offset are relative to the
+     * start of the field.
+     * 
+     * @param startOffset the offset to start checking from (inclusive)
+     * @param field       a Field of this {@code BitString}
+     * @return the offset of the previous {@code ZERO} bit or -1 if no bits are set
+     *         to {@code ZERO}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     *                                         or
+     *                                         {@code startOffset < -1 || startOffset > 0 && startOffset >= field.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
+    public int offsetOfPreviousZero(int startOffset, Field field) {
+        checkThisOffset(field.offset());
+        checkThisLength(field.offset(), field.length());
+        if (startOffset == -1) return -1;
+        checkRelativeOffset(startOffset, field.length());
+        return iOffsetOfLastZero(field.offset(), startOffset+1);
     }
     
     public BitString range(int offset) {
         checkThisOffset(offset);
-        return range(offset, length()-offset);
+        return range(offset, length() - offset);
     }
     
     public BitString range(int offset, int length) {
@@ -4866,7 +7735,7 @@ public class BitString implements Cloneable, Serializable  {
     
     public BitString reverse(int offset) {
         checkThisOffset(offset);
-        iReverse(offset, length()-offset);
+        iReverse(offset, length() - offset);
         return this;
     }
     
@@ -4907,7 +7776,7 @@ public class BitString implements Cloneable, Serializable  {
      * performed instead of a rotateLeft.
      * 
      * The substring starts at offset 'offset' of this {@code BitString} and extends
-     * to the end of {@code BitString}.
+     * to the end of this {@code BitString}.
      * 
      * Any bits rotated out on the left are rotated back into this {@code BitString}
      * on the right.
@@ -4919,7 +7788,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      */
     public BitString rotateLeft(int nBits, int offset) {
-        iRotateLeft(nBits, offset, length()-offset);
+        iRotateLeft(nBits, offset, length() - offset);
         return this;
     }
     
@@ -4943,7 +7812,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString rotateLeft(int nBits, int offset, int length) {
         checkThisOffset(offset);
@@ -4968,7 +7837,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length()-field.offset()}
+     *                                         {@code field.length() > this.length() - field.offset()}
      */
     public BitString rotateLeft(int nBits, Field field) {
         return rotateLeft(nBits, field.offset(), field.length());
@@ -5021,7 +7890,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString rotateLeft(int nBits, BitString other, int otherOffset) {
         other.checkArgOffset(otherOffset);
-        iRotateLeft(nBits, 0, this.length(), other, otherOffset, other.length()-otherOffset);
+        iRotateLeft(nBits, 0, this.length(), other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5046,7 +7915,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateLeft(int nBits, BitString other, int otherOffset, int otherLength) {
         other.checkArgOffset(otherOffset);
@@ -5072,7 +7941,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateLeft(int nBits, BitString other, Field otherField) {
         return rotateLeft(nBits, other, otherField.offset(), otherField.length());
@@ -5102,7 +7971,7 @@ public class BitString implements Cloneable, Serializable  {
             int thisOffset,
             BitString other) {
         checkThisOffset(thisOffset);
-        iRotateLeft(nBits, thisOffset, this.length()-thisOffset, other, 0, other.length());
+        iRotateLeft(nBits, thisOffset, this.length() - thisOffset, other, 0, other.length());
         return this;
     }
     
@@ -5137,7 +8006,7 @@ public class BitString implements Cloneable, Serializable  {
             BitString other, int otherOffset) {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
-        iRotateLeft(nBits, thisOffset, this.length()-thisOffset, other, otherOffset, other.length()-otherOffset);
+        iRotateLeft(nBits, thisOffset, this.length() - thisOffset, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5168,7 +8037,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */ 
     public BitString rotateLeft(int nBits,
             int thisOffset,
@@ -5176,7 +8045,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
         other.checkArgLength(otherOffset, otherLength);
-        iRotateLeft(nBits, thisOffset, this.length()-thisOffset, other, otherOffset, otherLength);
+        iRotateLeft(nBits, thisOffset, this.length() - thisOffset, other, otherOffset, otherLength);
         return this;
     }
     
@@ -5203,7 +8072,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateLeft(int nBits,
             int thisOffset,
@@ -5232,7 +8101,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString rotateLeft(int nBits,
             int thisOffset, int thisLength,
@@ -5270,7 +8139,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString rotateLeft(int nBits,
             int thisOffset, int thisLength,
@@ -5278,7 +8147,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         other.checkArgOffset(otherOffset);
-        iRotateLeft(nBits, thisOffset, thisLength, other, otherOffset, other.length()-otherOffset);
+        iRotateLeft(nBits, thisOffset, thisLength, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5310,9 +8179,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */   
     public BitString rotateLeft(int nBits,
             int thisOffset, int thisLength,
@@ -5349,9 +8218,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateLeft(int nBits,
             int thisOffset, int thisLength,
@@ -5376,7 +8245,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString rotateLeft(int nBits,
             Field thisField,
@@ -5407,7 +8276,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString rotateLeft(int nBits,
             Field thisField,
@@ -5441,9 +8310,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateLeft(int nBits,
             Field thisField,
@@ -5471,9 +8340,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateLeft(int nBits,
            Field thisField,
@@ -5520,7 +8389,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString rotateRight(int nBits, int offset) {
         checkThisOffset(offset);
-        iRotateRight(nBits, offset, length()-offset);
+        iRotateRight(nBits, offset, length() - offset);
         return this;
     }
     
@@ -5544,7 +8413,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString rotateRight(int nBits, int offset, int length) {
          checkThisOffset(offset);
@@ -5569,7 +8438,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length()-field.offset()}
+     *                                         {@code field.length() > this.length() - field.offset()}
      */
     public BitString rotateRight(int nBits, Field field) {
         return rotateRight(nBits, field.offset(), field.length());
@@ -5623,7 +8492,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString rotateRight(int nBits,
             BitString other, int otherOffset) {
         other.checkArgOffset(otherOffset);
-        iRotateRight(nBits, 0, this.length(), other, otherOffset, other.length()-otherOffset);
+        iRotateRight(nBits, 0, this.length(), other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5648,7 +8517,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateRight(int nBits,
             BitString other, int otherOffset, int otherLength) {
@@ -5675,7 +8544,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateRight(int nBits,
             BitString other, Field otherField) {
@@ -5706,7 +8575,7 @@ public class BitString implements Cloneable, Serializable  {
             int thisOffset,
             BitString other) {
         checkThisOffset(thisOffset);
-        iRotateRight(nBits, thisOffset, this.length()-thisOffset, other, 0, other.length());
+        iRotateRight(nBits, thisOffset, this.length() - thisOffset, other, 0, other.length());
         return this;
     }
     
@@ -5741,7 +8610,7 @@ public class BitString implements Cloneable, Serializable  {
             BitString other, int otherOffset) {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
-        iRotateRight(nBits, thisOffset, this.length()-thisOffset, other, otherOffset, other.length()-otherOffset);
+        iRotateRight(nBits, thisOffset, this.length() - thisOffset, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5772,7 +8641,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateRight(int nBits,
             int thisOffset,
@@ -5780,7 +8649,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
         other.checkArgLength(otherOffset, otherLength);
-        iRotateRight(nBits, thisOffset, this.length()-thisOffset, other, otherOffset, otherLength);
+        iRotateRight(nBits, thisOffset, this.length() - thisOffset, other, otherOffset, otherLength);
         return this;
     }
     
@@ -5807,7 +8676,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateRight(int nBits,
             int thisOffset,
@@ -5836,7 +8705,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString rotateRight(int nBits,
             int thisOffset, int thisLength,
@@ -5874,7 +8743,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString rotateRight(int nBits,
             int thisOffset, int thisLength,
@@ -5882,7 +8751,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         other.checkArgOffset(otherOffset);
-        iRotateRight(nBits, thisOffset, thisLength, other, otherOffset, other.length()-otherOffset);
+        iRotateRight(nBits, thisOffset, thisLength, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -5914,9 +8783,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateRight(int nBits,
             int thisOffset, int thisLength,
@@ -5953,9 +8822,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateRight(int nBits,
             int thisOffset, int thisLength,
@@ -5980,7 +8849,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisField.offset() > 0 && thisField.offset() >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString rotateRight(int nBits,
             Field thisField,
@@ -6011,7 +8880,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      */
     public BitString rotateRight(int nBits,
             Field thisField,
@@ -6043,9 +8912,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString rotateRight(int nBits,
             Field thisField,
@@ -6073,9 +8942,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherField.offset() > 0 && otherField.Offset() >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisField.length() > this.length()-thisField.offset()}
+     *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherField.length() > other.length()-otherField.offset()}
+     *                                         {@code otherField.length() > other.length() - otherField.offset()}
      */
     public BitString rotateRight(int nBits,
             Field thisField,
@@ -6143,7 +9012,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString shiftLeft(int nBits, int offset, int length) {
         return shiftLeft(nBits, ZERO_FILL, offset, length);
@@ -6214,7 +9083,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString shiftLeft(int nBits, boolean fill, int offset) {
         checkThisOffset(offset);
-        iShiftLeft(nBits, fill, offset, this.length()-offset);
+        iShiftLeft(nBits, fill, offset, this.length() - offset);
         return this;
     }
     
@@ -6240,7 +9109,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString shiftLeft(int nBits, boolean fill, int offset, int length) {
         checkThisOffset(offset);
@@ -6340,7 +9209,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits, BitString other, int otherOffset, int otherLength) {
         return shiftLeft(nBits, ZERO_FILL, other, otherOffset, otherLength);
@@ -6450,7 +9319,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits,
             int thisOffset,
@@ -6510,7 +9379,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftLeft(int nBits,
             int thisOffset, int thisLength,
@@ -6545,7 +9414,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftLeft(int nBits,
             int thisOffset, int thisLength,
@@ -6581,9 +9450,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits,
             int thisOffset, int thisLength,
@@ -6703,7 +9572,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws IllegalArgumentException        if
      *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits,
             Field thisField,
@@ -6793,7 +9662,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString shiftLeft(int nBits, boolean fill,
             BitString other, int otherOffset) {
         other.checkArgOffset(otherOffset);
-        iShiftLeft(nBits, fill, 0, this.length(), other, otherOffset, other.length()-otherOffset);
+        iShiftLeft(nBits, fill, 0, this.length(), other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -6820,7 +9689,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             BitString other, int otherOffset, int otherLength) {
@@ -6882,7 +9751,7 @@ public class BitString implements Cloneable, Serializable  {
             int thisOffset,
             BitString other) {
         checkThisOffset(thisOffset);
-        iShiftLeft(nBits, fill, thisOffset, this.length()-thisOffset, other, 0, other.length());
+        iShiftLeft(nBits, fill, thisOffset, this.length() - thisOffset, other, 0, other.length());
         return this;
     }
     
@@ -6919,7 +9788,7 @@ public class BitString implements Cloneable, Serializable  {
             BitString other, int otherOffset) {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
-        iShiftLeft(nBits, fill, thisOffset, this.length()-thisOffset, other, otherOffset, other.length()-otherOffset);
+        iShiftLeft(nBits, fill, thisOffset, this.length() - thisOffset, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -6952,7 +9821,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             int thisOffset,
@@ -6960,7 +9829,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
         other.checkArgLength(otherOffset, otherLength);
-        iShiftLeft(nBits, fill, thisOffset, this.length()-thisOffset, other, otherOffset, otherLength);
+        iShiftLeft(nBits, fill, thisOffset, this.length() - thisOffset, other, otherOffset, otherLength);
         return this;
     }
     
@@ -7020,7 +9889,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -7060,7 +9929,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -7068,7 +9937,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         other.checkArgOffset(otherOffset);
-        iShiftLeft(nBits, fill, thisOffset, thisLength, other, otherOffset, other.length()-otherOffset);
+        iShiftLeft(nBits, fill, thisOffset, thisLength, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -7102,9 +9971,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -7241,7 +10110,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws IllegalArgumentException        if
      *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftLeft(int nBits, boolean fill,
             Field thisField,
@@ -7341,7 +10210,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString shiftRight(int nBits, int offset, int length) {
         return shiftRight(nBits, ZERO_FILL, offset, length);
@@ -7412,7 +10281,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     public BitString shiftRight(int nBits, boolean fill, int offset) {
         checkThisOffset(offset);
-        iShiftRight(nBits, fill, offset, length()-offset);
+        iShiftRight(nBits, fill, offset, length() - offset);
         return this;
     }
     
@@ -7438,7 +10307,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length()-offset}
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public BitString shiftRight(int nBits, boolean fill, int offset, int length) {
         checkThisOffset(offset);
@@ -7538,7 +10407,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits, BitString other, int otherOffset, int otherLength) {
         return shiftRight(nBits, ZERO_FILL, other, otherOffset, otherLength);
@@ -7650,7 +10519,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits,
             int thisOffset,
@@ -7710,7 +10579,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftRight(int nBits,
             int thisOffset, int thisLength,
@@ -7745,7 +10614,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftRight(int nBits,
             int thisOffset, int thisLength,
@@ -7781,9 +10650,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits,
             int thisOffset, int thisLength,
@@ -7905,7 +10774,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws IllegalArgumentException        if
      *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits,
             Field thisField,
@@ -7995,7 +10864,7 @@ public class BitString implements Cloneable, Serializable  {
     public BitString shiftRight(int nBits, boolean fill,
             BitString other, int otherOffset) {
         other.checkArgOffset(otherOffset);
-        iShiftRight(nBits, fill, 0, this.length(), other, otherOffset, other.length()-otherOffset);
+        iShiftRight(nBits, fill, 0, this.length(), other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -8022,7 +10891,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             BitString other, int otherOffset, int otherLength) {
@@ -8084,7 +10953,7 @@ public class BitString implements Cloneable, Serializable  {
             int thisOffset,
             BitString other) {
         checkThisOffset(thisOffset);
-        iShiftRight(nBits, fill, thisOffset, this.length()-thisOffset, other, 0, other.length());
+        iShiftRight(nBits, fill, thisOffset, this.length() - thisOffset, other, 0, other.length());
         return this;
     }
     
@@ -8121,7 +10990,7 @@ public class BitString implements Cloneable, Serializable  {
             BitString other, int otherOffset) {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
-        iShiftRight(nBits, fill, thisOffset, this.length()-thisOffset, other, otherOffset, other.length()-otherOffset);
+        iShiftRight(nBits, fill, thisOffset, this.length() - thisOffset, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -8154,7 +11023,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             int thisOffset,
@@ -8162,7 +11031,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         other.checkArgOffset(otherOffset);
         other.checkArgLength(otherOffset, otherLength);
-        iShiftRight(nBits, fill, thisOffset, this.length()-thisOffset, other, otherOffset, otherLength);
+        iShiftRight(nBits, fill, thisOffset, this.length() - thisOffset, other, otherOffset, otherLength);
         return this;
     }
     
@@ -8222,7 +11091,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code thisOffset < 0 || thisOffset > 0 && thisOffset >= this.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -8262,7 +11131,7 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -8270,7 +11139,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
         other.checkArgOffset(otherOffset);
-        iShiftRight(nBits, fill, thisOffset, thisLength, other, otherOffset, other.length()-otherOffset);
+        iShiftRight(nBits, fill, thisOffset, thisLength, other, otherOffset, other.length() - otherOffset);
         return this;
     }
     
@@ -8304,9 +11173,9 @@ public class BitString implements Cloneable, Serializable  {
      *                                         or
      *                                         {@code otherOffset < 0 || otherOffset > 0 && otherOffset >= other.length()}
      * @throws IllegalArgumentException        if
-     *                                         {@code thisLength < 0 || thisLength > this.length()-thisOffset}
+     *                                         {@code thisLength < 0 || thisLength > this.length() - thisOffset}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             int thisOffset, int thisLength,
@@ -8443,7 +11312,7 @@ public class BitString implements Cloneable, Serializable  {
      * @throws IllegalArgumentException        if
      *                                         {@code thisField.length() > this.length() - thisField.offset()}
      *                                         or
-     *                                         {@code otherLength < 0 || otherLength > other.length()-otherOffset}
+     *                                         {@code otherLength < 0 || otherLength > other.length() - otherOffset}
      */
     public BitString shiftRight(int nBits, boolean fill,
             Field thisField,
@@ -8486,15 +11355,45 @@ public class BitString implements Cloneable, Serializable  {
         return shiftRight(nBits, fill, thisField.offset(), thisField.length(), other, otherField.offset(), otherField.length());
     }
     
+    /**
+     * Returns all of the bits in this {@code BitString}.
+     * 
+     * @return a copy of this {@code BitString}
+     */
     public BitString substring() {
         return substring(0, length());
     }
     
+    /**
+     * Returns a substring of this {@code BitString}.
+     * 
+     * This substring starts at offset 'offset' of this {@code BitString} and
+     * extends to the end of this {@code BitString}.
+     *
+     * @param offset the start of this substring
+     * @return a substring of this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     */ 
     public BitString substring(int offset) {
         checkThisOffset(offset);
-        return substring(offset, length()-offset);
+        return substring(offset, length() - offset);
     }
     
+    /**
+     * Returns a substring of this {@code BitString}.
+     *
+     * The substring starts at offset 'offset' of this {@code BitString} and has a
+     * length of 'length'.
+     * 
+     * @param offset the start of this substring
+     * @param length the length of this substring
+     * @return a substring of this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
     public BitString substring(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
@@ -8503,6 +11402,16 @@ public class BitString implements Cloneable, Serializable  {
         return substring;
     }
     
+    /**
+     * Returns a Field as a substring of this {@code BitString}.
+     * 
+     * @param field a Field of this {@code BitString}
+     * @return a Field as a substring of this {@code BitString}
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
     public BitString subString(Field field) {
         return substring(field.offset(), field.length());
     }
@@ -8525,13 +11434,15 @@ public class BitString implements Cloneable, Serializable  {
     
     public byte[] toByteArray(int offset) {
         checkThisOffset(offset);
-        return toByteArray(offset, this.length()-offset);
+        return toByteArray(offset, this.length() - offset);
     }
     
     public byte[] toByteArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
-        if (isEmpty()) return new byte[0];
+        if (length == 0) return new byte[0];
+        //int len = wordIndex(length)+1;
+        //wordIndex(bitIndex) = bitIndex >> ADDRESS_BITS_PER_WORD;
         int len = (length / 8) + ((length % 8) > 0 ? 1 : 0);
         byte[] bytes = new byte[len];
         int index = 0;
@@ -8568,15 +11479,17 @@ public class BitString implements Cloneable, Serializable  {
     
     public long[] toLongArray(int offset) {
         checkThisOffset(offset);
-        return toLongArray(offset, this.length()-offset);
+        return toLongArray(offset, this.length() - offset);
     }
     
     public long[] toLongArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
-        if (isEmpty()) return new long[0];
-        int len = (length / 64) + ((length % 64) > 0 ? 1 : 0);
-        final long[] array = new long[len];
+        if (length == 0) return new long[0];
+        //int len = wordIndex(length)+1;
+        //wordIndex(bitIndex) = bitIndex >> ADDRESS_BITS_PER_WORD;
+        //int len = (length / 64) + ((length % 64) > 0 ? 1 : 0);
+        final long[] array = new long[wordIndex(length)+1];
         int index = 0;
         final int[] iterator = getIterator(offset, length);
         while (hasNextIteratorWord(iterator)) {
@@ -8596,7 +11509,7 @@ public class BitString implements Cloneable, Serializable  {
     
     public String toString(int offset) {
         checkThisOffset(offset);
-        return toString(offset, this.length()-offset);
+        return toString(offset, this.length() - offset);
     }
     
     public String toString(int offset, int length) {
@@ -8609,9 +11522,7 @@ public class BitString implements Cloneable, Serializable  {
             long word = getNextIteratorFullWord(iterator);
             String wordString = String.format("%64s", Long.toBinaryString(word)).replace(' ', '0');
             int wordBitCount = getIteratorWordBitCount(iterator);
-            if (wordBitCount < BITS_PER_WORD) {
-                wordString = wordString.substring(0, wordBitCount); 
-            }
+            if (wordBitCount < BITS_PER_WORD) wordString = wordString.substring(0, wordBitCount);
             string.append(wordString);
         }
         return string.toString();
@@ -8646,7 +11557,7 @@ public class BitString implements Cloneable, Serializable  {
     
     public int hashCode(int offset) {
         checkThisOffset(offset);
-        return hashCode(offset, length()-offset);
+        return hashCode(offset, length() - offset);
     }
     
     public int hashCode(int offset, int length) {
@@ -8665,7 +11576,6 @@ public class BitString implements Cloneable, Serializable  {
         return hashCode(field.offset(), field.length());
     }
 
-    
     public static class Field {
         
         private final int offset;
@@ -8684,7 +11594,7 @@ public class BitString implements Cloneable, Serializable  {
             return this.length;
         }
         
-        public void checkOffset(int offset) {
+        private void checkOffset(int offset) {
             if (offset < 0 || offset >= length()) {
                 throw new StringIndexOutOfBoundsException(
                         "specified offset is invalid for this field; offset=" + offset + ", field length=" + length()); 
@@ -8754,7 +11664,7 @@ public class BitString implements Cloneable, Serializable  {
         }
         
         @Override
-        public int trimToSize() {
+        public int trimToLength() {
             throw new UnsupportedOperationException(noCapacityMsg());
         }
         
@@ -8769,7 +11679,7 @@ public class BitString implements Cloneable, Serializable  {
         }
         
         @Override
-        void setLength(int lengthDelta, int bitIndex) {
+        void setRangeLength(int lengthDelta, int bitIndex) {
             throwCanNotBeModifiedException();
         }
         
@@ -8836,7 +11746,7 @@ public class BitString implements Cloneable, Serializable  {
         }
         
         @Override
-        public int trimToSize() {
+        public int trimToLength() {
             throw new UnsupportedOperationException(noCapacityMsg());
         }
         
@@ -8844,6 +11754,11 @@ public class BitString implements Cloneable, Serializable  {
         public int length() {
             checkForModificationException();
             return this.length;
+        }
+        
+        @Override
+        int baseLength() {
+            return base.baseLength();
         }
         
 //        @Override
@@ -8859,13 +11774,13 @@ public class BitString implements Cloneable, Serializable  {
             final int lengthDelta = newLength - length();
             int bitIndex = super.lastBitIndex() + 1;
             if (lengthDelta < 0) bitIndex += lengthDelta;
-            parent.setLength(lengthDelta, bitIndex);
+            parent.setRangeLength(lengthDelta, bitIndex);
             updateExpectantModCountAndLength(lengthDelta);
         }
         
         @Override
-        void setLength(int lengthDelta, int bitIndex) {
-            parent.setLength(lengthDelta, bitIndex);
+        void setRangeLength(int lengthDelta, int bitIndex) {
+            parent.setRangeLength(lengthDelta, bitIndex);
             updateExpectantModCountAndLength(lengthDelta);
         }
         
@@ -9040,6 +11955,7 @@ public class BitString implements Cloneable, Serializable  {
         public BitString append(BitString that, int thatOffset, int thatLength) {
             that.checkArgOffset(thatOffset);
             that.checkArgLength(thatOffset, thatLength);
+            base.checkBaseLength(thatLength);
             iInsert(super.lastBitIndex()+1, that, thatOffset, thatLength);
             return this;
         }
