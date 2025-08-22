@@ -296,7 +296,7 @@ import java.util.function.Function;
  * @see java.util.LinkedList
  * @see List
  * @see Node
- * @since 1.0.0
+ * @since 1.0
  * @since JDK 1.8
  */
 public class NodableLinkedList<E>

@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 James R. Pfeifer. All rights reserved.
+/* Copyright (C) 2025 James R. Pfeifer. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,16 @@ import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.IntToLongFunction;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongToIntFunction;
 import java.util.function.Predicate;
+import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 
+import net.pfeifdom.java.util.function.IntLongConsumer;
 import net.pfeifdom.java.util.function.LongBiPredicate;
 
 /**
@@ -96,7 +101,7 @@ import net.pfeifdom.java.util.function.LongBiPredicate;
  *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
  *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
  *      ========= ========= ========= ========= ========= ========= ========= =========
- *       clear                         set(p)              set(q)
+ *       set(0)                        set(p)              set(q)
  * 
  * op:   nor       xnor                ornot               nandnot   nand
  *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
@@ -104,12 +109,12 @@ import net.pfeifdom.java.util.function.LongBiPredicate;
  *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
  *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
  *      ========= ========= ========= ========= ========= ========= ========= =========
- *                           set(~q)             set(~p)                       set
+ *                           set(~q)             set(~p)                       set(1)
  * 
  * </pre> 
  * 
  * @author james
- * @since 1.1.0
+ * @since 1.1
  * @since JDK 1.8
  */
 public class BitString implements Cloneable, Serializable  {
@@ -197,7 +202,7 @@ public class BitString implements Cloneable, Serializable  {
      */
     private long modCount = 0L;
     
-    private BitString temp = new BitString();
+//    private BitString temp = new BitString();
 
     /**
      * Creates a new bit string. All bits are initially {@code false}.
@@ -234,8 +239,13 @@ public class BitString implements Cloneable, Serializable  {
     /**
      * Creates a bit string using words as the internal representation.
      */
-    private BitString(long[] words) {
-        this.stringLength = words.length * BITS_PER_WORD;
+//    private BitString(long[] words) {
+//        this.stringLength = words.length * BITS_PER_WORD;
+//        this.words = words;
+//    }
+    
+    private BitString(long[] words, int length) {
+        this.stringLength = length;
         this.words = words;
     }
 
@@ -302,6 +312,35 @@ public class BitString implements Cloneable, Serializable  {
         words = (long[]) fields.get("bits", null);
     }
     
+    public static BitString valueOf(boolean[] booleans) {
+        return new BitString(wrapBooleans(booleans), booleans.length);
+    }
+    
+    public static BitString valueOf(byte[] bytes) {
+        checkNewBitStringLength(bytes.length * (long)Byte.SIZE);
+        return new BitString(wrapBytes(bytes), bytes.length * Byte.SIZE);
+    }
+    
+    public static BitString valueOf(char[] chars) {
+        checkNewBitStringLength(chars.length * (long)Character.SIZE);
+        return new BitString(wrapChars(chars), chars.length * Character.SIZE);
+    }
+    
+    public static BitString valueOf(double[] doubles) {
+        checkNewBitStringLength(doubles.length * (long)Double.SIZE);
+        return new BitString(wrapDoubles(doubles), doubles.length * Double.SIZE);
+    }
+    
+    public static BitString valueOf(float[] floats) {
+        checkNewBitStringLength(floats.length * (long)Float.SIZE);
+        return new BitString(wrapFloats(floats), floats.length * Float.SIZE);
+    }
+    
+    public static BitString valueOf(int[] ints) {
+        checkNewBitStringLength(ints.length * (long)Integer.SIZE);
+        return new BitString(wrapInts(ints), ints.length * Integer.SIZE);
+    }
+    
     /**
      * Returns a new bit String containing all the bits in the given long array.
      *
@@ -318,26 +357,32 @@ public class BitString implements Cloneable, Serializable  {
      * @return a {@code BitString} containing all the bits in the long array
      */
     public static BitString valueOf(long[] longs) {
-        return new BitString(Arrays.copyOf(longs, longs.length));
+        checkNewBitStringLength(longs.length * (long)Long.SIZE);
+        return new BitString(Arrays.copyOf(longs, longs.length), longs.length * Long.SIZE);
     }
     
-    public static BitString valueOf(int[] ints) {
-        //assert Integer.SIZE == Long.SIZE / 2;
-        if (ints.length * (long) Integer.SIZE > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("the number of bits in the array (" + ints.length * (long) Integer.SIZE
-                    + ") exceed the maximum of " + Integer.MAX_VALUE);
-        }
-        final long[] longs = new long[(ints.length + 1) / 2];
-        for (int i = 0, l = 0; i < ints.length; i++) {
-            if ((i % 2) == 0) {
-                longs[l] = ((long)ints[i]) << Integer.SIZE; // first half of long
-            } else {
-                longs[l] |= Integer.toUnsignedLong(ints[i]); // last half of long
-                l++;
-            }
-        }
-        return new BitString(longs);
+    public static BitString valueOf(short[] shorts) {
+        checkNewBitStringLength(shorts.length * (long)Short.SIZE);
+        return new BitString(wrapShorts(shorts), shorts.length * Short.SIZE);
     }
+    
+//    public static BitString valueOf(int[] ints) {
+//        //assert Integer.SIZE == Long.SIZE / 2;
+//        if (ints.length * (long) Integer.SIZE > Integer.MAX_VALUE) {
+//            throw new IllegalArgumentException("the number of bits in the array (" + ints.length * (long) Integer.SIZE
+//                    + ") exceed the maximum of " + Integer.MAX_VALUE);
+//        }
+//        final long[] longs = new long[(ints.length + 1) / 2];
+//        for (int i = 0, l = 0; i < ints.length; i++) {
+//            if ((i % 2) == 0) {
+//                longs[l] = ((long)ints[i]) << Integer.SIZE; // first half of long
+//            } else {
+//                longs[l] |= Integer.toUnsignedLong(ints[i]); // last half of long
+//                l++;
+//            }
+//        }
+//        return new BitString(longs);
+//    }
     
     /**
      * Returns a new bit string containing all the bits in the given long
@@ -358,29 +403,30 @@ public class BitString implements Cloneable, Serializable  {
      */
     public static BitString valueOf(LongBuffer lb) {
         lb = lb.slice();
+        checkNewBitStringLength(lb.remaining() * (long)Long.SIZE);
         long[] words = new long[lb.remaining()];
         lb.get(words);
-        return new BitString(words);
+        return new BitString(words, words.length * Long.SIZE);
     }
 
-    /**
-     * Returns a new bit string containing all the bits in the given byte array.
-     *
-     * <p>More precisely,
-     * <br>{@code BitString.valueOf(bytes).get(n) == ((bytes[n/8] & (BIT_MASK>>>(n%8))) != 0)}
-     * <br>for all {@code n <  8 * bytes.length}.
-     *
-     * <p>This method is equivalent to
-     * {@code BitSet.valueOf(ByteBuffer.wrap(bytes))}.
-     *
-     * @param bytes a byte array containing a big-endian
-     *        representation of a sequence of bits to be used as the
-     *        initial bits of the new bit set
-     * @return a {@code BitString} containing all the bits in the byte array
-     */
-    public static BitString valueOf(byte[] bytes) {
-        return BitString.valueOf(ByteBuffer.wrap(bytes));
-    }
+//    /**
+//     * Returns a new bit string containing all the bits in the given byte array.
+//     *
+//     * <p>More precisely,
+//     * <br>{@code BitString.valueOf(bytes).get(n) == ((bytes[n/8] & (BIT_MASK>>>(n%8))) != 0)}
+//     * <br>for all {@code n <  8 * bytes.length}.
+//     *
+//     * <p>This method is equivalent to
+//     * {@code BitSet.valueOf(ByteBuffer.wrap(bytes))}.
+//     *
+//     * @param bytes a byte array containing a big-endian
+//     *        representation of a sequence of bits to be used as the
+//     *        initial bits of the new bit set
+//     * @return a {@code BitString} containing all the bits in the byte array
+//     */
+//    public static BitString valueOf(byte[] bytes) {
+//        return BitString.valueOf(ByteBuffer.wrap(bytes));
+//    }
 
     /**
      * Returns a new bit string containing all the bits in the given byte
@@ -401,7 +447,10 @@ public class BitString implements Cloneable, Serializable  {
      */
     public static BitString valueOf(ByteBuffer bb) {
         bb = bb.slice();
-        long[] words = new long[(bb.remaining() + 7) / 8];
+        checkNewBitStringLength(bb.remaining() * (long)Byte.SIZE);
+        final int bitCount = bb.remaining() * Byte.SIZE;
+        final int wordCount = (bb.remaining() + 7) / 8;
+        long[] words = new long[wordCount];
         int i = 0;
         while (bb.remaining() >= 8) {
             words[i++] = bb.getLong();
@@ -409,7 +458,7 @@ public class BitString implements Cloneable, Serializable  {
         for (int remaining = bb.remaining(), j = 0; j < remaining; j++) {
             words[i] |= (bb.get() & 0xffL) << (8 * (6 - j));
         }
-        return new BitString(words);
+        return new BitString(words, bitCount);
     }
     
     long getWord(int wordIndex) {
@@ -710,9 +759,18 @@ public class BitString implements Cloneable, Serializable  {
     private static byte[] getWordBytes(long word) {
         final byte[] bytes = new byte[8];
         for (int i = 0; i < 8; i++) {
-            bytes[7-i] = (byte)((word >>> 8*i) & 0xff);
+            bytes[7-i] = (byte)((word >>> 8*i) & 0xffL);
         }
         return bytes;
+    }
+    
+    private static int[] unwrapWordToIntArray(long word) {
+        final int perWord = Long.SIZE / Integer.SIZE;
+        final int[] ints = new int[Long.SIZE / Integer.SIZE];
+        for (int i = 0; i < ints.length; i++) {
+            ints[1-i] = (int)((word >>> 32*i) & 0xffffffffL);
+        }
+        return ints;
     }
     
     private void getNextWords(int wordIndex, long[] words, int lastWordIndex) {
@@ -926,40 +984,235 @@ public class BitString implements Cloneable, Serializable  {
         }
     }
     
-    private BitString temp(byte bits) {
-        assert Byte.SIZE <= BITS_PER_WORD;
-        temp.iSetLength(Byte.SIZE);
-        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Byte.SIZE));
-        return temp;
+//    private BitString temp(byte bits) {
+//        assert Byte.SIZE <= BITS_PER_WORD;
+//        temp.iSetLength(Byte.SIZE);
+//        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Byte.SIZE));
+//        return temp;
+//    }
+//    
+//    private BitString temp(char bits) {
+//        assert Character.SIZE <= BITS_PER_WORD;
+//        temp.iSetLength(Character.SIZE);
+//        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Character.SIZE));
+//        return temp;
+//    }
+//    
+//    private BitString temp(int bits) {
+//        assert Integer.SIZE <= BITS_PER_WORD;
+//        temp.iSetLength(Integer.SIZE);
+//        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Integer.SIZE));
+//        return temp;
+//    }
+//    
+//    private BitString temp(long bits) {
+//        assert Long.SIZE == BITS_PER_WORD;
+//        temp.iSetLength(Long.SIZE);
+//        temp.setWord(0, bits);
+//        return temp;
+//    }
+//    
+//    private BitString temp(short bits) {
+//        assert Short.SIZE <= BITS_PER_WORD;
+//        temp.iSetLength(Short.SIZE);
+//        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Short.SIZE));
+//        return temp;
+//    }
+    
+    private static long[] wrapBooleans(boolean[] booleans) {
+        return wrap(booleans.length, 1,
+                (index) -> { return booleans[index] ? 1L : 0L; });
     }
     
-    private BitString temp(char bits) {
-        assert Character.SIZE <= BITS_PER_WORD;
-        temp.iSetLength(Character.SIZE);
-        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Character.SIZE));
-        return temp;
+    private static long[] wrapBytes(byte[] bytes) {
+        return wrap(bytes.length, Byte.SIZE,
+                (index) -> { return Byte.toUnsignedLong(bytes[index]); });
     }
     
-    private BitString temp(int bits) {
-        assert Integer.SIZE <= BITS_PER_WORD;
-        temp.iSetLength(Integer.SIZE);
-        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Integer.SIZE));
-        return temp;
+    private static long[] wrapChars(char[] chars) {
+        return wrap(chars.length, Character.SIZE,
+                (index) -> { return (long)(chars[index]); });
     }
     
-    private BitString temp(long bits) {
-        assert Long.SIZE == BITS_PER_WORD;
-        temp.iSetLength(Long.SIZE);
-        temp.setWord(0, bits);
-        return temp;
+    private static long[] wrapDoubles(double[] doubles) {
+        return wrap(doubles.length, Long.SIZE,
+                (index) -> { return Double.doubleToRawLongBits(doubles[index]); });
     }
     
-    private BitString temp(short bits) {
-        assert Short.SIZE <= BITS_PER_WORD;
-        temp.iSetLength(Short.SIZE);
-        temp.setWord(0, ((long)bits) << (BITS_PER_WORD - Short.SIZE));
-        return temp;
+    private static long[] wrapFloats(float[] floats) {
+        return wrap(floats.length, Integer.SIZE,
+                (index) -> { return Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])); });
     }
+    
+    private static long[] wrapInts(int[] ints) {
+        return wrap(ints.length, Integer.SIZE,
+                (index) -> { return Integer.toUnsignedLong(ints[index]); });
+    }
+    
+//    private static long wrapIntsIntoLong(int[] ints, int index) {
+//      return wrapPrimitivesIntoLong(ints, index, ints.length, Integer.SIZE,
+//              // primitives = ints
+//              (primitives, i) -> { return Integer.toUnsignedLong(((int[])primitives)[i]); });
+//  }
+    
+    private static long[] wrapShorts(short[] shorts) {
+        return wrap(shorts.length, Short.SIZE,
+                (index) -> { return Short.toUnsignedLong(shorts[index]); });
+                //(primitives, i) -> { return Short.toUnsignedLong(((short[])primitives)[i]); });
+    }
+    
+//    private static long wrapShortsIntoLong(short[] shorts, int index) {
+//        return wrapPrimitivesIntoLong(shorts, index, shorts.length, Short.SIZE,
+//                // primitives = shorts, i = index
+//                (primitives, i) -> { return Short.toUnsignedLong(((short[])primitives)[i]); });
+//    }
+    
+    private static long[] wrap(int primitiveCount, int primitiveSize,
+            IntToLongFunction getPrimitiveAsUnsignedLong) {
+        final int primitivesPerLong = Long.SIZE / primitiveSize;
+        final long[] longs = new long[(primitiveCount + primitivesPerLong - 1) / primitivesPerLong];
+        for (int i = 0, j = 0; i < primitiveCount; j = i++ / primitivesPerLong) {
+            final int position = (primitivesPerLong - 1) - (i % primitivesPerLong);
+            longs[j] |= getPrimitiveAsUnsignedLong.applyAsLong(i) << (position * primitiveSize);
+        }
+        return longs;
+    }
+    
+    private boolean[] unwrapBooleans(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new boolean[0];
+        final boolean[] booleans = new boolean[length];
+        unwrap(offset, length, 1,
+                (index, word) -> { booleans[index] = (word == 0) ? false : true; });
+        return booleans;
+    }
+    
+    private byte[] unwrapBytes(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new byte[0];
+        final byte[] bytes = new byte[(length - 1) / Byte.SIZE + 1];
+        unwrap(offset, length, Byte.SIZE,
+                (index, word) -> { bytes[index] = (byte)word; });
+        return bytes;
+    }
+    
+    private char[] unwrapChars(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new char[0];
+        final char[] chars = new char[(length - 1) / Character.SIZE + 1];
+        unwrap(offset, length, Character.SIZE,
+                (index, word) -> { chars[index] = (char)word; });
+        return chars;
+    }
+    
+    private double[] unwrapDoubles(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new double[0];
+        final double[] doubles = new double[(length - 1) / Long.SIZE + 1];
+        unwrap(offset, length, Long.SIZE,
+                (index, word) -> { doubles[index] = Double.longBitsToDouble(word); });
+        return doubles;
+    }
+    
+    private float[] unwrapFloats(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new float[0];
+        final float[] floats = new float[(length - 1) / Integer.SIZE + 1];
+        unwrap(offset, length, Integer.SIZE,
+                (index, word) -> { floats[index] = Float.intBitsToFloat((int)word); });
+        return floats;
+    }
+    
+    private int[] unwrapInts(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new int[0];
+        final int[] ints = new int[(length - 1) / Integer.SIZE + 1];
+        unwrap(offset, length, Integer.SIZE,
+                (index, word) -> { ints[index] = (int)word; });
+        return ints;
+    }
+    
+    private long[] unwrapLongs(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new long[0];
+        final long[] longs = new long[(length - 1) / Long.SIZE + 1];
+        unwrap(offset, length, Long.SIZE,
+                (index, word) -> { longs[index] = word; });
+        return longs;
+    }
+    
+    private short[] unwrapShorts(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new short[0];
+        final short[] shorts = new short[(length - 1) / Short.SIZE + 1];
+        unwrap(offset, length, Short.SIZE,
+                (index, word) -> { shorts[index] = (short)word; });
+        return shorts;
+    }
+    
+    private void unwrap(int offset, int length,
+            int primitiveSize,
+            IntLongConsumer setPrimitiveArrayElementFromUnsignedLong) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        final int primitivesPerWord = BITS_PER_WORD / primitiveSize;
+        final long primitiveMask = WORD_MASK >>> (BITS_PER_WORD - primitiveSize);
+        int index = 0;
+        final int[] iterator = getIterator(offset, length);
+        while (length > 0) {
+            final long word = getNextIteratorFullWord(iterator);
+            for (int p = primitivesPerWord - 1; p >= 0 && length > 0; p--, length -= primitiveSize) {
+                setPrimitiveArrayElementFromUnsignedLong.accept(index++, (word >>> (p * primitiveSize)) & primitiveMask);
+            }
+        }
+    }
+    
+//    private static long[] wrap2(Object primitives, int primitiveCount, int primitiveSize,
+//            BiFunction<Object, Integer, Long> getPrimitiveAsUnsignedLong) {
+//        assert primitives.getClass().isArray() && primitives.getClass().getComponentType().isPrimitive();
+//        final int primitivesPerLong = Long.SIZE / primitiveSize;
+//        final long[] longs = new long[(primitiveCount + primitivesPerLong - 1) / primitivesPerLong];
+//        for (int i = 0, j = 0; i < primitiveCount; i += primitivesPerLong, j++) {
+//            longs[j] = wrapPrimitivesIntoLong(primitives, i, primitiveCount, primitiveSize, getPrimitiveAsUnsignedLong);
+//        }
+//        return longs;
+//    }
+    
+//    private static long wrapPrimitivesIntoLong(Object primitives, int index, int primitiveCount, int primitiveSize,
+//            BiFunction<Object, Integer, Long> getPrimitiveAsUnsignedLong) {
+//        long word = 0L;
+//        final int primitivesPerLong = Long.SIZE / primitiveSize;
+//        for (int i = index; i < primitivesPerLong && i < primitiveCount; i++) {
+//            final int position = (primitivesPerLong - 1) - (i % primitivesPerLong);
+//            word |= getPrimitiveAsUnsignedLong.apply(primitives, i) << (position * primitiveSize);
+//        }
+//        return word;
+//    }
+    
+//    private long[] wrapInts(int[] ints) {
+//        if (ints.length * (long) Integer.SIZE > Integer.MAX_VALUE) {
+//            throw new IllegalArgumentException("the number of bits in the array (" + ints.length * (long) Integer.SIZE
+//                    + ") exceed the maximum of " + Integer.MAX_VALUE);
+//        }
+//        final long[] longs = new long[(ints.length + 1) / 2];
+//        for (int i = 0, l = 0; i < ints.length; i++) {
+//            if ((i % 2) == 0) {
+//                longs[l] = ((long)ints[i]) << Integer.SIZE; // first half of long
+//            } else {
+//                longs[l] |= Integer.toUnsignedLong(ints[i]); // last half of long
+//                l++;
+//            }
+//        }
+//        return longs;
+//    }
     
     private static boolean isValidRelativeOffset(int offset, int length) {
         return offset == 0 || offset > 0 && offset < length;
@@ -1038,9 +1291,27 @@ public class BitString implements Cloneable, Serializable  {
         }
     }
     
-    private void checkBaseLength(long length) {
-        if ((long)baseLength() + length > Integer.MAX_VALUE) {
-            throw new UnsupportedOperationException("the operation would result in the length of the base BitString exceeding the maximum of "+Integer.MAX_VALUE+": "+length);
+    private static void checkNewBitStringLength(long length) {
+        if (length > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                    "the size of the new BitString (" + length + ")  would exceed the maximum of " + Integer.MAX_VALUE);
+        }
+    }
+    
+    private void checkAvailableSpace(int offset, int requiredSpace) {
+        final int availableSpace = length() - offset;
+        if (availableSpace < requiredSpace) {
+            throw new IllegalStateException("not enough space to perform the operation"
+                    + "; required space=" + requiredSpace + ", available space=" + availableSpace
+                    + ", stringLength=" + length() + ", offset=" + offset);
+        }
+    }
+    
+    private void checkBaseLengthIncrease(long length) {
+        if (baseLength() + length > Integer.MAX_VALUE) {
+            throw new UnsupportedOperationException(
+                    "the operation would result in the length of the base BitString exceeding the maximum of "
+                            + Integer.MAX_VALUE + ": " + length);
         }
     }
     
@@ -1049,7 +1320,7 @@ public class BitString implements Cloneable, Serializable  {
         assert that.isValidLength(thatOffset, thatLength);
         ensureCapacity(this.length() + thatLength);
         setLength(this.length() + thatLength);
-        iCopyFromFrontOf(this.length(), thatLength, that, thatOffset, thatLength);
+        iCopy(this.length(), thatLength, that, thatOffset);
     }
     
     void iDelete(int bitIndex, int length) {
@@ -1070,7 +1341,7 @@ public class BitString implements Cloneable, Serializable  {
         ensureCapacity(this.length() + thatLength);
         setLength(this.length() + thatLength);
         iShiftRight(thatLength, ZERO_FILL, position, this.length() - position);
-        iCopyFromFrontOf(position, thatLength, that, thatOffset, thatLength);
+        iCopy(position, thatLength, that, thatOffset);
     }
     
     void iReplace(int thisBitIndex, int thisLength, BitString that, int thatOffset, int thatLength) {
@@ -1084,35 +1355,8 @@ public class BitString implements Cloneable, Serializable  {
         if (newLength > length()) setLength(newLength);
         iShiftRight(shift, ZERO_FILL, thisBitIndex, this.length() - thisBitIndex);
         if (newLength < length()) setLength(newLength);
-        iCopyFromFrontOf(thisBitIndex, thatLength, that, thatOffset, thatLength);
+        iCopy(thisBitIndex, thatLength, that, thatOffset);
     }
-    
-    /**
-     * <pre>
-     *          q
-     *      | 0 | 1 |
-     *   ===|=======|
-     *    0 | r | r |
-     *  p --|-------| r = p op q
-     *    1 | r | r |
-     *   ============
-     *             
-     *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
-     *      | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 0 | | 0 | 1 | | 0 | 1 | | 0 | 1 | | 0 | 1 |
-     *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
-     *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
-     *      ========= ========= ========= ========= ========= ========= ========= =========
-     * op:  clear     and       andnot    set(p)    nornot    set(q)    xor       or
-     *             
-     *      |=======| |=======| |=======| |=======| |=======| |=======| |=======| |=======|
-     *      | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 0 | | 1 | 1 | | 1 | 1 | | 1 | 1 | | 1 | 1 |
-     *      |-------| |-------| |-------| |-------| |-------| |-------| |-------| |-------|
-     *      | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 | | 0 | 0 | | 0 | 1 | | 1 | 0 | | 1 | 1 |
-     *      ========= ========= ========= ========= ========= ========= ========= =========
-     * op:  nor       xnor      set(~q)   ornot     set(~p)   nandnot   nand      set
-     * 
-     * </pre> 
-     */
     
     /**
      * Perform an <b>AND</b> operation on a substring of this BitString and a
@@ -1503,7 +1747,7 @@ public class BitString implements Cloneable, Serializable  {
         final int clearLength = thisLength - copyLength;
         
         iCopy(thisOffset, copyLength, that, thatOffset);
-        if (clearLength > 0) iClear(thisOffset + copyLength, clearLength);
+        iClear(thisOffset + copyLength, clearLength);
         
 //        // copy bits from the front of that BitString into this BitString.
 //        // insert the copied bits from the the front to the back of this BitString.
@@ -1538,37 +1782,43 @@ public class BitString implements Cloneable, Serializable  {
         assert that.isValidLength(thatOffset, thatLength);
         if (thisLength == 0) return;
         
-        final int thisFirstWordIndex = this.firstWordIndex(thisOffset);
-        final int thisLastWordIndex = this.lastWordIndex(thisOffset, thisLength);
-        final int thisLeftMarginSize = this.leftMarginSize(thisOffset);
-        final int thisRightMarginSize = this.rightMarginSize(thisOffset, thisLength);
-      
-        final long thisOriginalFirstWord = this.getWord(thisFirstWordIndex);
+//        final int thisFirstWordIndex = this.firstWordIndex(thisOffset);
+//        final int thisLastWordIndex = this.lastWordIndex(thisOffset, thisLength);
+//        final int thisLeftMarginSize = this.leftMarginSize(thisOffset);
+//        final int thisRightMarginSize = this.rightMarginSize(thisOffset, thisLength);
+//      
+//        final long thisOriginalFirstWord = this.getWord(thisFirstWordIndex);
         
-        // copy bits from the back of that BitString into this BitString.
-        // insert the copied bits from the the back to the front of this BitString.
-        // if that  BitString is shorter than this BitString, pad this BitString with zeros.
-        long thatWord;
-        final int[] thatIterator = that.getIterator(thatOffset, thatLength);
-        for (int thisWordIndex = thisLastWordIndex; thisWordIndex >= thisFirstWordIndex; thisWordIndex--) {
-            if (that.hasPreviousIteratorWord(thatIterator)) {
-                thatWord = that.getPreviousIteratorFullWord(thatIterator);
-            } else {
-                thatWord = 0L;
-            }
-            if (thisRightMarginSize > 0) {
-                this.setWord(thisWordIndex,
-                        (thatWord << thisRightMarginSize)
-                      | (this.getWord(thisWordIndex) & (WORD_MASK >>> BITS_PER_WORD - thisRightMarginSize)));
-                if (thisWordIndex-1 >= thisFirstWordIndex) {
-                    this.setWord(thisWordIndex-1, (thatWord >>> BITS_PER_WORD - thisRightMarginSize)); 
-                } 
-            } else {
-                this.setWord(thisWordIndex, thatWord);
-            }
-        }
+        final int copyLength = Math.min(thisLength, thatLength);
+        final int clearLength = thisLength - copyLength;
         
-        this.restoreLeftMargin(thisOriginalFirstWord, thisFirstWordIndex, thisLeftMarginSize);
+        iCopy(thisOffset + clearLength, copyLength, that, thatOffset);
+        iClear(thisOffset, clearLength);
+        
+//        // copy bits from the back of that BitString into this BitString.
+//        // insert the copied bits from the the back to the front of this BitString.
+//        // if that  BitString is shorter than this BitString, pad this BitString with zeros.
+//        long thatWord;
+//        final int[] thatIterator = that.getIterator(thatOffset, thatLength);
+//        for (int thisWordIndex = thisLastWordIndex; thisWordIndex >= thisFirstWordIndex; thisWordIndex--) {
+//            if (that.hasPreviousIteratorWord(thatIterator)) {
+//                thatWord = that.getPreviousIteratorFullWord(thatIterator);
+//            } else {
+//                thatWord = 0L;
+//            }
+//            if (thisRightMarginSize > 0) {
+//                this.setWord(thisWordIndex,
+//                        (thatWord << thisRightMarginSize)
+//                      | (this.getWord(thisWordIndex) & (WORD_MASK >>> BITS_PER_WORD - thisRightMarginSize)));
+//                if (thisWordIndex-1 >= thisFirstWordIndex) {
+//                    this.setWord(thisWordIndex-1, (thatWord >>> BITS_PER_WORD - thisRightMarginSize)); 
+//                } 
+//            } else {
+//                this.setWord(thisWordIndex, thatWord);
+//            }
+//        }
+//        
+//        this.restoreLeftMargin(thisOriginalFirstWord, thisFirstWordIndex, thisLeftMarginSize);
     }
     
     private void iReverse(int offset, int length) {
@@ -2070,31 +2320,43 @@ public class BitString implements Cloneable, Serializable  {
         this.iShiftRight(nBits, fill, thisOffset, thisLength);
     }
     
-    private long iGetPrimitive(int offset, int size, String name) {
+    private long iGetPrimitive(int offset, int primitiveSize) {
         assert isValidOffset(offset);
-        assert size <= BITS_PER_WORD;
-        final int space = length() - offset;
-        if (space < size) {
-            throw new IllegalArgumentException(
-                    "not enough space at the specified offset to get a " + name + ": " + "offset=" + offset
-                            + ", bit string length=" + length() + ", space=" + space + ", " + name + " size=" + size);
-        }
+        assert primitiveSize <= BITS_PER_WORD;
         final int bitIndex = bitIndex(offset);
         final long word = shiftWordLeft(wordBitIndex(bitIndex), ZERO_FILL, wordIndex(bitIndex),
                 lastWordIndex(), rightMarginSize());
-        return word >> (BITS_PER_WORD - size);
+        return word >> (BITS_PER_WORD - primitiveSize);
     }
     
-    private void iPutPrimitive(int offset, int size, String name, BitString primitiveBits) {
+//    private void iPutPrimitive(int offset, int size, BitString primitiveBits) {
+//        assert isValidOffset(offset);
+//        assert size <= BITS_PER_WORD;
+//        iCopy(offset, size, primitiveBits, 0);
+//    }
+    
+    private void iPutPrimitive(int offset, int primitiveSize, long primitiveBits) {
         assert isValidOffset(offset);
-        assert size <= BITS_PER_WORD;
-        final int space = length() - offset;
-        if (space < size) {
-            throw new IllegalArgumentException(
-                    "not enough space to put the " + name + " at the specified offset: " + "offset=" + offset
-                            + ", bit string length=" + length() + ", space=" + space + ", " + name + " size=" + size);
+        assert primitiveSize <= BITS_PER_WORD;
+        
+        final int firstWordIndex = firstWordIndex(offset);
+        final int firstWordBitIndex = firstWordBitIndex(offset);
+          
+        final int primitiveFirstWordBitIndex = BITS_PER_WORD - primitiveSize;
+        
+        long mask = WORD_MASK >>> primitiveFirstWordBitIndex;
+        int shift = primitiveFirstWordBitIndex - firstWordBitIndex;
+        
+        if (shift >= 0) {
+            setWord(firstWordIndex,
+                    (getWord(firstWordIndex) & ~(mask << shift)) | (primitiveBits << shift));
+        } else {
+            shift = -shift;
+            setWord(firstWordIndex,
+                    (getWord(firstWordIndex) & ~(mask >>> shift)) | (primitiveBits >>> shift));
+            setWord(firstWordIndex + 1,
+                    (getWord(firstWordIndex + 1) & (WORD_MASK >>> shift)) | (primitiveBits << (BITS_PER_WORD - shift)));
         }
-        iCopyFromFrontOf(offset, size, primitiveBits, 0, size);
     }
     
     /**
@@ -2259,53 +2521,97 @@ public class BitString implements Cloneable, Serializable  {
         return length - iNumberOfTrailingOnes(offset, length) - 1;
     }
     
-    public BitString append(BitString that, int thatOffset, int thatLength) {
+    public BitString append(BitString that) {
+        final int thatLength = that.length();
+        checkBaseLengthIncrease(thatLength);
+        iAppend(that, 0, thatLength);
+        return this;
+    }
+    
+    public BitString append(BitString that, int thatOffset) {
         that.checkArgOffset(thatOffset);
-        that.checkArgLength(thatOffset, thatLength);
-        checkBaseLength(thatLength);
+        final int thatLength = that.length() - thatOffset;
+        checkBaseLengthIncrease(thatLength);
         iAppend(that, thatOffset, thatLength);
         return this;
     }
     
-    public BitString appendByte(byte primitive) {
-        checkBaseLength(Byte.SIZE);
-        iAppend(temp(primitive), 0, Byte.SIZE);
+    public BitString append(BitString that, int thatOffset, int thatLength) {
+        that.checkArgOffset(thatOffset);
+        that.checkArgLength(thatOffset, thatLength);
+        checkBaseLengthIncrease(thatLength);
+        iAppend(that, thatOffset, thatLength);
         return this;
     }
     
-    public BitString appendChar(byte primitive) {
-        checkBaseLength(Character.SIZE);
-        iAppend(temp(primitive), 0, Character.SIZE);
+//    public BitString appendBoolean(boolean primitive) {
+//        checkBaseLength(1);
+//        iAppend(temp(primitive), 0, 1);
+//        return this;
+//    }
+    
+//    public BitString appendByte(byte primitive) {
+//        checkBaseLengthIncrease(Byte.SIZE);
+//        iAppend(temp(primitive), 0, Byte.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendChar(byte primitive) {
+//        checkBaseLengthIncrease(Character.SIZE);
+//        iAppend(temp(primitive), 0, Character.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendDouble(double primitive) {
+//        checkBaseLengthIncrease(Long.SIZE);
+//        iAppend(temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendFloat(float primitive) {
+//        checkBaseLengthIncrease(Integer.SIZE);
+//        iAppend(temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendInt(int primitive) {
+//        checkBaseLengthIncrease(Integer.SIZE);
+//        iAppend(temp(primitive), 0, Integer.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendInts(int[] primitives) {
+//        checkBaseLengthIncrease(primitives.length * Integer.SIZE);
+//        final int primitivesPerLong = Long.SIZE / Integer.SIZE;
+//        for (int i = 0; i < primitives.length; i += primitivesPerLong) {
+//            final long word = wrapIntsIntoLong(primitives, i);
+//            iAppend(temp(word), 0, Long.SIZE);
+//        }
+//        return this;
+//    }
+//    
+//    public BitString appendLong(long primitive) {
+//        checkBaseLengthIncrease(Long.SIZE);
+//        iAppend(temp(primitive), 0, Long.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString appendShort(short primitive) {
+//        checkBaseLengthIncrease(Short.SIZE);
+//        iAppend(temp(primitive), 0, Short.SIZE);
+//        return this;
+//    }
+    
+    public BitString delete() {
+        final int length = length();
+        iDelete(firstBitIndex(0), length);
         return this;
     }
     
-    public BitString appendDouble(double primitive) {
-        checkBaseLength(Long.SIZE);
-        iAppend(temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
-        return this;
-    }
-    
-    public BitString appendFloat(float primitive) {
-        checkBaseLength(Integer.SIZE);
-        iAppend(temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
-        return this;
-    }
-    
-    public BitString appendInt(int primitive) {
-        checkBaseLength(Integer.SIZE);
-        iAppend(temp(primitive), 0, Integer.SIZE);
-        return this;
-    }
-    
-    public BitString appendLong(long primitive) {
-        checkBaseLength(Long.SIZE);
-        iAppend(temp(primitive), 0, Long.SIZE);
-        return this;
-    }
-    
-    public BitString appendShort(short primitive) {
-        checkBaseLength(Short.SIZE);
-        iAppend(temp(primitive), 0, Short.SIZE);
+    public BitString delete(int offset) {
+        checkThisOffset(offset);
+        final int length = length() - offset;
+        iDelete(firstBitIndex(offset), length);
         return this;
     }
     
@@ -2316,61 +2622,86 @@ public class BitString implements Cloneable, Serializable  {
         return this;
     }
     
-    public BitString insert(int position, BitString that, int thatOffset, int thatLength) {
+    public BitString insert(int position, BitString that) {
+        checkThisPosition(position);
+        final int thatLength = that.length();
+        checkBaseLengthIncrease(thatLength);
+        iInsert(bitIndex(position), that, 0, thatLength);
+        return this;
+    }
+    
+    public BitString insert(int position, BitString that, int thatOffset) {
         checkThisPosition(position);
         that.checkArgOffset(thatOffset);
-        that.checkArgLength(thatOffset, thatLength);
-        checkBaseLength(thatLength);
+        final int thatLength = that.length() - thatOffset;
+        checkBaseLengthIncrease(thatLength);
         iInsert(bitIndex(position), that, thatOffset, thatLength);
         return this;
     }
     
-    public BitString insertByte(int position, byte primitive) {
+    public BitString insert(int position, BitString that, int thatOffset, int thatLength) {
         checkThisPosition(position);
-        checkBaseLength(Byte.SIZE);
-        iInsert(bitIndex(position), temp(primitive), 0, Byte.SIZE);
+        that.checkArgOffset(thatOffset);
+        that.checkArgLength(thatOffset, thatLength);
+        checkBaseLengthIncrease(thatLength);
+        iInsert(bitIndex(position), that, thatOffset, thatLength);
         return this;
     }
     
-    public BitString insertChar(int position, byte primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Character.SIZE);
-        iInsert(bitIndex(position), temp(primitive), 0, Character.SIZE);
-        return this;
-    }
+//    public BitString insertByte(int position, byte primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Byte.SIZE);
+//        iInsert(bitIndex(position), temp(primitive), 0, Byte.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertChar(int position, byte primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Character.SIZE);
+//        iInsert(bitIndex(position), temp(primitive), 0, Character.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertDouble(int position, double primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Long.SIZE);
+//        iInsert(bitIndex(position), temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertFloat(int position, float primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Integer.SIZE);
+//        iInsert(bitIndex(position), temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertInt(int position, int primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Integer.SIZE);
+//        iInsert(bitIndex(position), temp(primitive), 0, Integer.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertLong(int position, long primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Long.SIZE);
+//        iInsert(bitIndex(position), temp(primitive), 0, Long.SIZE);
+//        return this;
+//    }
+//    
+//    public BitString insertShort(int position, short primitive) {
+//        checkThisPosition(position);
+//        checkBaseLengthIncrease(Short.SIZE);
+//        iInsert(bitIndex(position), temp(primitive), 0, Short.SIZE);
+//        return this;
+//    }
     
-    public BitString insertDouble(int position, double primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Long.SIZE);
-        iInsert(bitIndex(position), temp(Double.doubleToRawLongBits(primitive)), 0, Long.SIZE);
-        return this;
-    }
-    
-    public BitString insertFloat(int position, float primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Integer.SIZE);
-        iInsert(bitIndex(position), temp(Float.floatToRawIntBits(primitive)), 0, Integer.SIZE);
-        return this;
-    }
-    
-    public BitString insertInt(int position, int primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Integer.SIZE);
-        iInsert(bitIndex(position), temp(primitive), 0, Integer.SIZE);
-        return this;
-    }
-    
-    public BitString insertLong(int position, long primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Long.SIZE);
-        iInsert(bitIndex(position), temp(primitive), 0, Long.SIZE);
-        return this;
-    }
-    
-    public BitString insertShort(int position, short primitive) {
-        checkThisPosition(position);
-        checkBaseLength(Short.SIZE);
-        iInsert(bitIndex(position), temp(primitive), 0, Short.SIZE);
+    public BitString replace(BitString that) {
+        final int thisLength = this.length();
+        final int thatLength = that.length();
+        checkBaseLengthIncrease(thatLength - thisLength);
+        iReplace(firstBitIndex(0), thisLength, that, 0, thatLength);
         return this;
     }
     
@@ -2379,7 +2710,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisLength(thisOffset, thisLength);
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
-        checkBaseLength(thatLength - thisLength);
+        checkBaseLengthIncrease(thatLength - thisLength);
         iReplace(firstBitIndex(thisOffset), thisLength, that, thatOffset, thatLength);
         return this;
     }
@@ -2604,7 +2935,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         final BitString substring = new BitString(length);
-        substring.iCopyFromFrontOf(0, length, this, offset, length);
+        substring.iCopy(0, length, this, offset);
         return substring;
     }
     
@@ -2656,37 +2987,45 @@ public class BitString implements Cloneable, Serializable  {
     
     public byte getByte(int offset) {
         checkThisOffset(offset);
-        return (byte)(iGetPrimitive(offset, Byte.SIZE, "byte"));
+        checkAvailableSpace(offset, Byte.SIZE);
+        return (byte)(iGetPrimitive(offset, Byte.SIZE));
     }
     
     public char getChar(int offset) {
         assert Character.SIZE <= BITS_PER_WORD;
-        return (char)(iGetPrimitive(offset, Character.SIZE, "char"));
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Character.SIZE);
+        return (char)(iGetPrimitive(offset, Character.SIZE));
     }
     
     public double getDouble(int offset) {
         checkThisOffset(offset);
-        return Double.longBitsToDouble((long)(iGetPrimitive(offset, Long.SIZE, "double")));
+        checkAvailableSpace(offset, Long.SIZE);
+        return Double.longBitsToDouble((long)(iGetPrimitive(offset, Long.SIZE)));
     }
     
     public float getFloat(int offset) {
         checkThisOffset(offset);
-        return Float.intBitsToFloat((int)(iGetPrimitive(offset, Integer.SIZE, "float")));
+        checkAvailableSpace(offset, Integer.SIZE);
+        return Float.intBitsToFloat((int)(iGetPrimitive(offset, Integer.SIZE)));
     }
     
     public int getInt(int offset) {
         checkThisOffset(offset);
-        return (int)(iGetPrimitive(offset, Integer.SIZE, "int"));
+        checkAvailableSpace(offset, Integer.SIZE);
+        return (int)(iGetPrimitive(offset, Integer.SIZE));
     }
     
     public long getLong(int offset) {
         checkThisOffset(offset);
-        return (long)(iGetPrimitive(offset, Long.SIZE, "long"));
+        checkAvailableSpace(offset, Long.SIZE);
+        return (long)(iGetPrimitive(offset, Long.SIZE));
     }
     
     public short getShort(int offset) {
         checkThisOffset(offset);
-        return (short)(iGetPrimitive(offset, Short.SIZE, "short"));
+        checkAvailableSpace(offset, Short.SIZE);
+        return (short)(iGetPrimitive(offset, Short.SIZE));
     }
     
     public BitString putBoolean(int offset, boolean primitive) {
@@ -2695,43 +3034,50 @@ public class BitString implements Cloneable, Serializable  {
     
     public BitString putByte(int offset, byte primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Byte.SIZE, "byte", temp(primitive));
+        checkAvailableSpace(offset, Byte.SIZE);
+        iPutPrimitive(offset, Byte.SIZE, Byte.toUnsignedLong(primitive));
         return this;
     }
     
     public BitString putChar(int offset, char primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Character.SIZE, "char", temp(primitive));
+        checkAvailableSpace(offset, Character.SIZE);
+        iPutPrimitive(offset, Character.SIZE, (long)primitive);
         return this;
     }
     
     public BitString putDouble(int offset, double primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Long.SIZE, "double", temp(Double.doubleToRawLongBits(primitive)));
+        checkAvailableSpace(offset, Long.SIZE);
+        iPutPrimitive(offset, Long.SIZE, Double.doubleToRawLongBits(primitive));
         return this;
     }
     
     public BitString putFloat(int offset, float primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Integer.SIZE, "float", temp(Float.floatToRawIntBits(primitive)));
+        checkAvailableSpace(offset, Integer.SIZE);
+        iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(primitive)));
         return this;
     }
     
     public BitString putInt(int offset, int primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Integer.SIZE, "int", temp(primitive));
+        checkAvailableSpace(offset, Integer.SIZE);
+        iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(primitive));
         return this;
     }
     
     public BitString putLong(int offset, long primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Long.SIZE, "long", temp(primitive));
+        checkAvailableSpace(offset, Long.SIZE);
+        iPutPrimitive(offset, Long.SIZE, primitive);
         return this;
     }
     
     public BitString putShort(int offset, short primitive) {
         checkThisOffset(offset);
-        iPutPrimitive(offset, Short.SIZE, "short", temp(primitive));
+        checkAvailableSpace(offset, Short.SIZE);
+        iPutPrimitive(offset, Short.SIZE, Short.toUnsignedLong(primitive));
         return this;
     }
     
@@ -2925,6 +3271,10 @@ public class BitString implements Cloneable, Serializable  {
      * The length of the operation is equal to the smaller of the length of this
      * {@code BitString} or the length of the specified bit string.
      * <p>
+     * The bits in This {@code BitString} are modified according to the following
+     * logic table. But basically, for each {@code ZERO} bit in the argument, the
+     * corresponding bit in this {@code BitString} is set to {@code ZERO}, otherwise,
+     * the bit is left unchanged.
      * This {@code BitString} is modified so that each bit in it has the value
      * {@code ONE} if and only if it both initially had the value {@code ONE} and
      * the corresponding bit in the specified bit string also had the value
@@ -11398,7 +11748,7 @@ public class BitString implements Cloneable, Serializable  {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         final BitString substring = new BitString(length);
-        substring.iCopyFromFrontOf(0, length, this, offset, length);
+        substring.iCopy(0, length, this, offset);
         return substring;
     }
     
@@ -11415,6 +11765,25 @@ public class BitString implements Cloneable, Serializable  {
     public BitString subString(Field field) {
         return substring(field.offset(), field.length());
     }
+    
+    public boolean[] toBooleanArray() {
+        return unwrapBooleans(0, length());
+    }
+    
+    public boolean[] toBooleanArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapBooleans(offset, length() - offset);
+    }
+    
+    public boolean[] toBooleanArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapBooleans(offset, length);
+    }
+    
+    public boolean[] toBooleanArray(Field field) {
+        return toBooleanArray(field.offset(), field.length());
+    }
 
     /**
      * Returns a new byte array containing all the bits in this bit string.
@@ -11429,36 +11798,98 @@ public class BitString implements Cloneable, Serializable  {
      *         of all the bits in this bit set
      */
     public byte[] toByteArray() {
-        return toByteArray(0);
+        return unwrapBytes(0, length());
     }
     
     public byte[] toByteArray(int offset) {
         checkThisOffset(offset);
-        return toByteArray(offset, this.length() - offset);
+        return unwrapBytes(offset, length() - offset);
     }
     
     public byte[] toByteArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
-        if (length == 0) return new byte[0];
-        //int len = wordIndex(length)+1;
-        //wordIndex(bitIndex) = bitIndex >> ADDRESS_BITS_PER_WORD;
-        int len = (length / 8) + ((length % 8) > 0 ? 1 : 0);
-        byte[] bytes = new byte[len];
-        int index = 0;
-        final int[] iterator = getIterator(offset, length);
-        while (hasNextIteratorWord(iterator)) {
-            final long word = getNextIteratorFullWord(iterator);
-            final byte[] wordBytes = getWordBytes(word);
-            for (int i = 0; i < 8 && len > 0; i++, len--) {
-                bytes[index++] = wordBytes[i];
-            }
-        }
-        return bytes;
+        return unwrapBytes(offset, length);
     }
     
     public byte[] toByteArray(Field field) {
         return toByteArray(field.offset(), field.length());
+    }
+    
+    public char[] toCharArray() {
+        return unwrapChars(0, length());
+    }
+    
+    public char[] toCharArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapChars(offset, length() - offset);
+    }
+    
+    public char[] toCharArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapChars(offset, length);
+    }
+    
+    public char[] toCharArray(Field field) {
+        return toCharArray(field.offset(), field.length());
+    }
+    
+    public double[] toDoubleArray() {
+        return unwrapDoubles(0, length());
+    }
+    
+    public double[] toDoubleArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapDoubles(offset, length() - offset);
+    }
+    
+    public double[] toDoubleArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapDoubles(offset, length);
+    }
+    
+    public double[] toDoubleArray(Field field) {
+        return toDoubleArray(field.offset(), field.length());
+    }
+    
+    public float[] toFloatArray() {
+        return unwrapFloats(0, length());
+    }
+    
+    public float[] toFloatrArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapFloats(offset, length() - offset);
+    }
+    
+    public float[] toFloatArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapFloats(offset, length);
+    }
+    
+    public float[] toFloatArray(Field field) {
+        return toFloatArray(field.offset(), field.length());
+    }
+    
+    public int[] toIntArray() {
+        return unwrapInts(0, length());
+    }
+    
+    public int[] toIntArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapInts(offset, length() - offset);
+    }
+    
+    public int[] toIntArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapInts(offset, length);
+    }
+    
+    public int[] toIntArray(Field field) {
+        return toIntArray(field.offset(), field.length());
     }
 
     /**
@@ -11474,32 +11905,41 @@ public class BitString implements Cloneable, Serializable  {
      *         of all the bits in this bit set
      */
     public long[] toLongArray() {
-        return toLongArray(0);
+        return unwrapLongs(0, length());
     }
     
     public long[] toLongArray(int offset) {
         checkThisOffset(offset);
-        return toLongArray(offset, this.length() - offset);
+        return unwrapLongs(offset, length() - offset);
     }
     
     public long[] toLongArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
-        if (length == 0) return new long[0];
-        //int len = wordIndex(length)+1;
-        //wordIndex(bitIndex) = bitIndex >> ADDRESS_BITS_PER_WORD;
-        //int len = (length / 64) + ((length % 64) > 0 ? 1 : 0);
-        final long[] array = new long[wordIndex(length)+1];
-        int index = 0;
-        final int[] iterator = getIterator(offset, length);
-        while (hasNextIteratorWord(iterator)) {
-            array[index++] = getNextIteratorFullWord(iterator);
-        }
-        return array;
+        return unwrapLongs(offset, length);
     }
     
     public long[] toLongArray(Field field) {
         return toLongArray(field.offset(), field.length());
+    }
+    
+    public short[] toShortArray() {
+        return unwrapShorts(0, length());
+    }
+    
+    public short[] toShortArray(int offset) {
+        checkThisOffset(offset);
+        return unwrapShorts(offset, length() - offset);
+    }
+    
+    public short[] toShortArray(int offset, int length) {
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        return unwrapShorts(offset, length);
+    }
+    
+    public short[] toShortArray(Field field) {
+        return toShortArray(field.offset(), field.length());
     }
     
     @Override
@@ -11955,7 +12395,7 @@ public class BitString implements Cloneable, Serializable  {
         public BitString append(BitString that, int thatOffset, int thatLength) {
             that.checkArgOffset(thatOffset);
             that.checkArgLength(thatOffset, thatLength);
-            base.checkBaseLength(thatLength);
+            base.checkBaseLengthIncrease(thatLength);
             iInsert(super.lastBitIndex()+1, that, thatOffset, thatLength);
             return this;
         }

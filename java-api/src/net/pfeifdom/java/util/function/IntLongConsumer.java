@@ -36,30 +36,32 @@
  * information or have any questions.
  */
 
-/**
- * <em>Functional interfaces</em> provide target types for lambda expressions
- * and method references.  Each functional interface has a single abstract
- * method, called the <em>functional method</em> for that functional interface,
- * to which the lambda expression's parameter and return types are matched or
- * adapted.
- *
- * <p>The interfaces in this package are annotated with
- * {@link java.lang.FunctionalInterface}. This annotation is not a requirement
- * for the compiler to recognize an interface as a functional interface, but
- * merely an aid to capture design intent and enlist the help of the compiler in
- * identifying accidental violations of design intent.
- *
- * <p>Functional interfaces often represent abstract concepts like functions,
- * actions, or predicates.  In documenting functional interfaces, or referring
- * to variables typed as functional interfaces, it is common to refer directly
- * to those abstract concepts, for example using "this function" instead of
- * "the function represented by this object".  When an API method is said to
- * accept or return a functional interface in this manner, such as "applies the
- * provided function to...", this is understood to mean a <i>non-null</i>
- * reference to an object implementing the appropriate functional interface,
- * unless potential nullity is explicitly specified.
- *
- * @see java.lang.FunctionalInterface
- * @since 1.1.0
- */
 package net.pfeifdom.java.util.function;
+
+/**
+ * Represents an operation that accepts a {@code int}-valued argument and a
+ * {@code long}-valued argument, and returns no result. This is the
+ * {@code (int, long)} specialization of {@link java.util.functon.BiConsumer}.
+ * Unlike most other functional interfaces, {@code IntLongConsumer} is expected
+ * to operate via side-effects.
+ *
+ * <p>
+ * This is a functional interface whose functional method is
+ * {@link #accept(int, long)}.
+ *
+ * @see java.util.function.BiConsumer
+ * @since 1.1
+ * @since JDK 1.8
+ */
+@FunctionalInterface
+public interface IntLongConsumer {
+    
+    /**
+     * Performs this operation on the given arguments.
+     *
+     * @param intArg  the {@code int}-valued argument
+     * @param longArg the {@code long}-valued argument
+     */
+    void accept(int intArg, long longArg);
+
+}

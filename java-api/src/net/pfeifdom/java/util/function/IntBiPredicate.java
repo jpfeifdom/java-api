@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 James R. Pfeifer. All rights reserved.
+/* Copyright (C) 2025 James R. Pfeifer. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.util.Objects;
  * {@link #test(int, int)}.
  *
  * @see java.util.function.Predicate
- * @since 1.8
+ * @since 1.1
  * @since JDK 1.8
  */
 @FunctionalInterface
