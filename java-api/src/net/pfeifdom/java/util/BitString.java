@@ -172,14 +172,24 @@ public abstract class BitString implements Cloneable, Serializable  {
     private static final boolean ONE_DFLT = ONE;
     private static final boolean ZERO_DFLT = ZERO;
     
-    public static final Field ALL = new Field.All();
-    
     public static Field field(int offset, int length) {
         return new Field(offset, length);
     }
     
     public static Field indexField(int fromIndex, int toIndex) {
         return Field.indexRange(fromIndex, toIndex);
+    }
+    
+    public static final Field ALL = new Field.All();
+    
+    public Field all() {
+        return all(0);
+    }
+    
+    public Field all(int position) {
+        checkThisPosition(position);
+        if (position == this.length()) return field(position == 0 ? 0 : position - 1, 0);
+        return field(position, this.length() - position);
     }
     
     /**
@@ -237,16 +247,6 @@ public abstract class BitString implements Cloneable, Serializable  {
     
     public boolean isEmpty() {
         return length() == 0;
-    }
-    
-    public Field all() {
-        return all(0);
-    }
-    
-    public Field all(int offset) {
-        checkThisPosition(offset);
-        if (offset == this.length()) return field(offset == 0 ? 0 : offset - 1, 0);
-        return field(offset, this.length() - offset);
     }
     
     public void setLength(int newLength) {
@@ -316,7 +316,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         return offset;
     }
     
-    private int firstBitIndex(int offset) {
+    int firstBitIndex(int offset) {
         return bitIndex(offset);
     }
     
@@ -760,26 +760,39 @@ public abstract class BitString implements Cloneable, Serializable  {
     private void checkAvailableSpace(int offset, int requiredSpace) {
         final int availableSpace = length() - offset;
         if (availableSpace < requiredSpace) {
-            throw new IllegalStateException("not enough space to perform the operation"
+            throw new UnsupportedOperationException("not enough space in the BitString to perform the operation"
                     + "; required space=" + requiredSpace + ", available space=" + availableSpace
-                    + ", stringLength=" + length() + ", offset=" + offset);
+                    + ", BitString Length=" + length() + ", offset=" + offset);
         }
     }
     
-    void checkBaseLengthIncrease(long length) {
-        if (baseLength() + length > Integer.MAX_VALUE) {
+    private void checkAvailableSpace(int offset, int length, int count) {
+        final long requiredSpace = (long)count * length;
+        final long availableSpace = length() - offset;
+        if (availableSpace < requiredSpace) {
+            throw new UnsupportedOperationException("not enough space in the BitString to perform the operation"
+                    + "; required space=" + requiredSpace + ", available space=" + availableSpace
+                    + ", BitString Length=" + length() + ", offset=" + offset
+                    + ", Primitive Length=" + length + ", Array Count=" + count);
+        }
+    }
+    
+    void checkBaseLengthIncrease(long increase) {
+        if (baseLength() + increase > Integer.MAX_VALUE) {
             throw new UnsupportedOperationException(
                     "the operation would result in the length of the base BitString exceeding the maximum of "
-                            + Integer.MAX_VALUE + ": " + length);
+                            + Integer.MAX_VALUE + ": base BitString length=" + baseLength() + ": increase=" + increase);
         }
     }
     
     void iAppend(BitString that, int thatOffset, int thatLength) {
         assert that.isValidOffset(thatOffset);
         assert that.isValidLength(thatOffset, thatLength);
-        ensureCapacity(this.length() + thatLength);
-        setLength(this.length() + thatLength);
-        iCopy(this.length(), thatLength, that, thatOffset);
+        final int thisLength = this.length();
+        final int newLength = thisLength + thatLength;
+        ensureCapacity(newLength);
+        setLength(newLength);
+        iCopy(thisLength, thatLength, that, thatOffset);
     }
     
     void iDelete(int bitIndex, int length) {
@@ -796,7 +809,10 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert that.isValidOffset(thatOffset);
         assert that.isValidLength(thatOffset, thatLength);
         if (thatLength == 0) return;
-        if (position == this.length()) { iAppend(that, thatOffset, thatLength); return; }
+        if (position == this.length()) {
+            iAppend(that, thatOffset, thatLength);
+            return;
+        }
         ensureCapacity(this.length() + thatLength);
         setLength(this.length() + thatLength);
         iShiftRight(thatLength, ZERO_FILL, position, this.length() - position);
@@ -1681,6 +1697,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     private void iPutPrimitive(int offset, int primitiveSize, long primitiveBits) {
         assert isValidOffset(offset);
         assert primitiveSize <= BITS_PER_WORD;
+        assert isValidLength(offset, primitiveSize);
         
         final int firstWordIndex = firstWordIndex(offset);
         final int firstWordBitIndex = firstWordBitIndex(offset);
@@ -1961,6 +1978,16 @@ public abstract class BitString implements Cloneable, Serializable  {
         return length - iNumberOfTrailingOnes(offset, length) - 1;
     }
     
+    /**
+     * Append the specified BitString to the end of this BitString.
+     * 
+     * @param that the BitString to be appended
+     * @return this BitString
+     * @throws UnsupportedOperationException if the length of this base BitString,
+     *                                       after the append operation, would
+     *                                       exceed the maximum allowed length of
+     *                                       Integer.MAXSIZE
+     */
     public BitString append(BitString that) {
         final int thatLength = that.length();
         checkBaseLengthIncrease(thatLength);
@@ -1968,6 +1995,25 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Append a substring of the specified BitString to the end of this BitString.
+     * 
+     * The substring starts at offset 'thatOffset' of this BitString and has a
+     * length of 'thatLength'.
+     * 
+     * @param that the BitString to be appended
+     * @param thatOffset the start of the substring to be appended
+     * @param thatLength the length of the substring to be appended
+     * @return this BitString
+     * @throws UnsupportedOperationException if the length of this base BitString,
+     *                                       after the append operation, would
+     *                                       exceed the maximum allowed length of
+     *                                       Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString append(BitString that, int thatOffset, int thatLength) {
         that.checkArgOffset(thatOffset);
         that.checkArgLength(thatOffset, thatLength);
@@ -1976,16 +2022,50 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Append a Field of the specified BitString to the end of this BitString.
+     * 
+     * @param that      the BitString to be appended
+     * @param thatField the Field of that BitString to be appended
+     * @return this BitString
+     * @throws UnsupportedOperationException   if the length of this base BitString,
+     *                                         after the append operation, would
+     *                                         exceed the maximum allowed length of
+     *                                         Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString append(BitString that, Field thatField) {
         return append(that, thatField.offset(), thatField.length(that));
     }
     
+    /**
+     * Delete this BitString.
+     * 
+     * @return this BitString
+     */
     public BitString delete() {
         final int length = length();
         iDelete(firstBitIndex(0), length);
         return this;
     }
     
+    /**
+     * Delete a substring of this BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * 
+     * @param offset the start of the substring to be deleted
+     * @param length the length of the substring to be deleted
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > length() - offset}
+     */
     public BitString delete(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
@@ -1993,10 +2073,34 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Delete a Field of this BitString.
+     * 
+     * @param field the Field of this BitString to be deleted
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     */
     public BitString delete(Field field) {
         return delete(field.offset(), field.length(this));
     }
     
+    /**
+     * Insert the specified BitString at the specified position in this BitString.
+     * 
+     * @param position the position in this BitString where the BitString is
+     *                 inserted
+     * @param that     the BitString to be inserted
+     * @return this BitString
+     * @throws UnsupportedOperationException   if the length of this base BitString,
+     *                                         after the insert operation, would
+     *                                         exceed the maximum allowed length of
+     *                                         Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code position < 0 || position > length()}
+     */
     public BitString insert(int position, BitString that) {
         checkThisPosition(position);
         final int thatLength = that.length();
@@ -2005,6 +2109,27 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Insert a substring of the specified BitString, at the specified position, in this BitString.
+     * 
+     * The substring starts at offset 'thatOffset' of this BitString and has a
+     * length of 'thatLength'.
+     * 
+     * @param that the BitString to be inserted
+     * @param thatOffset the start of the substring to be inserted
+     * @param thatLength the length of the substring to be inserted
+     * @return this BitString
+     * @throws UnsupportedOperationException if the length of this base BitString,
+     *                                       after the insert operation, would
+     *                                       exceed the maximum allowed length of
+     *                                       Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code position < 0 || position > length()}
+     *                                         or
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString insert(int position, BitString that, int thatOffset, int thatLength) {
         checkThisPosition(position);
         that.checkArgOffset(thatOffset);
@@ -2014,10 +2139,37 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Insert a Field of the specified BitString, at the specified position, in this BitString.
+     * 
+     * @param that      the BitString to be inserted
+     * @param thatField the Field of that BitString to be inserted
+     * @return this BitString
+     * @throws UnsupportedOperationException   if the length of this base BitString,
+     *                                         after the insert operation, would
+     *                                         exceed the maximum allowed length of
+     *                                         Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code position < 0 || position > length()}
+     *                                         or
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString insert(int position, BitString that, Field thatField) {
         return insert(position, that, thatField.offset(), thatField.length(that));
     }
     
+    /**
+     * Replace this BitString with the specified BitString.
+     * 
+     * @param that the BitString to replace this BitString
+     * @return this BitString
+     * @throws UnsupportedOperationException if the length of this base BitString,
+     *                                       after the replace operation, would
+     *                                       exceed the maximum allowed length of
+     *                                       Integer.MAXSIZE
+     */
     public BitString replace(BitString that) {
         final int thisLength = this.length();
         final int thatLength = that.length();
@@ -2026,6 +2178,25 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Replace this BitString with a substring of the specified BitString.
+     * 
+     * The substring starts at offset 'thatOffset' of this BitString and has a
+     * length of 'thatLength'.
+     * 
+     * @param that the BitString to replace this BitString
+     * @param thatOffset the start of the substring that replaces this BitString
+     * @param thatLength the length of the substring that replaces this BitString
+     * @return this BitString
+     * @throws UnsupportedOperationException if the length of this base BitString,
+     *                                       after the replace operation, would
+     *                                       exceed the maximum allowed length of
+     *                                       Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatOffset < 0 || thatOffset > 0 && thatOffset >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatLength < 0 || thatLength > that.length() - thatOffset}
+     */
     public BitString replace(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength) {
         checkThisOffset(thisOffset);
         checkThisLength(thisOffset, thisLength);
@@ -2036,12 +2207,27 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Replace this BitString with a Field of the specified BitString.
+     * 
+     * @param that      the BitString to replace this BitString
+     * @param thatField the Field of that BitString that replaces this BitString
+     * @return this BitString
+     * @throws UnsupportedOperationException   if the length of this base BitString,
+     *                                         after the replace operation, would
+     *                                         exceed the maximum allowed length of
+     *                                         Integer.MAXSIZE
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code thatField.offset() > 0 && thatField.offset() >= that.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code thatField.length() > that.length() - thatField.offset()}
+     */
     public BitString replace(Field thisField, BitString that, Field thatField) {
         return replace(thisField.offset(), thisField.length(this), that, thatField.offset(), thatField.length(that));
     }
     
     /**
-     * Sets all of the bits in this {@code BitString} to {@code ZERO}.
+     * Set all of the bits in this {@code BitString} to {@code ZERO}.
      * 
      * @return this {@code BitString}
      */
@@ -2051,7 +2237,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Sets all of the bits in a substring of this {@code BitString} to {@code ZERO}.
+     * Set all of the bits in a substring of this {@code BitString} to {@code ZERO}.
      * 
      * This substring starts at offset 'offset' of this {@code BitString} and
      * extends to the end of this {@code BitString}.
@@ -2068,7 +2254,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Sets all of the bits in a substring of this {@code BitString} to {@code ZERO}.
+     * Set all of the bits in a substring of this {@code BitString} to {@code ZERO}.
      *
      * The substring starts at offset 'offset' of this {@code BitString} and has a
      * length of 'length'.
@@ -2089,7 +2275,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Sets all of the bits in a Field of this {@code BitString} to {@code ZERO}.
+     * Set all of the bits in a Field of this {@code BitString} to {@code ZERO}.
      * 
      * @param field a Field of this {@code BitString}
      * @return this {@code BitString}
@@ -2103,7 +2289,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Sets the bit at the specified offset to {@code ZERO}.
+     * Set the bit at the specified offset to {@code ZERO}.
      * 
      * @param bitOffset the offset of the bit to set
      * @return this {@code BitString}
@@ -2118,6 +2304,14 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    /**
+     * Set the bit at the specified offset in a substring of this BitString to {@code ZERO}.
+     * 
+     * @param bitOffset the offset of the bit to set
+     * @param offset
+     * @param length
+     * @return this BitString
+     */
     public BitString clearBit(int bitOffset, int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
@@ -2125,6 +2319,13 @@ public abstract class BitString implements Cloneable, Serializable  {
         return clearBit(offset + bitOffset);
     }
     
+    /**
+     * Set the bit at the specified offset in a Field of this BitString to {@code ZERO}.
+     * 
+     * @param bitOffset
+     * @param field
+     * @return this BitString
+     */
     public BitString clearBit(int bitOffset, Field field) {
         return clearBit(bitOffset, field.offset(), field.length(this));
     }
@@ -2293,10 +2494,35 @@ public abstract class BitString implements Cloneable, Serializable  {
         return getBit(offset);
     }
     
+    // @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
+    public boolean[] getBooleanArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, 1, count);
+        return iToBooleanArray(offset, count);
+//        final boolean[] booleans = new boolean[count];
+//        for (int index = 0; index < count; index++) {
+//            booleans[index] = getBit(offset);
+//            offset++;
+//        }
+//        return booleans;
+    }
+    
     public byte getByte(int offset) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Byte.SIZE);
         return (byte)(iGetPrimitive(offset, Byte.SIZE));
+    }
+    
+    public byte[] getByteArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Byte.SIZE, count);
+        return iToByteArray(offset, count * Byte.SIZE);
+//        final byte[] bytes = new byte[count];
+//        for (int index = 0; index < count; index++) {
+//            bytes[index] = (byte)(iGetPrimitive(offset, Byte.SIZE));
+//            offset += Byte.SIZE;
+//        }
+//        return bytes;
     }
     
     public char getChar(int offset) {
@@ -2306,10 +2532,34 @@ public abstract class BitString implements Cloneable, Serializable  {
         return (char)(iGetPrimitive(offset, Character.SIZE));
     }
     
+    public char[] getCharArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Character.SIZE, count);
+        return iToCharArray(offset, count * Character.SIZE);
+//        final char[] chars = new char[count];
+//        for (int index = 0; index < count; index++) {
+//            chars[index] = (char)(iGetPrimitive(offset, Character.SIZE));
+//            offset += Character.SIZE;
+//        }
+//        return chars;
+    }
+    
     public double getDouble(int offset) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Long.SIZE);
         return Double.longBitsToDouble((long)(iGetPrimitive(offset, Long.SIZE)));
+    }
+    
+    public double[] getDoubleArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Long.SIZE, count);
+        return iToDoubleArray(offset, count * Long.SIZE);
+//        final double[] doubles = new double[count];
+//        for (int index = 0; index < count; index++) {
+//            doubles[index] = Double.longBitsToDouble((long)(iGetPrimitive(offset, Long.SIZE)));
+//            offset += Long.SIZE;
+//        }
+//        return doubles;
     }
     
     public float getFloat(int offset) {
@@ -2318,10 +2568,34 @@ public abstract class BitString implements Cloneable, Serializable  {
         return Float.intBitsToFloat((int)(iGetPrimitive(offset, Integer.SIZE)));
     }
     
+    public float[] getFloatArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Integer.SIZE, count);
+        return iToFloatArray(offset, count * Integer.SIZE);
+//        final float[] floats = new float[count];
+//        for (int index = 0; index < count; index++) {
+//            floats[index] = (int)(iGetPrimitive(offset, Integer.SIZE));
+//            offset += Integer.SIZE;
+//        }
+//        return floats;
+    }
+    
     public int getInt(int offset) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Integer.SIZE);
         return (int)(iGetPrimitive(offset, Integer.SIZE));
+    }
+    
+    public int[] getIntArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Integer.SIZE, count);
+        return iToIntArray(offset, count * Integer.SIZE);
+//        final int[] ints = new int[count];
+//        for (int index = 0; index < count; index++) {
+//            ints[index] = (int)(iGetPrimitive(offset, Integer.SIZE));
+//            offset += Integer.SIZE;
+//        }
+//        return ints;
     }
     
     public long getLong(int offset) {
@@ -2330,10 +2604,34 @@ public abstract class BitString implements Cloneable, Serializable  {
         return (long)(iGetPrimitive(offset, Long.SIZE));
     }
     
+    public long[] getLongArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Long.SIZE, count);
+        return iToLongArray(offset, count * Long.SIZE);
+//        final long[] longs = new long[count];
+//        for (int index = 0; index < count; index++) {
+//            longs[index] = (long)(iGetPrimitive(offset, Long.SIZE));
+//            offset += Long.SIZE;
+//        }
+//        return longs;
+    }
+    
     public short getShort(int offset) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Short.SIZE);
         return (short)(iGetPrimitive(offset, Short.SIZE));
+    }
+    
+    public short[] getShortArray(int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Short.SIZE, count);
+        return iToShortArray(offset, count * Short.SIZE);
+//        final short[] shorts = new short[count];
+//        for (int index = 0; index < count; index++) {
+//            shorts[index] = (short)(iGetPrimitive(offset, Short.SIZE));
+//            offset += Short.SIZE;
+//        }
+//        return shorts;
     }
     
     public BitString put(BitString that) {
@@ -2368,10 +2666,30 @@ public abstract class BitString implements Cloneable, Serializable  {
         return setBit(primitive, offset);
     }
     
+    public BitString putBooleanArray(int offset, boolean[] booleans) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, 1, booleans.length);
+        for (int index = 0; index < booleans.length; index++) {
+            setBit(booleans[index], offset);
+            offset++;
+        }
+        return this;
+    }
+    
     public BitString putByte(int offset, byte primitive) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Byte.SIZE);
         iPutPrimitive(offset, Byte.SIZE, Byte.toUnsignedLong(primitive));
+        return this;
+    }
+    
+    public BitString putByteArray(int offset, byte[] bytes) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Byte.SIZE, bytes.length);
+        for (int index = 0; index < bytes.length; index++) {
+            iPutPrimitive(offset, Byte.SIZE, Byte.toUnsignedLong(bytes[index]));
+            offset += Byte.SIZE;
+        }
         return this;
     }
     
@@ -2382,10 +2700,30 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    public BitString putCharArray(int offset, char[] chars) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Character.SIZE, chars.length);
+        for (int index = 0; index < chars.length; index++) {
+            iPutPrimitive(offset, Character.SIZE, (long)chars[index]);
+            offset += Character.SIZE;
+        }
+        return this;
+    }
+    
     public BitString putDouble(int offset, double primitive) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Long.SIZE);
         iPutPrimitive(offset, Long.SIZE, Double.doubleToRawLongBits(primitive));
+        return this;
+    }
+    
+    public BitString putDoubleArray(int offset, double[] doubles) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Long.SIZE, doubles.length);
+        for (int index = 0; index < doubles.length; index++) {
+            iPutPrimitive(offset, Long.SIZE, Double.doubleToRawLongBits(doubles[index]));
+            offset += Long.SIZE;
+        }
         return this;
     }
     
@@ -2396,10 +2734,30 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    public BitString putFloatArray(int offset, float[] floats) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Integer.SIZE, floats.length);
+        for (int index = 0; index < floats.length; index++) {
+            iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])));
+            offset += Integer.SIZE;
+        }
+        return this;
+    }
+    
     public BitString putInt(int offset, int primitive) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Integer.SIZE);
         iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(primitive));
+        return this;
+    }
+    
+    public BitString putIntArray(int offset, int[] ints) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Integer.SIZE, ints.length);
+        for (int index = 0; index < ints.length; index++) {
+            iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(ints[index]));
+            offset += Integer.SIZE;
+        }
         return this;
     }
     
@@ -2410,10 +2768,30 @@ public abstract class BitString implements Cloneable, Serializable  {
         return this;
     }
     
+    public BitString putLongArray(int offset, long[] longs) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Long.SIZE, longs.length);
+        for (int index = 0; index < longs.length; index++) {
+            iPutPrimitive(offset, Long.SIZE, longs[index]);
+            offset += Long.SIZE;
+        }
+        return this;
+    }
+    
     public BitString putShort(int offset, short primitive) {
         checkThisOffset(offset);
         checkAvailableSpace(offset, Short.SIZE);
         iPutPrimitive(offset, Short.SIZE, Short.toUnsignedLong(primitive));
+        return this;
+    }
+    
+    public BitString putShortArray(int offset, short[] shorts) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, Short.SIZE, shorts.length);
+        for (int index = 0; index < shorts.length; index++) {
+            iPutPrimitive(offset, Short.SIZE, Short.toUnsignedLong(shorts[index]));
+            offset += Short.SIZE;
+        }
         return this;
     }
     
@@ -6366,153 +6744,625 @@ public abstract class BitString implements Cloneable, Serializable  {
         return substring(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new boolean array representing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code boolean[] booleans = s.toBooleanArray();} <br>
+     * then {@code booleans.length == s.length()} and <br>
+     * {@code s.getBit(n) == booleans[n]} <br>
+     * for all {@code n < s.length()}.
+     * 
+     * @return a boolean array representing all the bits in this BitString
+     * @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
+     */
     public boolean[] toBooleanArray() {
         return iToBooleanArray(0, length());
     }
     
+    /**
+     * Returns a new boolean array representing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code boolean[] booleans = s.toBooleanArray(offset, length);} <br>
+     * then {@code booleans.length == length} and <br>
+     * {@code s.getBit(n, offset, length) == booleans[n]} <br>
+     * for all {@code n < length}.
+     * 
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a boolean array representing all the bits in a substring of this this
+     *         BitString
+     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public boolean[] toBooleanArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToBooleanArray(offset, length);
     }
     
+    /**
+     * Returns a new boolean array representing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code boolean[] booleans = s.toBooleanArray(field);} <br>
+     * then {@code booleans.length == field.length()} and <br>
+     * {@code s.getBit(n, field) == booleans[n]} <br>
+     * for all {@code n < field.length()}. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     * 
+     * @param field a Field of this BitString
+     * @return a boolean array representing all the bits in a substring of this this
+     *         BitString
+     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public boolean[] toBooleanArray(Field field) {
         return toBooleanArray(field.offset(), field.length(this));
     }
 
     /**
-     * Returns a new byte array containing all the bits in this bit string.
+     * Returns a new byte array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code byte[] bytes = s.toByteArray();} <br>
+     * then {@code bytes.length == (s.length()+7)/8} and <br>
+     * {@code s.getBit(n) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
+     * for all {@code n < s.length()}. <br>
+     * If {@code 8*bytes.length > s.length()} <br>
+     * then the last byte of the array is padded on the right by
+     * {@code 8*bytes.length - s.length()} ZEROS.
      *
-     * <p>More precisely, if
-     * <br>{@code byte[] bytes = s.toByteArray();}
-     * <br>then {@code bytes.length == (s.length()+7)/8} and
-     * <br>{@code s.get(n) == ((bytes[n/8] & (1<<(n%8))) != 0)}
-     * <br>for all {@code n < 8 * bytes.length}.
-     *
-     * @return a byte array containing a little-endian representation
-     *         of all the bits in this bit set
+     * @return a byte array containing all the bits in this BitString
      */
     public byte[] toByteArray() {
         return iToByteArray(0, length());
     }
     
+    /**
+     * Returns a new byte array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code byte[] bytes = s.toByteArray(offset, length);} <br>
+     * then {@code bytes.length == (length+7)/8} and <br>
+     * {@code s.getBit(n, offset, length) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 8*bytes.length > length} <br>
+     * then the last byte of the array is padded on the right by
+     * {@code 8*bytes.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a byte array containing all the bits in a substring of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public byte[] toByteArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToByteArray(offset, length);
     }
     
+    /**
+     * Returns a new byte array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code byte[] bytes = s.toByteArray(field);} <br>
+     * then {@code bytes.length == (field.length()+7)/8} and <br>
+     * {@code s.getBit(n, field) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 8*bytes.length > field.length()} <br>
+     * then the last byte of the array is padded on the right by
+     * {@code 8*bytes.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(),
+     * but ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a byte array containing all the bits in a field of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public byte[] toByteArray(Field field) {
         return toByteArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new char array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code char[] chars = s.toCharArray();} <br>
+     * then {@code chars.length == (s.length()+15)/16} and <br>
+     * {@code s.getBit(n) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < s.length()}. <br>
+     * If {@code 16*chars.length > s.length()} <br>
+     * then the last char of the array is padded on the right by
+     * {@code 16*chars.length - s.length()} ZEROS.
+     *
+     * @return a char array containing all the bits in this BitString
+     */
     public char[] toCharArray() {
         return iToCharArray(0, length());
     }
     
+    /**
+     * Returns a new char array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code char[] chars = s.toCharArray(offset, length);} <br>
+     * then {@code chars.length == (length+15)/16} and <br>
+     * {@code s.getBit(n, offset, length) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 16*chars.length > length} <br>
+     * then the last char of the array is padded on the right by
+     * {@code 16*chars.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a char array containing all the bits in a substring of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public char[] toCharArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToCharArray(offset, length);
     }
     
+    /**
+     * Returns a new char array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code char[] chars = s.toCharArray(field);} <br>
+     * then {@code chars.length == (field.length()+15)/16} and <br>
+     * {@code s.getBit(n, field) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 16*chars.length > field.length()} <br>
+     * then the last char of the array is padded on the right by
+     * {@code 16*chars.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(),
+     * but ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a char array containing all the bits in a field of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public char[] toCharArray(Field field) {
         return toCharArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new double array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code double[] doubles = s.toDoubleArray();} <br>
+     * then {@code doubles.length == (s.length()+63)/64} and <br>
+     * {@code s.getBit(n) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < 64*s.length()}. <br>
+     * If {@code 64*doubles.length > s.length()} <br>
+     * then the last double of the array is padded on the right by
+     * {@code 64*doubles.length - s.length()} ZEROS.
+     *
+     * @return a double array containing all the bits in this BitString
+     */
     public double[] toDoubleArray() {
         return iToDoubleArray(0, length());
     }
     
+    /**
+     * Returns a new double array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code double[] doubles = s.toDoubleArray(offset, length);} <br>
+     * then {@code doubles.length == (length+63)/64} and <br>
+     * {@code s.getBit(n, offset, length) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < 64*length}. <br>
+     * If {@code 64*doubles.length > length} <br>
+     * then the last double of the array is padded on the right by
+     * {@code 64*doubles.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a double array containing all the bits in a substring of this
+     *         BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public double[] toDoubleArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToDoubleArray(offset, length);
     }
     
+    /**
+     * Returns a new double array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code double[] doubles = s.toDoubleArray(field);} <br>
+     * then {@code doubles.length == (field.length()+63)/64} and <br>
+     * {@code s.getBit(n, field) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < 64*field.length()}. <br>
+     * If {@code 64*doubles.length > field.length()} <br>
+     * then the last double of the array is padded on the right by
+     * {@code 64*doubles.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a double array containing all the bits in a field of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public double[] toDoubleArray(Field field) {
         return toDoubleArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new float array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code float[] floats = s.toFloatArray();} <br>
+     * then {@code floats.length == (s.length()+31)/32} and <br>
+     * {@code s.getBit(n) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < s.length()}. <br>
+     * If {@code 32*floats.length > s.length()} <br>
+     * then the last float of the array is padded on the right by
+     * {@code 32*floats.length - s.length()} ZEROS.
+     *
+     * @return a float array containing all the bits in this BitString
+     */
     public float[] toFloatArray() {
         return iToFloatArray(0, length());
     }
     
+    /**
+     * Returns a new float array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code float[] floats = s.toFloatArray(offset, length);} <br>
+     * then {@code floats.length == (length+31)/32} and <br>
+     * {@code s.getBit(n, offset, length) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 32*floats.length > length} <br>
+     * then the last float of the array is padded on the right by
+     * {@code 32*floats.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a float array containing all the bits in a substring of this
+     *         BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public float[] toFloatArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToFloatArray(offset, length);
     }
     
+    /**
+     * Returns a new float array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code float[] floats = s.toFloatArray(field);} <br>
+     * then {@code floats.length == (field.length()+31)/32} and <br>
+     * {@code s.getBit(n, field) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 32*floats.length > field.length()} <br>
+     * then the last float of the array is padded on the right by
+     * {@code 32*floats.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a float array containing all the bits in a field of this
+     *         BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public float[] toFloatArray(Field field) {
         return toFloatArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new int array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code int[] ints = s.toIntArray();} <br>
+     * then {@code ints.length == (s.length()+31)/32} and <br>
+     * {@code s.getBit(n) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < s.length()}. <br>
+     * If {@code 32*ints.length > s.length()} <br>
+     * then the last int of the array is padded on the right by
+     * {@code 32*ints.length - s.length()} ZEROS.
+     *
+     * @return a int array containing all the bits in this BitString
+     */
     public int[] toIntArray() {
         return iToIntArray(0, length());
     }
     
+    /**
+     * Returns a new int array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code int[] ints = s.toIntArray(offset, length);} <br>
+     * then {@code ints.length == (length+31)/32} and <br>
+     * {@code s.getBit(n, offset, length) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 32*ints.length > length} <br>
+     * then the last int of the array is padded on the right by
+     * {@code 32*ints.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a int array containing all the bits in a substring of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public int[] toIntArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToIntArray(offset, length);
     }
     
+    /**
+     * Returns a new int array containing all the bits in a field of this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code int[] ints = s.toIntArray(field);} <br>
+     * then {@code ints.length == (field.length()+31)/32} and <br>
+     * {@code s.getBit(n, field) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 32*ints.length > field.length()} <br>
+     * then the last int of the array is padded on the right by
+     * {@code 32*ints.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a int array containing all the bits in a field of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public int[] toIntArray(Field field) {
         return toIntArray(field.offset(), field.length(this));
     }
 
     /**
-     * Returns a new long array containing all the bits in this bit string.
+     * Returns a new long array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code long[] longs = s.toLongArray();} <br>
+     * then {@code longs.length == (s.length()+63)/64} and <br>
+     * {@code s.getBit(n) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < 64*s.length()}. <br>
+     * If {@code 64*longs.length > s.length()} <br>
+     * then the last long of the array is padded on the right by
+     * {@code 64*longs.length - s.length()} ZEROS.
      *
-     * <p>More precisely, if
-     * <br>{@code long[] longs = s.toLongArray();}
-     * <br>then {@code longs.length == (s.length()+63)/64} and
-     * <br>{@code s.get(n) == ((longs[n/64] & (1L<<(n%64))) != 0)}
-     * <br>for all {@code n < 64 * longs.length}.
-     *
-     * @return a long array containing a big-endian representation
-     *         of all the bits in this bit set
+     * @return a long array containing all the bits in this BitString
      */
     public long[] toLongArray() {
         return iToLongArray(0, length());
     }
     
+    /**
+     * Returns a new long array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code long[] longs = s.toLongArray(offset, length);} <br>
+     * then {@code longs.length == (length+63)/64} and <br>
+     * {@code s.getBit(n, offset, length) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 64*longs.length > length} <br>
+     * then the last long of the array is padded on the right by
+     * {@code 64*longs.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a long array containing all the bits in this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public long[] toLongArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToLongArray(offset, length);
     }
     
+    /**
+     * Returns a new long array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code long[] longs = s.toLongArray(field);} <br>
+     * then {@code longs.length == (field.length()+63)/64} and <br>
+     * {@code s.getBit(n, field) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 64*longs.length > field.length()} <br>
+     * then the last long of the array is padded on the right by
+     * {@code 64*longs.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a long array containing all the bits in this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public long[] toLongArray(Field field) {
         return toLongArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a new short array containing all the bits in this BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code short[] shorts = s.toShortArray();} <br>
+     * then {@code shorts.length == (s.length()+15)/16} and <br>
+     * {@code s.getBit(n) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < s.length()}. <br>
+     * If {@code 16*shorts.length > s.length()} <br>
+     * then the last short of the array is padded on the right by
+     * {@code 16*shorts.length - s.length()} ZEROS.
+     *
+     * @return a int array containing all the bits in this BitString
+     */
     public short[] toShortArray() {
         return iToShortArray(0, length());
     }
     
+    /**
+     * Returns a new short array containing all the bits in a substring of this
+     * BitString.
+     * 
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * <p>
+     * More precisely, if <br>
+     * {@code short[] shorts = s.toShortArray(offset, length);} <br>
+     * then {@code shorts.length == (length+15)/16} and <br>
+     * {@code s.getBit(n, offset, length) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < length}. <br>
+     * If {@code 16*shorts.length > length} <br>
+     * then the last short of the array is padded on the right by
+     * {@code 16*shorts.length - length} ZEROS.
+     *
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a int array containing all the bits in a substring of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
+     */
     public short[] toShortArray(int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         return iToShortArray(offset, length);
     }
     
+    /**
+     * Returns a new short array containing all the bits in a field of this
+     * BitString.
+     * <p>
+     * More precisely, if <br>
+     * {@code short[] shorts = s.toShortArray(field);} <br>
+     * then {@code shorts.length == (field.length()+15)/16} and <br>
+     * {@code s.getBit(n, field) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
+     * for all {@code n < field.length()}. <br>
+     * If {@code 16*shorts.length > field.length()} <br>
+     * then the last short of the array is padded on the right by
+     * {@code 16*shorts.length - field.length()} ZEROS. <br>
+     * Note: the length of the ALL field constant is effectively s.length(), but
+     * ALL.length() returns 0.
+     *
+     * @param field a Field of this BitString
+     * @return a int array containing all the bits in a field of this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public short[] toShortArray(Field field) {
         return toShortArray(field.offset(), field.length(this));
     }
     
+    /**
+     * Returns a String of '0's and '1's, representing all the bits in this
+     * BitString.
+     * 
+     * @return a String of '0's and '1's, representing all the bits in this
+     *         BitString
+     * @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
+     */
     @Override
     public String toString() {
         return toString(0, this.length());
     }
     
     /**
+     * Returns a String of '0's and '1's, representing all the bits in a substring
+     * of this BitString.
      * 
-     * @param offset
-     * @param length
-     * @return
-     * @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
+     * The substring starts at offset 'offset' of this BitString and has a
+     * length of 'length'.
+     * 
+     * @param offset the offset of this substring
+     * @param length the length of this substring
+     * @return a String of '0's and '1's, representing all the bits in a substring
+     *         of this BitString
+     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code length < 0 || length > this.length() - offset}
      */
     public String toString(int offset, int length) {
         checkThisOffset(offset);
@@ -6530,6 +7380,19 @@ public abstract class BitString implements Cloneable, Serializable  {
         return string.toString();
     }
     
+    /**
+     * Returns a String of '0's and '1's, representing all the bits in a field of
+     * this BitString.
+     * 
+     * @param field a Field of this BitString
+     * @return a String of '0's and '1's, representing all the bits in a field of
+     *         this BitString
+     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > this.length() - field.offset()}
+     */
     public String toString(Field field) {
         return toString(field.offset(), field.length(this));
     }
@@ -6817,7 +7680,7 @@ public abstract class BitString implements Cloneable, Serializable  {
             checkForModificationException();
             if (newLength < 0) throw new IllegalArgumentException("specified length is negative: "+newLength);
             final int lengthDelta = newLength - length();
-            int bitIndex = super.lastBitIndex() + 1;
+            int bitIndex = lastBitIndex() + 1;
             if (lengthDelta < 0) bitIndex += lengthDelta;
             setRangeLength(lengthDelta, bitIndex);
         }
@@ -6887,20 +7750,27 @@ public abstract class BitString implements Cloneable, Serializable  {
         }
         
         @Override
+        public BitString append(BitString that) {
+            checkBaseLengthIncrease(that.length());
+            iInsert(lastBitIndex()+1, that, 0, that.length());
+            return this;
+        }
+        
+        @Override
         public BitString append(BitString that, int thatOffset, int thatLength) {
             that.checkArgOffset(thatOffset);
             that.checkArgLength(thatOffset, thatLength);
-            base.checkBaseLengthIncrease(thatLength);
-            iInsert(super.lastBitIndex()+1, that, thatOffset, thatLength);
+            checkBaseLengthIncrease(thatLength);
+            iInsert(lastBitIndex()+1, that, thatOffset, thatLength);
             return this;
         }
         
         @Override
         public BitString range(int offset, int length) {
             checkForModificationException();
-            super.checkThisOffset(offset);
-            super.checkThisLength(offset, length);
-            return new Range(base, this, super.firstBitIndex(offset), length);
+            checkThisOffset(offset);
+            checkThisLength(offset, length);
+            return new Range(base, this, firstBitIndex(offset), length);
         }
         
     }

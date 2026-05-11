@@ -140,19 +140,35 @@ public interface BufferedBitString {
     
     public boolean getBoolean(int offset);
     
+    public boolean[] getBooleanArray(int offset, int count);
+    
     public byte getByte(int offset);
+
+    public byte[] getByteArray(int offset, int count);
     
     public char getChar(int offset);
+
+    public char[] getCharArray(int offset, int count);
     
     public double getDouble(int offset);
+
+    public double[] getDoubleArray(int offset, int count);
     
     public float getFloat(int offset);
+
+    public float[] getFloatArray(int offset, int count);
     
     public int getInt(int offset);
+
+    public int[] getIntArray(int offset, int count);
     
     public long getLong(int offset);
+
+    public Long[] getLongArray(int offset, int count);
     
     public short getShort(int offset);
+
+    public short[] getShortArray(int offset, int count);
     
     public BitString put(BitString that);
     
@@ -164,19 +180,35 @@ public interface BufferedBitString {
     
     public BitString putBoolean(int offset, boolean primitive);
     
+    public BitString putBooleanArray(int offset, boolean[] booleans);
+    
     public BitString putByte(int offset, byte primitive);
+
+    public BitString putByteArray(int offset, byte[] bytes);
     
     public BitString putChar(int offset, char primitive);
+
+    public BitString putCharArray(int offset, char[] chars);
     
     public BitString putDouble(int offset, double primitive);
+
+    public BitString putDoubleArray(int offset, double[] doubles);
     
     public BitString putFloat(int offset, float primitive);
+
+    public BitString putFloatArray(int offset, float[] floats);
     
     public BitString putInt(int offset, int primitive);
+
+    public BitString putIntArray(int offset, int[] ints);
     
     public BitString putLong(int offset, long primitive);
+
+    public BitString putLongArray(int offset, long[] longs);
     
     public BitString putShort(int offset, short primitive);
+
+    public BitString putShortArray(int offset, short[] shorts);
     
     public BitString set();
     
