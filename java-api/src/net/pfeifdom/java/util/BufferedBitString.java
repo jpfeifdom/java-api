@@ -164,7 +164,7 @@ public interface BufferedBitString {
     
     public long getLong(int offset);
 
-    public Long[] getLongArray(int offset, int count);
+    public long[] getLongArray(int offset, int count);
     
     public short getShort(int offset);
 
@@ -522,57 +522,21 @@ public interface BufferedBitString {
     
     public boolean[] toBooleanArray();
     
-    public boolean[] toBooleanArray(int offset, int length);
-    
-    public boolean[] toBooleanArray(Field field);
-    
     public byte[] toByteArray();
-    
-    public byte[] toByteArray(int offset, int length);
-    
-    public byte[] toByteArray(Field field);
-    
-    public char[] toCharArray();
-    
-    public char[] toCharArray(int offset, int length);
-    
-    public char[] toCharArray(Field field);
-    
-    public double[] toDoubleArray();
-    
-    public double[] toDoubleArray(int offset, int length);
-    
-    public double[] toDoubleArray(Field field);
-    
-    public float[] toFloatArray();
-    
-    public float[] toFloatArray(int offset, int length);
-    
-    public float[] toFloatArray(Field field);
     
     public int[] toIntArray();
     
-    public int[] toIntArray(int offset, int length);
-    
-    public int[] toIntArray(Field field);
-    
     public long[] toLongArray();
-    
-    public long[] toLongArray(int offset, int length);
-    
-    public long[] toLongArray(Field field);
     
     public short[] toShortArray();
     
-    public short[] toShortArray(int offset, int length);
-    
-    public short[] toShortArray(Field field);
-    
     public String toString();
     
-    public String toString(int offset, int length);
+    public String toBinaryString();
     
-    public String toString(Field field);
+    public String toHexString();
+    
+    public String toOctalString();
     
     public int hashCode();
     

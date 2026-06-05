@@ -57,6 +57,8 @@ import net.pfeifdom.java.util.function.LongBiPredicate;
  * A mutable sequence of bits.
  * 
  * <p>
+ * A BitString is not a binary number.
+ * <p>
  * Every bit string has a capacity. As long as the length of the bit sequence
  * contained in the bit string does not exceed the capacity, it is not necessary
  * to allocate a new internal buffer. If the internal buffer overflows, it is
@@ -252,11 +254,19 @@ public abstract class BitString implements Cloneable, Serializable  {
     public void setLength(int newLength) {
         if (newLength == this.stringLength) return;
         if (newLength < 0) throw new IllegalArgumentException("specified length is negative: " + newLength);
-        ensureCapacity(newLength);
         final int oldLength = this.stringLength;
+        ensureCapacity(newLength);
         this.stringLength = newLength;
         if (newLength > oldLength) iClear(oldLength, newLength - oldLength);
         if (newLength < oldLength) incrementModCount(); // do not invalidate Ranges if appending
+    }
+    
+    void iSetLength(int newLength) {
+        assert newLength >= 0;
+        if (newLength == this.stringLength) return;
+        ensureCapacity(newLength);
+        if (newLength < this.stringLength) incrementModCount(); // do not invalidate Ranges if appending
+        this.stringLength = newLength;
     }
     
     // a Range of this BitString has changed its length by the specified delta at the specified bitIndex
@@ -314,6 +324,10 @@ public abstract class BitString implements Cloneable, Serializable  {
     
     int bitIndex(int offset) {
         return offset;
+    }
+    
+    int firstBitIndex() {
+        return firstBitIndex(0);
     }
     
     int firstBitIndex(int offset) {
@@ -2048,7 +2062,7 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public BitString delete() {
         final int length = length();
-        iDelete(firstBitIndex(0), length);
+        iDelete(firstBitIndex(), length);
         return this;
     }
     
@@ -2174,7 +2188,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         final int thisLength = this.length();
         final int thatLength = that.length();
         checkBaseLengthIncrease(thatLength - thisLength);
-        iReplace(firstBitIndex(0), thisLength, that, 0, thatLength);
+        iReplace(firstBitIndex(), thisLength, that, 0, thatLength);
         return this;
     }
     
@@ -4559,14 +4573,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      * are equal. This {@code BitString} and the object are equal if and only if the
      * object is a {@code BitString} that has the the same length as this
      * {@code BitString} and has the same set of bits set to {@code ONE} as this
-     * {@code BitString}. That is, for every nonnegative {@code int} index {@code k}
+     * {@code BitString}. That is the following comparison is true
+     * for every nonnegative {@code int} index {@code k}
      * less than the length of the comparison,
-     * 
      * <pre>
      * this.getBit(k) == ((BitString) obj).getBit(k)
      * </pre>
-     * 
-     * must be true.
      *
      * @param obj the object to compare against
      * @return {@code true} if this {@code BitString} and the object are equal
@@ -6760,59 +6772,59 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iToBooleanArray(0, length());
     }
     
-    /**
-     * Returns a new boolean array representing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code boolean[] booleans = s.toBooleanArray(offset, length);} <br>
-     * then {@code booleans.length == length} and <br>
-     * {@code s.getBit(n, offset, length) == booleans[n]} <br>
-     * for all {@code n < length}.
-     * 
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a boolean array representing all the bits in a substring of this this
-     *         BitString
-     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public boolean[] toBooleanArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToBooleanArray(offset, length);
-    }
-    
-    /**
-     * Returns a new boolean array representing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code boolean[] booleans = s.toBooleanArray(field);} <br>
-     * then {@code booleans.length == field.length()} and <br>
-     * {@code s.getBit(n, field) == booleans[n]} <br>
-     * for all {@code n < field.length()}. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     * 
-     * @param field a Field of this BitString
-     * @return a boolean array representing all the bits in a substring of this this
-     *         BitString
-     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public boolean[] toBooleanArray(Field field) {
-        return toBooleanArray(field.offset(), field.length(this));
-    }
+//    /**
+//     * Returns a new boolean array representing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code boolean[] booleans = s.toBooleanArray(offset, length);} <br>
+//     * then {@code booleans.length == length} and <br>
+//     * {@code s.getBit(n, offset, length) == booleans[n]} <br>
+//     * for all {@code n < length}.
+//     * 
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a boolean array representing all the bits in a substring of this this
+//     *         BitString
+//     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public boolean[] toBooleanArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToBooleanArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new boolean array representing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code boolean[] booleans = s.toBooleanArray(field);} <br>
+//     * then {@code booleans.length == field.length()} and <br>
+//     * {@code s.getBit(n, field) == booleans[n]} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     * 
+//     * @param field a Field of this BitString
+//     * @return a boolean array representing all the bits in a substring of this this
+//     *         BitString
+//     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public boolean[] toBooleanArray(Field field) {
+//        return toBooleanArray(field.offset(), field.length(this));
+//    }
 
     /**
      * Returns a new byte array containing all the bits in this BitString.
@@ -6832,286 +6844,286 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iToByteArray(0, length());
     }
     
-    /**
-     * Returns a new byte array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code byte[] bytes = s.toByteArray(offset, length);} <br>
-     * then {@code bytes.length == (length+7)/8} and <br>
-     * {@code s.getBit(n, offset, length) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 8*bytes.length > length} <br>
-     * then the last byte of the array is padded on the right by
-     * {@code 8*bytes.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a byte array containing all the bits in a substring of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public byte[] toByteArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToByteArray(offset, length);
-    }
-    
-    /**
-     * Returns a new byte array containing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code byte[] bytes = s.toByteArray(field);} <br>
-     * then {@code bytes.length == (field.length()+7)/8} and <br>
-     * {@code s.getBit(n, field) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 8*bytes.length > field.length()} <br>
-     * then the last byte of the array is padded on the right by
-     * {@code 8*bytes.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(),
-     * but ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a byte array containing all the bits in a field of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public byte[] toByteArray(Field field) {
-        return toByteArray(field.offset(), field.length(this));
-    }
-    
-    /**
-     * Returns a new char array containing all the bits in this BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code char[] chars = s.toCharArray();} <br>
-     * then {@code chars.length == (s.length()+15)/16} and <br>
-     * {@code s.getBit(n) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
-     * for all {@code n < s.length()}. <br>
-     * If {@code 16*chars.length > s.length()} <br>
-     * then the last char of the array is padded on the right by
-     * {@code 16*chars.length - s.length()} ZEROS.
-     *
-     * @return a char array containing all the bits in this BitString
-     */
-    public char[] toCharArray() {
-        return iToCharArray(0, length());
-    }
-    
-    /**
-     * Returns a new char array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code char[] chars = s.toCharArray(offset, length);} <br>
-     * then {@code chars.length == (length+15)/16} and <br>
-     * {@code s.getBit(n, offset, length) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 16*chars.length > length} <br>
-     * then the last char of the array is padded on the right by
-     * {@code 16*chars.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a char array containing all the bits in a substring of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public char[] toCharArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToCharArray(offset, length);
-    }
-    
-    /**
-     * Returns a new char array containing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code char[] chars = s.toCharArray(field);} <br>
-     * then {@code chars.length == (field.length()+15)/16} and <br>
-     * {@code s.getBit(n, field) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 16*chars.length > field.length()} <br>
-     * then the last char of the array is padded on the right by
-     * {@code 16*chars.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(),
-     * but ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a char array containing all the bits in a field of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public char[] toCharArray(Field field) {
-        return toCharArray(field.offset(), field.length(this));
-    }
-    
-    /**
-     * Returns a new double array containing all the bits in this BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code double[] doubles = s.toDoubleArray();} <br>
-     * then {@code doubles.length == (s.length()+63)/64} and <br>
-     * {@code s.getBit(n) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
-     * for all {@code n < 64*s.length()}. <br>
-     * If {@code 64*doubles.length > s.length()} <br>
-     * then the last double of the array is padded on the right by
-     * {@code 64*doubles.length - s.length()} ZEROS.
-     *
-     * @return a double array containing all the bits in this BitString
-     */
-    public double[] toDoubleArray() {
-        return iToDoubleArray(0, length());
-    }
-    
-    /**
-     * Returns a new double array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code double[] doubles = s.toDoubleArray(offset, length);} <br>
-     * then {@code doubles.length == (length+63)/64} and <br>
-     * {@code s.getBit(n, offset, length) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
-     * for all {@code n < 64*length}. <br>
-     * If {@code 64*doubles.length > length} <br>
-     * then the last double of the array is padded on the right by
-     * {@code 64*doubles.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a double array containing all the bits in a substring of this
-     *         BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public double[] toDoubleArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToDoubleArray(offset, length);
-    }
-    
-    /**
-     * Returns a new double array containing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code double[] doubles = s.toDoubleArray(field);} <br>
-     * then {@code doubles.length == (field.length()+63)/64} and <br>
-     * {@code s.getBit(n, field) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
-     * for all {@code n < 64*field.length()}. <br>
-     * If {@code 64*doubles.length > field.length()} <br>
-     * then the last double of the array is padded on the right by
-     * {@code 64*doubles.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a double array containing all the bits in a field of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public double[] toDoubleArray(Field field) {
-        return toDoubleArray(field.offset(), field.length(this));
-    }
-    
-    /**
-     * Returns a new float array containing all the bits in this BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code float[] floats = s.toFloatArray();} <br>
-     * then {@code floats.length == (s.length()+31)/32} and <br>
-     * {@code s.getBit(n) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
-     * for all {@code n < s.length()}. <br>
-     * If {@code 32*floats.length > s.length()} <br>
-     * then the last float of the array is padded on the right by
-     * {@code 32*floats.length - s.length()} ZEROS.
-     *
-     * @return a float array containing all the bits in this BitString
-     */
-    public float[] toFloatArray() {
-        return iToFloatArray(0, length());
-    }
-    
-    /**
-     * Returns a new float array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code float[] floats = s.toFloatArray(offset, length);} <br>
-     * then {@code floats.length == (length+31)/32} and <br>
-     * {@code s.getBit(n, offset, length) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 32*floats.length > length} <br>
-     * then the last float of the array is padded on the right by
-     * {@code 32*floats.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a float array containing all the bits in a substring of this
-     *         BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public float[] toFloatArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToFloatArray(offset, length);
-    }
-    
-    /**
-     * Returns a new float array containing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code float[] floats = s.toFloatArray(field);} <br>
-     * then {@code floats.length == (field.length()+31)/32} and <br>
-     * {@code s.getBit(n, field) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 32*floats.length > field.length()} <br>
-     * then the last float of the array is padded on the right by
-     * {@code 32*floats.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a float array containing all the bits in a field of this
-     *         BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public float[] toFloatArray(Field field) {
-        return toFloatArray(field.offset(), field.length(this));
-    }
+//    /**
+//     * Returns a new byte array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code byte[] bytes = s.toByteArray(offset, length);} <br>
+//     * then {@code bytes.length == (length+7)/8} and <br>
+//     * {@code s.getBit(n, offset, length) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 8*bytes.length > length} <br>
+//     * then the last byte of the array is padded on the right by
+//     * {@code 8*bytes.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a byte array containing all the bits in a substring of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public byte[] toByteArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToByteArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new byte array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code byte[] bytes = s.toByteArray(field);} <br>
+//     * then {@code bytes.length == (field.length()+7)/8} and <br>
+//     * {@code s.getBit(n, field) == ((bytes[n/8] & (1<<(7-n%8))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 8*bytes.length > field.length()} <br>
+//     * then the last byte of the array is padded on the right by
+//     * {@code 8*bytes.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(),
+//     * but ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a byte array containing all the bits in a field of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public byte[] toByteArray(Field field) {
+//        return toByteArray(field.offset(), field.length(this));
+//    }
+//    
+//    /**
+//     * Returns a new char array containing all the bits in this BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code char[] chars = s.toCharArray();} <br>
+//     * then {@code chars.length == (s.length()+15)/16} and <br>
+//     * {@code s.getBit(n) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+//     * for all {@code n < s.length()}. <br>
+//     * If {@code 16*chars.length > s.length()} <br>
+//     * then the last char of the array is padded on the right by
+//     * {@code 16*chars.length - s.length()} ZEROS.
+//     *
+//     * @return a char array containing all the bits in this BitString
+//     */
+//    public char[] toCharArray() {
+//        return iToCharArray(0, length());
+//    }
+//    
+//    /**
+//     * Returns a new char array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code char[] chars = s.toCharArray(offset, length);} <br>
+//     * then {@code chars.length == (length+15)/16} and <br>
+//     * {@code s.getBit(n, offset, length) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 16*chars.length > length} <br>
+//     * then the last char of the array is padded on the right by
+//     * {@code 16*chars.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a char array containing all the bits in a substring of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public char[] toCharArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToCharArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new char array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code char[] chars = s.toCharArray(field);} <br>
+//     * then {@code chars.length == (field.length()+15)/16} and <br>
+//     * {@code s.getBit(n, field) == ((chars[n/16] & (1<<(15-n%16))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 16*chars.length > field.length()} <br>
+//     * then the last char of the array is padded on the right by
+//     * {@code 16*chars.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(),
+//     * but ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a char array containing all the bits in a field of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public char[] toCharArray(Field field) {
+//        return toCharArray(field.offset(), field.length(this));
+//    }
+//    
+//    /**
+//     * Returns a new double array containing all the bits in this BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code double[] doubles = s.toDoubleArray();} <br>
+//     * then {@code doubles.length == (s.length()+63)/64} and <br>
+//     * {@code s.getBit(n) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+//     * for all {@code n < 64*s.length()}. <br>
+//     * If {@code 64*doubles.length > s.length()} <br>
+//     * then the last double of the array is padded on the right by
+//     * {@code 64*doubles.length - s.length()} ZEROS.
+//     *
+//     * @return a double array containing all the bits in this BitString
+//     */
+//    public double[] toDoubleArray() {
+//        return iToDoubleArray(0, length());
+//    }
+//    
+//    /**
+//     * Returns a new double array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code double[] doubles = s.toDoubleArray(offset, length);} <br>
+//     * then {@code doubles.length == (length+63)/64} and <br>
+//     * {@code s.getBit(n, offset, length) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+//     * for all {@code n < 64*length}. <br>
+//     * If {@code 64*doubles.length > length} <br>
+//     * then the last double of the array is padded on the right by
+//     * {@code 64*doubles.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a double array containing all the bits in a substring of this
+//     *         BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public double[] toDoubleArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToDoubleArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new double array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code double[] doubles = s.toDoubleArray(field);} <br>
+//     * then {@code doubles.length == (field.length()+63)/64} and <br>
+//     * {@code s.getBit(n, field) == ((doubles[n/64] & (1L<<(63-n%64))) != 0)} <br>
+//     * for all {@code n < 64*field.length()}. <br>
+//     * If {@code 64*doubles.length > field.length()} <br>
+//     * then the last double of the array is padded on the right by
+//     * {@code 64*doubles.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a double array containing all the bits in a field of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public double[] toDoubleArray(Field field) {
+//        return toDoubleArray(field.offset(), field.length(this));
+//    }
+//    
+//    /**
+//     * Returns a new float array containing all the bits in this BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code float[] floats = s.toFloatArray();} <br>
+//     * then {@code floats.length == (s.length()+31)/32} and <br>
+//     * {@code s.getBit(n) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+//     * for all {@code n < s.length()}. <br>
+//     * If {@code 32*floats.length > s.length()} <br>
+//     * then the last float of the array is padded on the right by
+//     * {@code 32*floats.length - s.length()} ZEROS.
+//     *
+//     * @return a float array containing all the bits in this BitString
+//     */
+//    public float[] toFloatArray() {
+//        return iToFloatArray(0, length());
+//    }
+//    
+//    /**
+//     * Returns a new float array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code float[] floats = s.toFloatArray(offset, length);} <br>
+//     * then {@code floats.length == (length+31)/32} and <br>
+//     * {@code s.getBit(n, offset, length) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 32*floats.length > length} <br>
+//     * then the last float of the array is padded on the right by
+//     * {@code 32*floats.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a float array containing all the bits in a substring of this
+//     *         BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public float[] toFloatArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToFloatArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new float array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code float[] floats = s.toFloatArray(field);} <br>
+//     * then {@code floats.length == (field.length()+31)/32} and <br>
+//     * {@code s.getBit(n, field) == ((floats[n/32] & (1<<(31-n%32))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 32*floats.length > field.length()} <br>
+//     * then the last float of the array is padded on the right by
+//     * {@code 32*floats.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a float array containing all the bits in a field of this
+//     *         BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public float[] toFloatArray(Field field) {
+//        return toFloatArray(field.offset(), field.length(this));
+//    }
     
     /**
      * Returns a new int array containing all the bits in this BitString.
@@ -7131,60 +7143,60 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iToIntArray(0, length());
     }
     
-    /**
-     * Returns a new int array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code int[] ints = s.toIntArray(offset, length);} <br>
-     * then {@code ints.length == (length+31)/32} and <br>
-     * {@code s.getBit(n, offset, length) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 32*ints.length > length} <br>
-     * then the last int of the array is padded on the right by
-     * {@code 32*ints.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a int array containing all the bits in a substring of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public int[] toIntArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToIntArray(offset, length);
-    }
-    
-    /**
-     * Returns a new int array containing all the bits in a field of this BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code int[] ints = s.toIntArray(field);} <br>
-     * then {@code ints.length == (field.length()+31)/32} and <br>
-     * {@code s.getBit(n, field) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 32*ints.length > field.length()} <br>
-     * then the last int of the array is padded on the right by
-     * {@code 32*ints.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a int array containing all the bits in a field of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public int[] toIntArray(Field field) {
-        return toIntArray(field.offset(), field.length(this));
-    }
+//    /**
+//     * Returns a new int array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code int[] ints = s.toIntArray(offset, length);} <br>
+//     * then {@code ints.length == (length+31)/32} and <br>
+//     * {@code s.getBit(n, offset, length) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 32*ints.length > length} <br>
+//     * then the last int of the array is padded on the right by
+//     * {@code 32*ints.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a int array containing all the bits in a substring of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public int[] toIntArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToIntArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new int array containing all the bits in a field of this BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code int[] ints = s.toIntArray(field);} <br>
+//     * then {@code ints.length == (field.length()+31)/32} and <br>
+//     * {@code s.getBit(n, field) == ((ints[n/32] & (1<<(31-n%32))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 32*ints.length > field.length()} <br>
+//     * then the last int of the array is padded on the right by
+//     * {@code 32*ints.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a int array containing all the bits in a field of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public int[] toIntArray(Field field) {
+//        return toIntArray(field.offset(), field.length(this));
+//    }
 
     /**
      * Returns a new long array containing all the bits in this BitString.
@@ -7204,61 +7216,61 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iToLongArray(0, length());
     }
     
-    /**
-     * Returns a new long array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code long[] longs = s.toLongArray(offset, length);} <br>
-     * then {@code longs.length == (length+63)/64} and <br>
-     * {@code s.getBit(n, offset, length) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 64*longs.length > length} <br>
-     * then the last long of the array is padded on the right by
-     * {@code 64*longs.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a long array containing all the bits in this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public long[] toLongArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToLongArray(offset, length);
-    }
-    
-    /**
-     * Returns a new long array containing all the bits in a field of this
-     * BitString.
-     * <p>
-     * More precisely, if <br>
-     * {@code long[] longs = s.toLongArray(field);} <br>
-     * then {@code longs.length == (field.length()+63)/64} and <br>
-     * {@code s.getBit(n, field) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 64*longs.length > field.length()} <br>
-     * then the last long of the array is padded on the right by
-     * {@code 64*longs.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a long array containing all the bits in this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public long[] toLongArray(Field field) {
-        return toLongArray(field.offset(), field.length(this));
-    }
+//    /**
+//     * Returns a new long array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code long[] longs = s.toLongArray(offset, length);} <br>
+//     * then {@code longs.length == (length+63)/64} and <br>
+//     * {@code s.getBit(n, offset, length) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 64*longs.length > length} <br>
+//     * then the last long of the array is padded on the right by
+//     * {@code 64*longs.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a long array containing all the bits in this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public long[] toLongArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToLongArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new long array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code long[] longs = s.toLongArray(field);} <br>
+//     * then {@code longs.length == (field.length()+63)/64} and <br>
+//     * {@code s.getBit(n, field) == ((longs[n/64] & (1L<<(63-n%64))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 64*longs.length > field.length()} <br>
+//     * then the last long of the array is padded on the right by
+//     * {@code 64*longs.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a long array containing all the bits in this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public long[] toLongArray(Field field) {
+//        return toLongArray(field.offset(), field.length(this));
+//    }
     
     /**
      * Returns a new short array containing all the bits in this BitString.
@@ -7278,123 +7290,247 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iToShortArray(0, length());
     }
     
-    /**
-     * Returns a new short array containing all the bits in a substring of this
-     * BitString.
-     * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * <p>
-     * More precisely, if <br>
-     * {@code short[] shorts = s.toShortArray(offset, length);} <br>
-     * then {@code shorts.length == (length+15)/16} and <br>
-     * {@code s.getBit(n, offset, length) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
-     * for all {@code n < length}. <br>
-     * If {@code 16*shorts.length > length} <br>
-     * then the last short of the array is padded on the right by
-     * {@code 16*shorts.length - length} ZEROS.
-     *
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a int array containing all the bits in a substring of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
-     */
-    public short[] toShortArray(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
-        return iToShortArray(offset, length);
-    }
+//    /**
+//     * Returns a new short array containing all the bits in a substring of this
+//     * BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code short[] shorts = s.toShortArray(offset, length);} <br>
+//     * then {@code shorts.length == (length+15)/16} and <br>
+//     * {@code s.getBit(n, offset, length) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
+//     * for all {@code n < length}. <br>
+//     * If {@code 16*shorts.length > length} <br>
+//     * then the last short of the array is padded on the right by
+//     * {@code 16*shorts.length - length} ZEROS.
+//     *
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a int array containing all the bits in a substring of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public short[] toShortArray(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        return iToShortArray(offset, length);
+//    }
+//    
+//    /**
+//     * Returns a new short array containing all the bits in a field of this
+//     * BitString.
+//     * <p>
+//     * More precisely, if <br>
+//     * {@code short[] shorts = s.toShortArray(field);} <br>
+//     * then {@code shorts.length == (field.length()+15)/16} and <br>
+//     * {@code s.getBit(n, field) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
+//     * for all {@code n < field.length()}. <br>
+//     * If {@code 16*shorts.length > field.length()} <br>
+//     * then the last short of the array is padded on the right by
+//     * {@code 16*shorts.length - field.length()} ZEROS. <br>
+//     * Note: the length of the ALL field constant is effectively s.length(), but
+//     * ALL.length() returns 0.
+//     *
+//     * @param field a Field of this BitString
+//     * @return a int array containing all the bits in a field of this BitString
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public short[] toShortArray(Field field) {
+//        return toShortArray(field.offset(), field.length(this));
+//    }
     
     /**
-     * Returns a new short array containing all the bits in a field of this
+     * Returns a String of binary digits, representing all the bits in this
      * BitString.
      * <p>
-     * More precisely, if <br>
-     * {@code short[] shorts = s.toShortArray(field);} <br>
-     * then {@code shorts.length == (field.length()+15)/16} and <br>
-     * {@code s.getBit(n, field) == ((shorts[n/16] & (1<<(15-n%16))) != 0)} <br>
-     * for all {@code n < field.length()}. <br>
-     * If {@code 16*shorts.length > field.length()} <br>
-     * then the last short of the array is padded on the right by
-     * {@code 16*shorts.length - field.length()} ZEROS. <br>
-     * Note: the length of the ALL field constant is effectively s.length(), but
-     * ALL.length() returns 0.
-     *
-     * @param field a Field of this BitString
-     * @return a int array containing all the bits in a field of this BitString
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
-     */
-    public short[] toShortArray(Field field) {
-        return toShortArray(field.offset(), field.length(this));
-    }
-    
-    /**
-     * Returns a String of '0's and '1's, representing all the bits in this
-     * BitString.
+     * The characters {@code '0'} ({@code '\u005Cu0030'}) and {@code
+     * '1'} ({@code '\u005Cu0031'}) are used as binary digits.
+     * <p>
+     * This method is equivalent to {@link #toBinaryString}.
      * 
-     * @return a String of '0's and '1's, representing all the bits in this
+     * @return a String of binary digits, representing all the bits in this
      *         BitString
      * @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
      */
     @Override
     public String toString() {
-        return toString(0, this.length());
+        return toBinaryString();
     }
     
+//    /**
+//     * Returns a String of '0's and '1's, representing all the bits in a substring
+//     * of this BitString.
+//     * 
+//     * The substring starts at offset 'offset' of this BitString and has a
+//     * length of 'length'.
+//     * 
+//     * @param offset the offset of this substring
+//     * @param length the length of this substring
+//     * @return a String of '0's and '1's, representing all the bits in a substring
+//     *         of this BitString
+//     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code length < 0 || length > this.length() - offset}
+//     */
+//    public String toString(int offset, int length) {
+//        checkThisOffset(offset);
+//        checkThisLength(offset, length);
+//        if (length == 0) return "";
+//        final StringBuilder string = new StringBuilder(length);
+//        final int[] iterator = getIterator(offset, length);
+//        while (hasNextIteratorWord(iterator)) {
+//            final long word = getNextIteratorFullWord(iterator);
+//            String wordString = String.format("%64s", Long.toBinaryString(word)).replace(' ', '0');
+//            final int wordBitCount = getIteratorWordBitCount(iterator);
+//            if (wordBitCount < BITS_PER_WORD) wordString = wordString.substring(0, wordBitCount);
+//            string.append(wordString);
+//        }
+//        return string.toString();
+//    }
+    
+//    /**
+//     * Returns a String of '0's and '1's, representing all the bits in a field of
+//     * this BitString.
+//     * 
+//     * @param field a Field of this BitString
+//     * @return a String of '0's and '1's, representing all the bits in a field of
+//     *         this BitString
+//     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
+//     * @throws StringIndexOutOfBoundsException if
+//     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
+//     * @throws IllegalArgumentException        if
+//     *                                         {@code field.length() > this.length() - field.offset()}
+//     */
+//    public String toString(Field field) {
+//        return toString(field.offset(), field.length(this));
+//    }
+    
     /**
-     * Returns a String of '0's and '1's, representing all the bits in a substring
-     * of this BitString.
+     * Returns a String of binary digits, representing all the bits in this
+     * BitString.
+     * <p>
+     * The characters {@code '0'} ({@code '\u005Cu0030'}) and {@code
+     * '1'} ({@code '\u005Cu0031'}) are used as binary digits.
      * 
-     * The substring starts at offset 'offset' of this BitString and has a
-     * length of 'length'.
-     * 
-     * @param offset the offset of this substring
-     * @param length the length of this substring
-     * @return a String of '0's and '1's, representing all the bits in a substring
-     *         of this BitString
-     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code offset < 0 || offset > 0 && offset >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code length < 0 || length > this.length() - offset}
+     * @return a String of binary digits, representing all the bits in this
+     *         BitString
+     * @throws java.lang.OutOfMemoryError Requested array size exceeds VM limit
      */
-    public String toString(int offset, int length) {
-        checkThisOffset(offset);
-        checkThisLength(offset, length);
+    public String toBinaryString() {
+        final int offset = 0;
+        final int length = this.length();
         if (length == 0) return "";
-        final StringBuilder string = new StringBuilder(length);
+        final StringBuilder binaryString = new StringBuilder(length);
         final int[] iterator = getIterator(offset, length);
         while (hasNextIteratorWord(iterator)) {
             final long word = getNextIteratorFullWord(iterator);
-            String wordString = String.format("%64s", Long.toBinaryString(word)).replace(' ', '0');
+            String binarySubString = String.format("%64s", Long.toBinaryString(word)).replace(' ', '0');
             final int wordBitCount = getIteratorWordBitCount(iterator);
-            if (wordBitCount < BITS_PER_WORD) wordString = wordString.substring(0, wordBitCount);
-            string.append(wordString);
+            if (wordBitCount < BITS_PER_WORD) binarySubString = binarySubString.substring(0, wordBitCount);
+            binaryString.append(binarySubString);
         }
-        return string.toString();
+        return binaryString.toString();
     }
     
     /**
-     * Returns a String of '0's and '1's, representing all the bits in a field of
-     * this BitString.
+     * Returns a String, of hexadecimal digits, representing all the bits in this
+     * BitString.
+     * <p>
+     * The following characters are used as hexadecimal digits:
      * 
-     * @param field a Field of this BitString
-     * @return a String of '0's and '1's, representing all the bits in a field of
-     *         this BitString
-     * @throws java.lang.OutOfMemoryError      Requested array size exceeds VM limit
-     * @throws StringIndexOutOfBoundsException if
-     *                                         {@code field.offset() > 0 && field.offset() >= this.length()}
-     * @throws IllegalArgumentException        if
-     *                                         {@code field.length() > this.length() - field.offset()}
+     * <blockquote> {@code 0123456789abcdef} </blockquote>
+     *
+     * These are the characters {@code '\u005Cu0030'} through {@code '\u005Cu0039'}
+     * and {@code '\u005Cu0061'} through {@code '\u005Cu0066'}.
+     * <p>
+     * BitStrings are processed from left to right; from the lowest offset to the
+     * highest offset. Any remaining bits on the far right that do not form a full
+     * hexadecimal digit, will be padded on the right with character {@code '0'}
+     * ({@code '\u005Cu0030'}).
+     * 
+     * @return a String, of hexadecimal digits, representing all the bits in this
+     *         BitString
      */
-    public String toString(Field field) {
-        return toString(field.offset(), field.length(this));
+    public String toHexString() {
+        final int offset = 0;
+        final int length = this.length();
+        if (length == 0) return "";
+        final int bitsPerHexDigit = 4;
+        final int HexDigitsPerWord = 16;
+        int hexCount = (length - 1) / bitsPerHexDigit + 1;
+        final StringBuilder hexString = new StringBuilder(hexCount);
+        final int[] iterator = getIterator(offset, length);
+        while (hasNextIteratorWord(iterator)) {
+            final long word = getNextIteratorFullWord(iterator);
+            String hexSubString = String.format("%16s", Long.toHexString(word)).replace(' ', '0');
+            if (hexCount < HexDigitsPerWord) hexSubString = hexSubString.substring(0, hexCount);
+            hexString.append(hexSubString);
+            hexCount -= HexDigitsPerWord;
+        }
+        return hexString.toString();
+    }
+    
+    /**
+     * Returns a String, of octal digits, representing all the bits in this
+     * BitString.
+     * <p>
+     * The following characters are used as octal digits:
+     * 
+     * <blockquote> {@code 01234567} </blockquote>
+     *
+     * These are the characters {@code '\u005Cu0030'} through {@code '\u005Cu0037'}.
+     * <p>
+     * BitStrings are processed from left to right; from the lowest offset to the
+     * highest offset. Any remaining bits on the far right that do not form a full
+     * octal digit, will be padded on the right with character {@code '0'}
+     * ({@code '\u005Cu0030'}).
+     * 
+     * @return a String, of octal digits, representing all the bits in this
+     *         BitString
+     */
+    public String toOctalString() {
+        final int offset = 0;
+        final int length = this.length();
+        if (length == 0) return "";
+        final int bitsPerOctalDigit = 3;
+        final int octalDigitsPerWord = 21;
+        int octalCount = (length - 1) / bitsPerOctalDigit + 1;
+        final StringBuilder octalString = new StringBuilder(octalCount);
+        final int[] iterator = getIterator(offset, length);
+        while (octalCount > 0) {
+            long prevWord = 0L;
+            // a word contains 21 full octal digits (3 bits each for 63 bits) with one
+            // extra bit at the end which goes with the next two bits in the next word.
+            // Therefore, each word is shifted one bit to the right before it is
+            // converted to octal digits. In addition, any bits that were shifted
+            // out of the previous word, need to be shifted into the current word.
+            // After every third word that has been shifted as described above,
+            // the 3 bits that were shifted out of the current word constitute one
+            // octal digit.
+            for (int n = 0; n < bitsPerOctalDigit && octalCount > 0; n++) {
+                final long word = (hasNextIteratorWord(iterator)) ? getNextIteratorFullWord(iterator) : 0L;
+                final long octalWord = ((n == 0) ? word : shiftArgsRight(n, prevWord, word)) >>> 1;
+                String octalSubString = String.format("%21s", Long.toOctalString(octalWord)).replace(' ', '0');
+                if (octalCount < octalDigitsPerWord) octalSubString = octalSubString.substring(0, octalCount);
+                octalString.append(octalSubString);
+                octalCount -= octalDigitsPerWord;
+                prevWord = word;
+            }
+            if (octalCount > 0) {
+                octalString.append(Long.toOctalString(prevWord & 0x00000007L));
+                octalCount--;
+            }
+        }
+        return octalString.toString();
     }
 
     /**
@@ -7552,28 +7688,31 @@ public abstract class BitString implements Cloneable, Serializable  {
             throwCanNotBeModifiedException();
         }
         
-        private String noCapacityMsg() {
-            return "BitString Constants have no actual capacity";
-        }
+//        private String noCapacityMsg() {
+//            return "BitString Constants have no actual capacity";
+//        }
         
         @Override
         void resizeBackingArray(int capacity) {
-            throw new UnsupportedOperationException(noCapacityMsg());
+            throw new UnsupportedOperationException();
         }
         
         @Override
         public int capacity() {
-            throw new UnsupportedOperationException(noCapacityMsg());
+            return Integer.MAX_VALUE;
+            //throw new UnsupportedOperationException(noCapacityMsg());
         }
         
         @Override
         public int ensureCapacity(int bitsRequired) {
-            throw new UnsupportedOperationException(noCapacityMsg());
+            return capacity();
+            //throw new UnsupportedOperationException(noCapacityMsg());
         }
         
         @Override
         public int trimToLength() {
-            throw new UnsupportedOperationException(noCapacityMsg());
+            return capacity();
+            //throw new UnsupportedOperationException(noCapacityMsg());
         }
         
         @Override
@@ -7641,7 +7780,8 @@ public abstract class BitString implements Cloneable, Serializable  {
         
         @Override
         void resizeBackingArray(int capacity) {
-            base.resizeBackingArray(capacity);
+            throw new UnsupportedOperationException();
+            //base.resizeBackingArray(capacity);
         }
         
         @Override
