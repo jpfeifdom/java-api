@@ -43,6 +43,14 @@ import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.function.IntToLongFunction;
 
+/**
+ * Creates a BitString that is backed by an array of bytes.
+ * 
+ * @author James Pfeifer
+ * @since 1.1
+ * @since JDK 1.8
+ *
+ */
 public class ByteBitString extends BitString {
     
     /**
@@ -155,6 +163,10 @@ public class ByteBitString extends BitString {
 //        }
 //    }
     
+    public static ByteBitString valueOf(boolean primitiveBoolean) {
+        return new ByteBitString(new byte[] {(byte)(primitiveBoolean ? 0x80 : 0x00)}, 1);
+    }
+    
     /**
      * Returns a new BitString containing all the bits in the given boolean array.
      * <p>
@@ -178,6 +190,10 @@ public class ByteBitString extends BitString {
             if (booleans[i]) bytes[b] |= 0x80 >>> p;
         }
         return new ByteBitString(bytes, booleans.length);
+    }
+    
+    public static ByteBitString valueOf(byte primitiveByte) {
+        return new ByteBitString(new byte[] {primitiveByte}, Byte.SIZE);
     }
     
     /**
@@ -205,70 +221,86 @@ public class ByteBitString extends BitString {
         return new ByteBitString(Arrays.copyOf(bytes, bytes.length), length);
     }
     
-//    /**
-//     * Returns a new BitString containing all the bits in the given char array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(chars).getBit(n) == ((chars[n/16] & (0x8000>>>(n%16))) != 0)}<br>
-//     * for all {@code n < 16 * chars.length}.
-//     * <p>
-//     * This method is equivalent to {@code BitSet.valueOf(CharBuffer.wrap(chars))}.
-//     *
-//     * @param chars a char array containing a big-endian representation of a
-//     *              sequence of bits to be used as the initial bits of the new
-//     *              BitString
-//     * @return a {@code BitString} containing all the bits in the char array
-//     */
-//    public static ByteBitString valueOf(char[] chars) {
-//        //checkNewBitStringLength(chars.length * (long)Character.SIZE);
-//        if (chars.length > MAX_CHARS) throw new IllegalArgumentException("char array is too large");
-//        final int length = (chars.length == MAX_CHARS) ? Integer.MAX_VALUE : chars.length * Character.SIZE;
-//        return new ByteBitString(unpackChars(chars), length);
-//    }
-//    
-//    /**
-//     * Returns a new BitString containing all the bits in the given double array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(doubles).getBit(n) == ((doubles[n/64] & (0x8000000000000000L>>>(n%64))) != 0)}<br>
-//     * for all {@code n < 64 * doubles.length}.
-//     * <p>
-//     * This method is equivalent to
-//     * {@code BitSet.valueOf(DoubleBuffer.wrap(doubles))}.
-//     *
-//     * @param doubles a double array containing a big-endian representation of a
-//     *                sequence of bits to be used as the initial bits of the new
-//     *                BitString
-//     * @return a {@code BitString} containing all the bits in the double array
-//     */
-//    public static ByteBitString valueOf(double[] doubles) {
-//        //checkNewBitStringLength(doubles.length * (long)Double.SIZE);
-//        if (doubles.length > MAX_DOUBLES) throw new IllegalArgumentException("double array is too large");
-//        final int length = (doubles.length == MAX_DOUBLES) ? Integer.MAX_VALUE : doubles.length * Double.SIZE;
-//        return new ByteBitString(unpackDoubles(doubles), length);
-//    }
-//    
-//    /**
-//     * Returns a new BitString containing all the bits in the given float array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(floats).getBit(n) == ((floats[n/32] & (0x80000000>>>(n%32))) != 0)}<br>
-//     * for all {@code n < 32 * floats.length}.
-//     * <p>
-//     * This method is equivalent to
-//     * {@code BitSet.valueOf(FloatBuffer.wrap(floats))}.
-//     *
-//     * @param floats a float array containing a big-endian representation of a
-//     *               sequence of bits to be used as the initial bits of the new
-//     *               BitString
-//     * @return a {@code BitString} containing all the bits in the float array
-//     */
-//    public static ByteBitString valueOf(float[] floats) {
-//        //checkNewBitStringLength(floats.length * (long)Float.SIZE);
-//        if (floats.length > MAX_FLOATS) throw new IllegalArgumentException("float array is too large");
-//        final int length = (floats.length == MAX_FLOATS) ? Integer.MAX_VALUE : floats.length * Float.SIZE;
-//        return new ByteBitString(unpackFloats(floats), length);
-//    }
+    public static ByteBitString valueOf(char primitiveChar) {
+        return new ByteBitString(unpackChars(new char[] {primitiveChar}), Character.SIZE);
+    }
+    
+    /**
+     * Returns a new BitString containing all the bits in the given char array.
+     * <p>
+     * More precisely, <br>
+     * {@code BitString.valueOf(chars).getBit(n) == ((chars[n/16] & (0x8000>>>(n%16))) != 0)}<br>
+     * for all {@code n < 16 * chars.length}.
+     * <p>
+     * This method is equivalent to {@code BitSet.valueOf(CharBuffer.wrap(chars))}.
+     *
+     * @param chars a char array containing a big-endian representation of a
+     *              sequence of bits to be used as the initial bits of the new
+     *              BitString
+     * @return a {@code BitString} containing all the bits in the char array
+     */
+    public static ByteBitString valueOf(char[] chars) {
+        //checkNewBitStringLength(chars.length * (long)Character.SIZE);
+        if (chars.length > MAX_CHARS) throw new IllegalArgumentException("char array is too large");
+        final int length = (chars.length == MAX_CHARS) ? Integer.MAX_VALUE : chars.length * Character.SIZE;
+        return new ByteBitString(unpackChars(chars), length);
+    }
+    
+    public static ByteBitString valueOf(double primitiveDouble) {
+        return new ByteBitString(unpackDoubles(new double[] {primitiveDouble}), Double.SIZE);
+    }
+    
+    /**
+     * Returns a new BitString containing all the bits in the given double array.
+     * <p>
+     * More precisely, <br>
+     * {@code BitString.valueOf(doubles).getBit(n) == ((doubles[n/64] & (0x8000000000000000L>>>(n%64))) != 0)}<br>
+     * for all {@code n < 64 * doubles.length}.
+     * <p>
+     * This method is equivalent to
+     * {@code BitSet.valueOf(DoubleBuffer.wrap(doubles))}.
+     *
+     * @param doubles a double array containing a big-endian representation of a
+     *                sequence of bits to be used as the initial bits of the new
+     *                BitString
+     * @return a {@code BitString} containing all the bits in the double array
+     */
+    public static ByteBitString valueOf(double[] doubles) {
+        //checkNewBitStringLength(doubles.length * (long)Double.SIZE);
+        if (doubles.length > MAX_DOUBLES) throw new IllegalArgumentException("double array is too large");
+        final int length = (doubles.length == MAX_DOUBLES) ? Integer.MAX_VALUE : doubles.length * Double.SIZE;
+        return new ByteBitString(unpackDoubles(doubles), length);
+    }
+    
+    public static ByteBitString valueOf(float primitiveFloat) {
+        return new ByteBitString(unpackFloats(new float[] {primitiveFloat}), Float.SIZE);
+    }
+    
+    /**
+     * Returns a new BitString containing all the bits in the given float array.
+     * <p>
+     * More precisely, <br>
+     * {@code BitString.valueOf(floats).getBit(n) == ((floats[n/32] & (0x80000000>>>(n%32))) != 0)}<br>
+     * for all {@code n < 32 * floats.length}.
+     * <p>
+     * This method is equivalent to
+     * {@code BitSet.valueOf(FloatBuffer.wrap(floats))}.
+     *
+     * @param floats a float array containing a big-endian representation of a
+     *               sequence of bits to be used as the initial bits of the new
+     *               BitString
+     * @return a {@code BitString} containing all the bits in the float array
+     */
+    public static ByteBitString valueOf(float[] floats) {
+        //checkNewBitStringLength(floats.length * (long)Float.SIZE);
+        if (floats.length > MAX_FLOATS) throw new IllegalArgumentException("float array is too large");
+        final int length = (floats.length == MAX_FLOATS) ? Integer.MAX_VALUE : floats.length * Float.SIZE;
+        return new ByteBitString(unpackFloats(floats), length);
+    }
+    
+    public static ByteBitString valueOf(int primitiveInt) {
+        return new ByteBitString(unpackInts(new int[] {primitiveInt}), Integer.SIZE);
+    }
     
     /**
      * Returns a new BitString containing all the bits in the given int array.
@@ -290,6 +322,10 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackInts(ints), length);
     }
     
+    public static ByteBitString valueOf(long primitiveLong) {
+        return new ByteBitString(unpackLongs(new long[] {primitiveLong}), Long.SIZE);
+    }
+    
     /**
      * Returns a new BitString containing all the bits in the given long array.
      * <p>
@@ -309,6 +345,10 @@ public class ByteBitString extends BitString {
         if (longs.length > MAX_LONGS) throw new IllegalArgumentException("long array is too large");
         final int length = (longs.length == MAX_LONGS) ? Integer.MAX_VALUE : longs.length * Long.SIZE;
         return new ByteBitString(unpackLongs(longs), length);
+    }
+    
+    public static ByteBitString valueOf(short primitiveShort) {
+        return new ByteBitString(unpackShorts(new short[] {primitiveShort}), Short.SIZE);
     }
     
     /**
@@ -439,20 +479,20 @@ public class ByteBitString extends BitString {
         }
     }
     
-//    private static byte[] unpackChars(char[] chars) {
-//        return unpack(chars.length, Character.BYTES,
-//                (index) -> { return (long)(chars[index]); });
-//    }
-//    
-//    private static byte[] unpackDoubles(double[] doubles) {
-//        return unpack(doubles.length, Long.BYTES,
-//                (index) -> { return Double.doubleToRawLongBits(doubles[index]); });
-//    }
-//    
-//    private static byte[] unpackFloats(float[] floats) {
-//        return unpack(floats.length, Integer.BYTES,
-//                (index) -> { return Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])); });
-//    }
+    private static byte[] unpackChars(char[] chars) {
+        return unpack(chars.length, Character.BYTES,
+                (index) -> { return (long)(chars[index]); });
+    }
+    
+    private static byte[] unpackDoubles(double[] doubles) {
+        return unpack(doubles.length, Long.BYTES,
+                (index) -> { return Double.doubleToRawLongBits(doubles[index]); });
+    }
+    
+    private static byte[] unpackFloats(float[] floats) {
+        return unpack(floats.length, Integer.BYTES,
+                (index) -> { return Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])); });
+    }
     
     private static byte[] unpackInts(int[] ints) {
         return unpack(ints.length, Integer.BYTES,

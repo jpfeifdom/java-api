@@ -48,6 +48,7 @@ import java.util.Objects;
  * This is a functional interface whose functional method is
  * {@link #test(int, int)}.
  *
+ * @author James Pfeifer
  * @see java.util.function.Predicate
  * @since 1.1
  * @since JDK 1.8

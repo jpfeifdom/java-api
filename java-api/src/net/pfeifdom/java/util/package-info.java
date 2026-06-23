@@ -53,6 +53,7 @@
  * <li>the list could have more than {@code Integer.MAX_VALUE} elements
  * </ul>
  * 
+ * @author James Pfeifer
  * @since 1.0.0
  */
 package net.pfeifdom.java.util;

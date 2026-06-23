@@ -49,6 +49,7 @@ package net.pfeifdom.java.util.function;
  * This is a functional interface whose functional method is
  * {@link #accept(int, long)}.
  *
+ * @author James Pfeifer
  * @see java.util.function.BiConsumer
  * @since 1.1
  * @since JDK 1.8

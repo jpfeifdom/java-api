@@ -59,6 +59,7 @@
  * reference to an object implementing the appropriate functional interface,
  * unless potential nullity is explicitly specified.
  *
+ * @author James Pfeifer
  * @see java.lang.FunctionalInterface
  * @since 1.1.0
  */

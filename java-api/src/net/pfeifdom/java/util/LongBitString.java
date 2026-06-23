@@ -42,6 +42,14 @@ import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
 
+/**
+ * Creates a BitString that is backed by an array of longs.
+ * 
+ * @author James Pfeifer
+ * @since 1.1
+ * @since JDK 1.8
+ *
+ */
 public class LongBitString extends BitString {
     
     /**
@@ -154,6 +162,12 @@ public class LongBitString extends BitString {
 //        }
 //    }
     
+    //public static LongBitString
+    
+    public static LongBitString valueOf(boolean primitiveBoolean) {
+        return new LongBitString(packBooleans(new boolean[] {primitiveBoolean}), 1);
+    }
+    
     /**
      * Returns a new BitString containing all the bits in the given boolean array.
      * <p>
@@ -171,6 +185,10 @@ public class LongBitString extends BitString {
      */
     public static LongBitString valueOf(boolean[] booleans) {
         return new LongBitString(packBooleans(booleans), booleans.length);
+    }
+    
+    public static LongBitString valueOf(byte primitiveByte) {
+        return new LongBitString(packBytes(new byte[] {primitiveByte}), Byte.SIZE);
     }
     
     /**
@@ -198,70 +216,86 @@ public class LongBitString extends BitString {
         return new LongBitString(packBytes(bytes), length);
     }
     
-//    /**
-//     * Returns a new BitString containing all the bits in the given char array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(chars).getBit(n) == ((chars[n/16] & (0x8000>>>(n%16))) != 0)}<br>
-//     * for all {@code n < 16 * chars.length}.
-//     * <p>
-//     * This method is equivalent to {@code BitSet.valueOf(CharBuffer.wrap(chars))}.
-//     *
-//     * @param chars a char array containing a big-endian representation of a
-//     *              sequence of bits to be used as the initial bits of the new
-//     *              BitString
-//     * @return a {@code BitString} containing all the bits in the char array
-//     */
-//    public static LongBitString valueOf(char[] chars) {
-//        //checkNewBitStringLength(chars.length * (long)Character.SIZE);
-//        if (chars.length > MAX_CHARS) throw new IllegalArgumentException("char array is too large");
-//        final int length = (chars.length == MAX_CHARS) ? Integer.MAX_VALUE : chars.length * Character.SIZE;
-//        return new LongBitString(packChars(chars), length);
-//    }
-//    
-//    /**
-//     * Returns a new BitString containing all the bits in the given double array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(doubles).getBit(n) == ((doubles[n/64] & (0x8000000000000000L>>>(n%64))) != 0)}<br>
-//     * for all {@code n < 64 * doubles.length}.
-//     * <p>
-//     * This method is equivalent to
-//     * {@code BitSet.valueOf(DoubleBuffer.wrap(doubles))}.
-//     *
-//     * @param doubles a double array containing a big-endian representation of a
-//     *                sequence of bits to be used as the initial bits of the new
-//     *                BitString
-//     * @return a {@code BitString} containing all the bits in the double array
-//     */
-//    public static LongBitString valueOf(double[] doubles) {
-//        //checkNewBitStringLength(doubles.length * (long)Double.SIZE);
-//        if (doubles.length > MAX_DOUBLES) throw new IllegalArgumentException("double array is too large");
-//        final int length = (doubles.length == MAX_DOUBLES) ? Integer.MAX_VALUE : doubles.length * Double.SIZE;
-//        return new LongBitString(packDoubles(doubles), length);
-//    }
-//    
-//    /**
-//     * Returns a new BitString containing all the bits in the given float array.
-//     * <p>
-//     * More precisely, <br>
-//     * {@code BitString.valueOf(floats).getBit(n) == ((floats[n/32] & (0x80000000>>>(n%32))) != 0)}<br>
-//     * for all {@code n < 32 * floats.length}.
-//     * <p>
-//     * This method is equivalent to
-//     * {@code BitSet.valueOf(FloatBuffer.wrap(floats))}.
-//     *
-//     * @param floats a float array containing a big-endian representation of a
-//     *               sequence of bits to be used as the initial bits of the new
-//     *               BitString
-//     * @return a {@code BitString} containing all the bits in the float array
-//     */
-//    public static LongBitString valueOf(float[] floats) {
-//        //checkNewBitStringLength(floats.length * (long)Float.SIZE);
-//        if (floats.length > MAX_FLOATS) throw new IllegalArgumentException("float array is too large");
-//        final int length = (floats.length == MAX_FLOATS) ? Integer.MAX_VALUE : floats.length * Float.SIZE;
-//        return new LongBitString(packFloats(floats), length);
-//    }
+    public static LongBitString valueOf(char primitiveChar) {
+        return new LongBitString(packChars(new char[] {primitiveChar}), Character.SIZE);
+    }
+    
+  /**
+   * Returns a new BitString containing all the bits in the given char array.
+   * <p>
+   * More precisely, <br>
+   * {@code BitString.valueOf(chars).getBit(n) == ((chars[n/16] & (0x8000>>>(n%16))) != 0)}<br>
+   * for all {@code n < 16 * chars.length}.
+   * <p>
+   * This method is equivalent to {@code BitSet.valueOf(CharBuffer.wrap(chars))}.
+   *
+   * @param chars a char array containing a big-endian representation of a
+   *              sequence of bits to be used as the initial bits of the new
+   *              BitString
+   * @return a {@code BitString} containing all the bits in the char array
+   */
+  public static LongBitString valueOf(char[] chars) {
+      //checkNewBitStringLength(chars.length * (long)Character.SIZE);
+      if (chars.length > MAX_CHARS) throw new IllegalArgumentException("char array is too large");
+      final int length = (chars.length == MAX_CHARS) ? Integer.MAX_VALUE : chars.length * Character.SIZE;
+      return new LongBitString(packChars(chars), length);
+  }
+  
+  public static LongBitString valueOf(double primitiveDouble) {
+      return new LongBitString(packDoubles(new double[] {primitiveDouble}), Double.SIZE);
+  }
+  
+  /**
+   * Returns a new BitString containing all the bits in the given double array.
+   * <p>
+   * More precisely, <br>
+   * {@code BitString.valueOf(doubles).getBit(n) == ((doubles[n/64] & (0x8000000000000000L>>>(n%64))) != 0)}<br>
+   * for all {@code n < 64 * doubles.length}.
+   * <p>
+   * This method is equivalent to
+   * {@code BitSet.valueOf(DoubleBuffer.wrap(doubles))}.
+   *
+   * @param doubles a double array containing a big-endian representation of a
+   *                sequence of bits to be used as the initial bits of the new
+   *                BitString
+   * @return a {@code BitString} containing all the bits in the double array
+   */
+  public static LongBitString valueOf(double[] doubles) {
+      //checkNewBitStringLength(doubles.length * (long)Double.SIZE);
+      if (doubles.length > MAX_DOUBLES) throw new IllegalArgumentException("double array is too large");
+      final int length = (doubles.length == MAX_DOUBLES) ? Integer.MAX_VALUE : doubles.length * Double.SIZE;
+      return new LongBitString(packDoubles(doubles), length);
+  }
+  
+  public static LongBitString valueOf(float primitiveFloat) {
+      return new LongBitString(packFloats(new float[] {primitiveFloat}), Float.SIZE);
+  }
+  
+  /**
+   * Returns a new BitString containing all the bits in the given float array.
+   * <p>
+   * More precisely, <br>
+   * {@code BitString.valueOf(floats).getBit(n) == ((floats[n/32] & (0x80000000>>>(n%32))) != 0)}<br>
+   * for all {@code n < 32 * floats.length}.
+   * <p>
+   * This method is equivalent to
+   * {@code BitSet.valueOf(FloatBuffer.wrap(floats))}.
+   *
+   * @param floats a float array containing a big-endian representation of a
+   *               sequence of bits to be used as the initial bits of the new
+   *               BitString
+   * @return a {@code BitString} containing all the bits in the float array
+   */
+  public static LongBitString valueOf(float[] floats) {
+      //checkNewBitStringLength(floats.length * (long)Float.SIZE);
+      if (floats.length > MAX_FLOATS) throw new IllegalArgumentException("float array is too large");
+      final int length = (floats.length == MAX_FLOATS) ? Integer.MAX_VALUE : floats.length * Float.SIZE;
+      return new LongBitString(packFloats(floats), length);
+  }
+    
+    public static LongBitString valueOf(int primitiveInt) {
+        return new LongBitString(packInts(new int[] {primitiveInt}), Integer.SIZE);
+    }
     
     /**
      * Returns a new BitString containing all the bits in the given int array.
@@ -283,6 +317,10 @@ public class LongBitString extends BitString {
         return new LongBitString(packInts(ints), length);
     }
     
+    public static LongBitString valueOf(long primitiveLong) {
+        return new LongBitString(new long[] {primitiveLong}, Long.SIZE);
+    }
+    
     /**
      * Returns a new BitString containing all the bits in the given long array.
      * <p>
@@ -302,6 +340,10 @@ public class LongBitString extends BitString {
         if (longs.length > MAX_LONGS) throw new IllegalArgumentException("long array is too large");
         final int length = (longs.length == MAX_LONGS) ? Integer.MAX_VALUE : longs.length * Long.SIZE;
         return new LongBitString(Arrays.copyOf(longs, longs.length), length);
+    }
+    
+    public static LongBitString valueOf(short primitiveShort) {
+        return new LongBitString(packShorts(new short[] {primitiveShort}), Short.SIZE);
     }
     
     /**
@@ -397,28 +439,5 @@ public class LongBitString extends BitString {
         assert wordIndex >= 0 && wordIndex < this.backingArray.length;
         backingArray[wordIndex] = word;
     }
-    
-//    /**
-//     * Returns a substring of this {@code BitString}.
-//     *
-//     * The substring starts at offset 'offset' of this {@code BitString} and has a
-//     * length of 'length'.
-//     * 
-//     * @param offset the start of this substring
-//     * @param length the length of this substring
-//     * @return a substring of this {@code BitString}
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    @Override
-//    public LongBitString substring(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        final LongBitString substring = new LongBitString(length);
-//        substring.iCopy(0, length, this, offset);
-//        return substring;
-//    }
 
 }

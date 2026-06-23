@@ -42,6 +42,13 @@ import java.nio.Buffer;
 
 import net.pfeifdom.java.util.BitString.Field;
 
+/**
+ * 
+ * @author James Pfeifer
+ * @since 1.1
+ * @since JDK 1.8
+ *
+ */
 public interface BufferedBitString {
     
     public enum Mode { ABSOLUTE, RELATIVE }
@@ -242,17 +249,39 @@ public interface BufferedBitString {
     
     public BitString and(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString and(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString and(Field thisField, BitString arg, Field argField);
     
     public BitString andNot(BitString arg);
     
     public BitString andNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString andNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString andNot(Field thisField, BitString arg, Field argField);
+    
+    public BitString copy(BitString arg);
+    
+    public BitString copy(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString copy(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
+    public BitString copy(Field thisField, BitString arg, Field argField);
+    
+    public BitString copyNot(BitString arg);
+    
+    public BitString copyNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString copyNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
+    public BitString copyNot(Field thisField, BitString arg, Field argField);
     
     public BitString nand(BitString arg);
     
     public BitString nand(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString nand(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
     
     public BitString nand(Field thisField, BitString arg, Field argField);
     
@@ -260,11 +289,15 @@ public interface BufferedBitString {
     
     public BitString nandNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString nandNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString nandNot(Field thisField, BitString arg, Field argField);
     
     public BitString nor(BitString arg);
     
     public BitString nor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString nor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
     
     public BitString nor(Field thisField, BitString arg, Field argField);
     
@@ -272,11 +305,15 @@ public interface BufferedBitString {
     
     public BitString norNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString norNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString norNot(Field thisField, BitString arg, Field argField);
     
     public BitString or(BitString arg);
     
     public BitString or(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString or(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
     
     public BitString or(Field thisField, BitString arg, Field argField);
     
@@ -284,17 +321,23 @@ public interface BufferedBitString {
     
     public BitString orNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString orNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString orNot(Field thisField, BitString arg, Field argField);
     
     public BitString xor(BitString arg);
     
     public BitString xor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
+    public BitString xor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
+    
     public BitString xor(Field thisField, BitString arg, Field argField);
     
     public BitString xnor(BitString arg);
     
     public BitString xnor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
+    
+    public BitString xnor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength, BitString.Direction direction);
     
     public BitString xnor(Field thisField, BitString arg, Field argField);
     

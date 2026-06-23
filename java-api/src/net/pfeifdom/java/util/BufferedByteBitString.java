@@ -43,6 +43,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 
+/**
+ * Creates a ByteBitString that is bound to a ByteBuffer.
+ * This ByteBitString and the ByteBuffer share the same backing array of bytes.
+ * 
+ * @author James Pfeifer
+ * @since 1.1
+ * @since JDK 1.8
+ *
+ */
 public class BufferedByteBitString extends ByteBitString implements BufferedBitString {
     
     /**
