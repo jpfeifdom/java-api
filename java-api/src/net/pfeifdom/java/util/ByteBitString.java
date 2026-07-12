@@ -471,7 +471,7 @@ public class ByteBitString extends BitString {
     }
     
     @Override
-    void setWord(int wordIndex, long word) {
+    void putWord(int wordIndex, long word) {
         int byteIndex = wordIndex * Long.BYTES;
         assert byteIndex >= 0 && byteIndex < this.backingArray.length;
         for (int i = byteIndex, p = Long.BYTES - 1; p >= 0 && i < backingArray.length; i++, p--) {

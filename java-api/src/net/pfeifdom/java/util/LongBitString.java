@@ -435,7 +435,7 @@ public class LongBitString extends BitString {
     }
     
     @Override
-    void setWord(int wordIndex, long word) {
+    void putWord(int wordIndex, long word) {
         assert wordIndex >= 0 && wordIndex < this.backingArray.length;
         backingArray[wordIndex] = word;
     }

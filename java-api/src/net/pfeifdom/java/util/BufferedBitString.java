@@ -246,6 +246,8 @@ public interface BufferedBitString {
     public BitString setBit(boolean bit, int bitOffset, Field field);
     
     public BitString and(BitString arg);
+
+    public BitString and(BitString arg, BitString.Direction direction);
     
     public BitString and(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -254,6 +256,8 @@ public interface BufferedBitString {
     public BitString and(Field thisField, BitString arg, Field argField);
     
     public BitString andNot(BitString arg);
+
+    public BitString andNot(BitString arg, BitString.Direction direction);
     
     public BitString andNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -262,6 +266,8 @@ public interface BufferedBitString {
     public BitString andNot(Field thisField, BitString arg, Field argField);
     
     public BitString copy(BitString arg);
+
+    public BitString copy(BitString arg, BitString.Direction direction);
     
     public BitString copy(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -270,6 +276,8 @@ public interface BufferedBitString {
     public BitString copy(Field thisField, BitString arg, Field argField);
     
     public BitString copyNot(BitString arg);
+
+    public BitString copyNot(BitString arg, BitString.Direction direction);
     
     public BitString copyNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -278,6 +286,8 @@ public interface BufferedBitString {
     public BitString copyNot(Field thisField, BitString arg, Field argField);
     
     public BitString nand(BitString arg);
+
+    public BitString nand(BitString arg, BitString.Direction direction);
     
     public BitString nand(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -286,6 +296,8 @@ public interface BufferedBitString {
     public BitString nand(Field thisField, BitString arg, Field argField);
     
     public BitString nandNot(BitString arg);
+
+    public BitString nandNot(BitString arg, BitString.Direction direction);
     
     public BitString nandNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -294,6 +306,8 @@ public interface BufferedBitString {
     public BitString nandNot(Field thisField, BitString arg, Field argField);
     
     public BitString nor(BitString arg);
+
+    public BitString nor(BitString arg, BitString.Direction direction);
     
     public BitString nor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -302,6 +316,8 @@ public interface BufferedBitString {
     public BitString nor(Field thisField, BitString arg, Field argField);
     
     public BitString norNot(BitString arg);
+
+    public BitString norNot(BitString arg, BitString.Direction direction);
     
     public BitString norNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -310,6 +326,8 @@ public interface BufferedBitString {
     public BitString norNot(Field thisField, BitString arg, Field argField);
     
     public BitString or(BitString arg);
+
+    public BitString or(BitString arg, BitString.Direction direction);
     
     public BitString or(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -318,6 +336,8 @@ public interface BufferedBitString {
     public BitString or(Field thisField, BitString arg, Field argField);
     
     public BitString orNot(BitString arg);
+
+    public BitString orNot(BitString arg, BitString.Direction direction);
     
     public BitString orNot(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -326,6 +346,8 @@ public interface BufferedBitString {
     public BitString orNot(Field thisField, BitString arg, Field argField);
     
     public BitString xor(BitString arg);
+
+    public BitString xor(BitString arg, BitString.Direction direction);
     
     public BitString xor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -334,6 +356,8 @@ public interface BufferedBitString {
     public BitString xor(Field thisField, BitString arg, Field argField);
     
     public BitString xnor(BitString arg);
+
+    public BitString xnor(BitString arg, BitString.Direction direction);
     
     public BitString xnor(int thisOffset, int thisLength, BitString arg, int argOffset, int argLength);
     
@@ -341,29 +365,29 @@ public interface BufferedBitString {
     
     public BitString xnor(Field thisField, BitString arg, Field argField);
     
-    public BitString copyFrom(BitString that);
-    
-    public BitString copyFrom(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
-    
-    public BitString copyFrom(Field thisField, BitString that, Field thatField);
-    
-    public BitString copyFromBackOf(BitString that);
-    
-    public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
-    
-    public BitString copyFromBackOf(Field thisField, BitString that, Field thatField);
-    
-    public BitString copyNotFrom(BitString that);
-    
-    public BitString copyNotFrom(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
-    
-    public BitString copyNotFrom(Field thisField, BitString that, Field thatField);
-    
-    public BitString copyNotFromBackOf(BitString that);
-    
-    public BitString copyNotFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
-    
-    public BitString copyNotFromBackOf(Field thisField, BitString that, Field thatField);
+//    public BitString copyFrom(BitString that);
+//    
+//    public BitString copyFrom(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
+//    
+//    public BitString copyFrom(Field thisField, BitString that, Field thatField);
+//    
+//    public BitString copyFromBackOf(BitString that);
+//    
+//    public BitString copyFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
+//    
+//    public BitString copyFromBackOf(Field thisField, BitString that, Field thatField);
+//    
+//    public BitString copyNotFrom(BitString that);
+//    
+//    public BitString copyNotFrom(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
+//    
+//    public BitString copyNotFrom(Field thisField, BitString that, Field thatField);
+//    
+//    public BitString copyNotFromBackOf(BitString that);
+//    
+//    public BitString copyNotFromBackOf(int thisOffset, int thisLength, BitString that, int thatOffset, int thatLength);
+//    
+//    public BitString copyNotFromBackOf(Field thisField, BitString that, Field thatField);
     
     public boolean equals(Object obj);
     
@@ -483,77 +507,101 @@ public interface BufferedBitString {
     
     public BitString reverse(Field field);
     
-    public BitString rotateLeft(int nBits);
+    public BitString rotate(BitString.Direction direction, int distance);
     
-    public BitString rotateLeft(int nBits, int offset, int length);
+    public BitString rotate(BitString.Direction direction, int distance, int offset, int length);
     
-    public BitString rotateLeft(int nBits, Field field);
+    public BitString rotate(BitString.Direction direction, int distance, Field field);
     
-    public BitString rotateLeft(int nBits, BitString other);
+    public BitString rotate(BitString.Direction direction, int distance, BitString other);
     
-    public BitString rotateLeft(int nBits, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    public BitString rotate(BitString.Direction direction, int distance, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString rotateLeft(int nBits, Field thisField, BitString other, Field otherField);
+    public BitString rotate(BitString.Direction direction, int distance, Field thisField, BitString other, Field otherField);
     
-    public BitString rotateRight(int nBits);
+    public BitString rotateLeft(int distance);
     
-    public BitString rotateRight(int nBits, int offset, int length);
+    //public BitString rotateLeft(int distance, int offset, int length);
     
-    public BitString rotateRight(int nBits, Field field);
+    public BitString rotateLeft(int distance, Field field);
     
-    public BitString rotateRight(int nBits, BitString other);
+    public BitString rotateLeft(int distance, BitString other);
     
-    public BitString rotateRight(int nBits, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    //public BitString rotateLeft(int distance, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString rotateRight(int nBits, Field thisField, BitString other, Field otherField);
+    public BitString rotateLeft(int distance, Field thisField, BitString other, Field otherField);
     
-    public BitString shiftLeft(int nBits);
+    public BitString rotateRight(int distance);
     
-    public BitString shiftLeft(int nBits, int offset, int length);
+    //public BitString rotateRight(int distance, int offset, int length);
     
-    public BitString shiftLeft(int nBits, Field field);
+    public BitString rotateRight(int distance, Field field);
     
-    public BitString shiftLeft(int nBits, boolean fill);
+    public BitString rotateRight(int distance, BitString other);
     
-    public BitString shiftLeft(int nBits, boolean fill, int offset, int length);
+    //public BitString rotateRight(int distance, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString shiftLeft(int nBits, boolean fill, Field field);
+    public BitString rotateRight(int distance, Field thisField, BitString other, Field otherField);
     
-    public BitString shiftLeft(int nBits, BitString other);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill);
     
-    public BitString shiftLeft(int nBits, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill, int offset, int length);
     
-    public BitString shiftLeft(int nBits, Field thisField, BitString other, Field otherField);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill, Field field);
     
-    public BitString shiftLeft(int nBits, boolean fill, BitString other);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill, BitString other);
     
-    public BitString shiftLeft(int nBits, boolean fill, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString shiftLeft(int nBits, boolean fill, Field thisField, BitString other, Field otherField);
+    public BitString shift(BitString.Direction direction, int distance, boolean fill, Field thisField, BitString other, Field otherField);
     
-    public BitString shiftRight(int nBits);
+    public BitString shiftLeft(int distance);
     
-    public BitString shiftRight(int nBits, int offset, int length);
+    //public BitString shiftLeft(int distance, int offset, int length);
     
-    public BitString shiftRight(int nBits, Field field);
+    public BitString shiftLeft(int distance, Field field);
     
-    public BitString shiftRight(int nBits, boolean fill);
+    //public BitString shiftLeft(int distance, boolean fill);
     
-    public BitString shiftRight(int nBits, boolean fill, int offset, int length);
+    //public BitString shiftLeft(int distance, boolean fill, int offset, int length);
     
-    public BitString shiftRight(int nBits, boolean fill, Field field);
+    //public BitString shiftLeft(int distance, boolean fill, Field field);
     
-    public BitString shiftRight(int nBits, BitString other);
+    public BitString shiftLeft(int distance, BitString other);
     
-    public BitString shiftRight(int nBits, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    //public BitString shiftLeft(int distance, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString shiftRight(int nBits, Field thisField, BitString other, Field otherField);
+    public BitString shiftLeft(int distance, Field thisField, BitString other, Field otherField);
     
-    public BitString shiftRight(int nBits, boolean fill, BitString other);
+    //public BitString shiftLeft(int distance, boolean fill, BitString other);
     
-    public BitString shiftRight(int nBits, boolean fill, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    //public BitString shiftLeft(int distance, boolean fill, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
     
-    public BitString shiftRight(int nBits, boolean fill, Field thisField, BitString other, Field otherField);
+    //public BitString shiftLeft(int distance, boolean fill, Field thisField, BitString other, Field otherField);
+    
+    public BitString shiftRight(int distance);
+    
+    //public BitString shiftRight(int distance, int offset, int length);
+    
+    public BitString shiftRight(int distance, Field field);
+    
+    //public BitString shiftRight(int distance, boolean fill);
+    
+    //public BitString shiftRight(int distance, boolean fill, int offset, int length);
+    
+    //public BitString shiftRight(int distance, boolean fill, Field field);
+    
+    public BitString shiftRight(int distance, BitString other);
+    
+    //public BitString shiftRight(int distance, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    
+    public BitString shiftRight(int distance, Field thisField, BitString other, Field otherField);
+    
+    //public BitString shiftRight(int distance, boolean fill, BitString other);
+    
+    //public BitString shiftRight(int distance, boolean fill, int thisOffset, int thisLength, BitString other, int otherOffset, int otherLength);
+    
+    //public BitString shiftRight(int distance, boolean fill, Field thisField, BitString other, Field otherField);
     
     public BitString substring();
     
