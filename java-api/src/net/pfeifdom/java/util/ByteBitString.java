@@ -405,7 +405,7 @@ public class ByteBitString extends BitString {
      * Returns a new BitString containing all the bits in the given byte buffer
      * between its position and limit.
      * <p>
-     * >More precisely, <br>
+     * More precisely, <br>
      * {@code BitString.valueOf(bb).getBit(n) == ((bb.get(bb.position()+n/8) & (0x80>>>(n%8))) != 0)}
      * <br>
      * for all {@code n < 8 * bb.remaining()}.

@@ -41,7 +41,7 @@ package net.pfeifdom.java.util.function;
 /**
  * Represents an operation that accepts a {@code int}-valued argument and a
  * {@code long}-valued argument, and returns no result. This is the
- * {@code (int, long)} specialization of {@link java.util.functon.BiConsumer}.
+ * {@code (int, long)} specialization of {@link java.util.function.BiConsumer}.
  * Unlike most other functional interfaces, {@code IntLongConsumer} is expected
  * to operate via side-effects.
  *
