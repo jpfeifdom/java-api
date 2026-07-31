@@ -43,6 +43,7 @@ import java.nio.Buffer;
 import net.pfeifdom.java.util.BitString.BinaryOp;
 import net.pfeifdom.java.util.BitString.UnaryOp;
 import net.pfeifdom.java.util.BitString.Direction;
+import net.pfeifdom.java.util.BitString.Position;
 import net.pfeifdom.java.util.BitString.Field;
 
 /**
@@ -161,6 +162,12 @@ public interface BufferedBitString {
     public BitString put(int offset, BitString that, int thatOffset, int thatLength);
     
     public BitString put(int offset, BitString that, Field thatField);
+    
+    public BitString putBit(int bitOffset, boolean bit);
+    
+    public BitString putBit(int bitOffset, boolean bit, int offset, int length);
+    
+    public BitString putBit(int bitOffset, boolean bit, Field field);
     
     public BitString putBoolean(int offset, boolean primitive);
     
@@ -312,97 +319,85 @@ public interface BufferedBitString {
     
     public boolean intersects(Field thisField, BitString that, Field thatField);
     
-    public int numberOfLeadingOnes();
+    public int numberOfOnes();
     
-    public int numberOfLeadingOnes(int offset, int length);
+    public int numberOfOnes(Field field);
+    
+    public int numberOfZeros();
+    
+    public int numberOfZeros(Field field);
+    
+    public int numberOfLeadingOnes();
     
     public int numberOfLeadingOnes(Field field);
     
     public int numberOfLeadingZeros();
     
-    public int numberOfLeadingZeros(int offset, int length);
-    
     public int numberOfLeadingZeros(Field field);
     
-    public int numberOfOnes();
-    
-    public int numberOfOnes(int offset, int length);
-    
-    public int numberOfOnes(Field field);
-    
     public int numberOfTrailingOnes();
-    
-    public int numberOfTrailingOnes(int offset, int length);
     
     public int numberOfTrailingOnes(Field field);
     
     public int numberOfTrailingZeros();
     
-    public int numberOfTrailingZeros(int offset, int length);
-    
     public int numberOfTrailingZeros(Field field);
     
-    public int numberOfZeros();
+    public int numberOf(boolean bit);
     
-    public int numberOfZeros(int offset, int length);
+    public int numberOf(boolean bit, int offset, int length);
     
-    public int numberOfZeros(Field field);
+    public int numberOf(boolean bit, Field field);
+    
+    public int numberOf(Position position, boolean bit);
+    
+    public int numberOf(Position position, boolean bit, int offset, int length);
+    
+    public int numberOf(Position position, boolean bit, Field field);
     
     public int offsetOfFirstOne();
-    
-    public int offsetOfFirstOne(int offset, int length);
     
     public int offsetOfFirstOne(Field field);
     
     public int offsetOfFirstZero();
     
-    public int offsetOfFirstZero(int offset, int length);
-    
     public int offsetOfFirstZero(Field field);
     
     public int offsetOfLastOne();
-    
-    public int offsetOfLastOne(int offset, int length);
     
     public int offsetOfLastOne(Field field);
     
     public int offsetOfLastZero();
     
-    public int offsetOfLastZero(int offset, int length);
-    
     public int offsetOfLastZero(Field field);
     
+    public int offsetOf(Position position, boolean bit);
+    
+    public int offsetOf(Position position, boolean bit, int offset, int length);
+    
+    public int offsetOf(Position position, boolean bit, Field field);
+    
     public int offsetOfNextOne(int startOffset);
-    
-    public int offsetOfNextOne(int startOffset, int offset);
-    
-    public int offsetOfNextOne(int startOffset, int offset, int length);
     
     public int offsetOfNextOne(int startOffset, Field field);
     
     public int offsetOfNextZero(int startOffset);
     
-    public int offsetOfNextZero(int startOffset, int offset);
-    
-    public int offsetOfNextZero(int startOffset, int offset, int length);
-    
     public int offsetOfNextZero(int startOffset, Field field);
     
     public int offsetOfPreviousOne(int startOffset);
-    
-    public int offsetOfPreviousOne(int startOffset, int offset);
-    
-    public int offsetOfPreviousOne(int startOffset, int offset, int length);
     
     public int offsetOfPreviousOne(int startOffset, Field field);
     
     public int offsetOfPreviousZero(int startOffset);
     
-    public int offsetOfPreviousZero(int startOffset, int offset);
-    
-    public int offsetOfPreviousZero(int startOffset, int offset, int length);
-    
     public int offsetOfPreviousZero(int startOffset, Field field);
+    
+    public int offsetOf(BitString.Direction direction, boolean bit, int startOffset);
+    
+    public int offsetOf(BitString.Direction direction, boolean bit, int startOffset, int offset, int length);
+    
+    public int offsetOf(BitString.Direction direction, boolean bit, int startOffset, Field field);
     
     public BitString rotate(BitString.Direction direction, int distance);
     
