@@ -45,6 +45,7 @@ import net.pfeifdom.java.util.BitString.UnaryOp;
 import net.pfeifdom.java.util.BitString.Direction;
 import net.pfeifdom.java.util.BitString.Position;
 import net.pfeifdom.java.util.BitString.Field;
+import net.pfeifdom.java.util.BitString.Primitive;
 
 /**
  * 
@@ -155,51 +156,71 @@ public interface BufferedBitString {
 
     public short[] getShortArray(int offset, int count);
     
+    public Primitive getPrimitive(Primitive.Type type, int offset);
+    
+    public Primitive getPrimitive(Primitive.Type type, Field field);
+    
+    public Primitive[] getPrimitiveArray(Primitive.Type type, int offset, int count);
+    
+    public Primitive[] getPrimitiveArray(Primitive.Type type, Field field, int count);
+    
+    public Primitive[] getPrimitiveArray(Primitive.Type[] types, int offset);
+    
+    public Primitive[] getPrimitiveArray(Primitive.Type[] types, Field field);
+    
     public BitString put(BitString that);
     
-    public BitString put(int offset, BitString that);
+    public BitString put(BitString that, int offset);
     
-    public BitString put(int offset, BitString that, int thatOffset, int thatLength);
+    public BitString put(BitString that, int thatOffset, int thatLength, int offset);
     
-    public BitString put(int offset, BitString that, Field thatField);
+    public BitString put(BitString that, Field thatField, Field thisField);
     
-    public BitString putBit(int bitOffset, boolean bit);
+    public BitString putBit(boolean bit, int bitOffset);
     
-    public BitString putBit(int bitOffset, boolean bit, int offset, int length);
+    public BitString putBit(boolean bit, int bitOffset, int offset, int length);
     
-    public BitString putBit(int bitOffset, boolean bit, Field field);
+    public BitString putBit(boolean bit, int bitOffset, Field field);
     
-    public BitString putBoolean(int offset, boolean primitive);
+    public BitString putBoolean(boolean booleanValue, int offset);
     
-    public BitString putBooleanArray(int offset, boolean[] booleans);
+    public BitString putBooleanArray(boolean[] booleans, int offset);
     
-    public BitString putByte(int offset, byte primitive);
+    public BitString putByte(byte byteValue, int offset);
 
-    public BitString putByteArray(int offset, byte[] bytes);
+    public BitString putByteArray(byte[] bytes, int offset);
     
-    public BitString putChar(int offset, char primitive);
+    public BitString putChar(char charValue, int offset);
 
-    public BitString putCharArray(int offset, char[] chars);
+    public BitString putCharArray(char[] chars, int offset);
     
-    public BitString putDouble(int offset, double primitive);
+    public BitString putDouble(double doubleValue, int offset);
 
-    public BitString putDoubleArray(int offset, double[] doubles);
+    public BitString putDoubleArray(double[] doubles, int offset);
     
-    public BitString putFloat(int offset, float primitive);
+    public BitString putFloat(float floatValue, int offset);
 
-    public BitString putFloatArray(int offset, float[] floats);
+    public BitString putFloatArray(float[] floats, int offset);
     
-    public BitString putInt(int offset, int primitive);
+    public BitString putInt(int intValue, int offset);
 
-    public BitString putIntArray(int offset, int[] ints);
+    public BitString putIntArray(int[] ints, int offset);
     
-    public BitString putLong(int offset, long primitive);
+    public BitString putLong(long longValue, int offset);
 
-    public BitString putLongArray(int offset, long[] longs);
+    public BitString putLongArray(long[] longs, int offset);
     
-    public BitString putShort(int offset, short primitive);
+    public BitString putShort(short shortValue, int offset);
 
-    public BitString putShortArray(int offset, short[] shorts);
+    public BitString putShortArray(short[] shorts, int offset);
+    
+    public BitString putPrimitive(Primitive primitive, int offset);
+    
+    public BitString putPrimitive(Primitive primitive, Field field);
+    
+    public BitString putPrimitiveArray(Primitive[] primitives, int offset);
+    
+    public BitString putPrimitiveArray(Primitive[] primitives, Field field);
     
     public BitString clear();
     
@@ -484,6 +505,8 @@ public interface BufferedBitString {
     public long[] toLongArray();
     
     public short[] toShortArray();
+    
+    public Primitive[] toPrimitiveArray();
     
     public String toString();
     

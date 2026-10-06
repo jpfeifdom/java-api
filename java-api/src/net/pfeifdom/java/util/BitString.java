@@ -44,6 +44,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.IntToLongFunction;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongToIntFunction;
@@ -280,7 +281,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return a Field with the specified attributes.
+     * Returns a Field with the specified offset and length.
      * 
      * @param offset the offset of the Field
      * @param length the length of the Field.
@@ -291,12 +292,12 @@ public abstract class BitString implements Cloneable, Serializable  {
         return new Field(offset, length);
     }
     
-    /**
-     * 
-     * @param fromIndex
-     * @param toIndex
-     * @return
-     */
+//    /**
+//     * 
+//     * @param fromIndex
+//     * @param toIndex
+//     * @return
+//     */
     public static Field indexField(int fromIndex, int toIndex) {
         return Field.indexRange(fromIndex, toIndex);
     }
@@ -308,7 +309,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     public static final Field ALL = new Field.All();
     
     /**
-     * Return a Field which represents all the bits of this {@code BitString}. The
+     * Returns a Field which represents all the bits of this {@code BitString}. The
      * offset of the returned Field is 0 and its length is this.length().
      * 
      * @return a Field which represents all the bits of this {@code BitString}
@@ -318,7 +319,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return a Field which represents a substring of this {@code BitString}.
+     * Returns a Field which represents a substring of this {@code BitString}.
      * 
      * If position equals this.length(), an empty Field (length == 0) positioned at
      * the end of this {@code BitString} is returned, otherwise, a Field
@@ -371,7 +372,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     abstract void resizeBackingArray(int capacity);
     
     /**
-     * Return the capacity of this {@code BitString}.
+     * Returns the capacity of this {@code BitString}.
      * 
      * @return the capacity of this {@code BitString}
      */
@@ -635,7 +636,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return rArg shifted right the specified number of bits. The far right bits in
+     * Returns rArg shifted right the specified number of bits. The far right bits in
      * rArg that are shifted out, are lost. The far left bits in rArg are replaced
      * by the far right bits that are shifted in from lArg.
      * 
@@ -650,7 +651,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return lArg shifted left the specified number of bits. The far left bits in
+     * Returns lArg shifted left the specified number of bits. The far left bits in
      * lArg that are shifted out, are lost. The far right bits in lArg are replaced
      * by the far left bits that are shifted in from rArg.
      * 
@@ -890,23 +891,26 @@ public abstract class BitString implements Cloneable, Serializable  {
         }
     }
     
-    private void checkAvailableSpace(int offset, int requiredSpace) {
-        final int availableSpace = length() - offset;
-        if (availableSpace < requiredSpace) {
-            throw new UnsupportedOperationException("not enough space in the BitString to perform the operation"
-                    + "; required space=" + requiredSpace + ", available space=" + availableSpace
-                    + ", BitString Length=" + length() + ", offset=" + offset);
+    private boolean spaceIsAvailable(int availableSpace, long requiredSpace) {
+        return availableSpace >= requiredSpace;
+    }
+    
+    private void checkAvailableSpace(int offset, int availableSpace, int requiredSpace) {
+        if (!(spaceIsAvailable(availableSpace, requiredSpace))) {
+            throw new UnsupportedOperationException("not enough space starting at offset " + offset
+                    + " to perform the operation"
+                    + "; required space=" + requiredSpace
+                    + ", available space=" + availableSpace);
         }
     }
     
-    private void checkAvailableSpace(int offset, int length, int count) {
-        final long requiredSpace = (long)count * length;
-        final long availableSpace = length() - offset;
-        if (availableSpace < requiredSpace) {
-            throw new UnsupportedOperationException("not enough space in the BitString to perform the operation"
-                    + "; required space=" + requiredSpace + ", available space=" + availableSpace
-                    + ", BitString Length=" + length() + ", offset=" + offset
-                    + ", Primitive Length=" + length + ", Array Count=" + count);
+    private void checkAvailableSpace(int offset, int availableSpace, long requiredSpace, int count) {
+        if (!(spaceIsAvailable(availableSpace, requiredSpace))) {
+            throw new UnsupportedOperationException("not enough space starting at offset " + offset
+                    + " to perform the operation"
+                    + "; required space=" + requiredSpace
+                    + ", available space=" + availableSpace
+                    + ", Array Count=" + count);
         }
     }
     
@@ -1284,7 +1288,7 @@ public abstract class BitString implements Cloneable, Serializable  {
             BitString that, int thatOffset, int thatLength, boolean pad) {
         iOp(binaryOp, direction, thisOffset, thisLength, that, thatOffset, thatLength);
         if (thatLength < thisLength) {
-            if (direction.isLTR()) thisOffset =+ thatLength;
+            if (direction.isLTR()) thisOffset += thatLength;
             iBinaryOpLTR(binaryOp.op(), thisOffset, thisLength - thatLength, pad ? ONES : ZEROS, 0);
         }
     }
@@ -1464,7 +1468,7 @@ public abstract class BitString implements Cloneable, Serializable  {
             
             reversedBitString.putWordBits(bitIndex, nBits, backWordReversed);
             
-            bitIndex =+ nBits;
+            bitIndex += nBits;
         }
         
         return reversedBitString;
@@ -1784,7 +1788,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         this.iShiftRight(distance, fill, thisOffset, thisLength);
     }
     
-    private long iGetPrimitive(int offset, int primitiveSize) {
+    private long iGetPrimitiveWord(int offset, int primitiveSize) {
         assert isValidOffset(offset);
         assert primitiveSize <= BITS_PER_WORD;
         final int bitIndex = bitIndex(offset);
@@ -1793,12 +1797,21 @@ public abstract class BitString implements Cloneable, Serializable  {
         return word >>> (BITS_PER_WORD - primitiveSize);
     }
     
-    private void iPutPrimitive(int offset, int primitiveSize, long primitive) {
+    void iPutPrimitiveWord(int offset, int primitiveSize, long primitiveWord) {
         assert isValidOffset(offset);
         assert primitiveSize <= BITS_PER_WORD;
-        assert isValidLength(offset, primitiveSize);
-        
-        putWordBits(bitIndex(offset), primitiveSize, primitive << (BITS_PER_WORD - primitiveSize));
+        assert spaceIsAvailable(length() - offset, primitiveSize);
+        putWordBits(bitIndex(offset), primitiveSize, primitiveWord << (BITS_PER_WORD - primitiveSize));
+    }
+    
+    void iPutPrimitiveArray(int offset, Primitive[] primitives) {
+        assert isValidOffset(offset);
+        assert spaceIsAvailable(length() - offset, Primitive.arrayCumulativeSize(primitives));
+        for (int index = 0; index < primitives.length; index++) {
+            final int primitiveSize = primitives[index].type().size();
+            iPutPrimitiveWord(offset, primitiveSize, primitives[index].longValue());
+            offset += primitiveSize;
+        }
     }
     
     private boolean[] iToBooleanArray(int offset, int length) {
@@ -1806,7 +1819,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new boolean[0];
         final boolean[] booleans = new boolean[length];
-        iToPrimitiveArray(offset, length, 1,
+        iLoadPrimitiveArray(offset, length, 1,
                 (index, word) -> { booleans[index] = (word == 0) ? false : true; });
         return booleans;
     }
@@ -1816,7 +1829,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new byte[0];
         final byte[] bytes = new byte[(length - 1) / Byte.SIZE + 1];
-        iToPrimitiveArray(offset, length, Byte.SIZE,
+        iLoadPrimitiveArray(offset, length, Byte.SIZE,
                 (index, word) -> { bytes[index] = (byte)word; });
         return bytes;
     }
@@ -1826,7 +1839,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new char[0];
         final char[] chars = new char[(length - 1) / Character.SIZE + 1];
-        iToPrimitiveArray(offset, length, Character.SIZE,
+        iLoadPrimitiveArray(offset, length, Character.SIZE,
                 (index, word) -> { chars[index] = (char)word; });
         return chars;
     }
@@ -1836,7 +1849,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new double[0];
         final double[] doubles = new double[(length - 1) / Long.SIZE + 1];
-        iToPrimitiveArray(offset, length, Long.SIZE,
+        iLoadPrimitiveArray(offset, length, Long.SIZE,
                 (index, word) -> { doubles[index] = Double.longBitsToDouble(word); });
         return doubles;
     }
@@ -1846,7 +1859,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new float[0];
         final float[] floats = new float[(length - 1) / Integer.SIZE + 1];
-        iToPrimitiveArray(offset, length, Integer.SIZE,
+        iLoadPrimitiveArray(offset, length, Integer.SIZE,
                 (index, word) -> { floats[index] = Float.intBitsToFloat((int)word); });
         return floats;
     }
@@ -1856,7 +1869,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new int[0];
         final int[] ints = new int[(length - 1) / Integer.SIZE + 1];
-        iToPrimitiveArray(offset, length, Integer.SIZE,
+        iLoadPrimitiveArray(offset, length, Integer.SIZE,
                 (index, word) -> { ints[index] = (int)word; });
         return ints;
     }
@@ -1866,7 +1879,7 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new long[0];
         final long[] longs = new long[(length - 1) / Long.SIZE + 1];
-        iToPrimitiveArray(offset, length, Long.SIZE,
+        iLoadPrimitiveArray(offset, length, Long.SIZE,
                 (index, word) -> { longs[index] = word; });
         return longs;
     }
@@ -1876,12 +1889,72 @@ public abstract class BitString implements Cloneable, Serializable  {
         assert isValidLength(offset, length);
         if (length == 0) return new short[0];
         final short[] shorts = new short[(length - 1) / Short.SIZE + 1];
-        iToPrimitiveArray(offset, length, Short.SIZE,
+        iLoadPrimitiveArray(offset, length, Short.SIZE,
                 (index, word) -> { shorts[index] = (short)word; });
         return shorts;
     }
     
-    private void iToPrimitiveArray(int offset, int length,
+    private Primitive[] iToPrimitiveArray(Primitive.Type type, int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new Primitive[0];
+        final Primitive[] primitives = new Primitive[(length - 1) / type.size() + 1];
+        iLoadPrimitiveArray(offset, length, type.size(),
+                (index, word) -> { primitives[index] = new Primitive(type, word); });
+        return primitives;
+    }
+    
+    private Primitive[] iToPrimitiveArray(Primitive.Type[] types, int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new Primitive[0];
+        final Primitive[] primitives = new Primitive[types.length];
+        int index = 0;
+        for (Primitive.Type type: types) {
+            primitives[index++] = new Primitive(type, iGetPrimitiveWord(offset, type.size()));
+            offset += type.size();
+        }
+        return primitives;
+    }
+    
+    private Primitive[] iToPrimitiveArray(int offset, int length) {
+        assert isValidOffset(offset);
+        assert isValidLength(offset, length);
+        if (length == 0) return new Primitive[0];
+        int remainingLength = length;
+        int primitiveCount = 0;
+        final Primitive.Type[] primitiveTypes = {
+                Primitive.Type.LONG,
+                Primitive.Type.INT,
+                Primitive.Type.SHORT,
+                Primitive.Type.BYTE,
+                Primitive.Type.BOOLEAN
+                };
+        for (Primitive.Type primitiveType: primitiveTypes) {
+            if (remainingLength <= 0) break;
+            final int primitiveSize = primitiveType.size();
+            final int count = remainingLength / primitiveSize;
+            primitiveCount += count;
+            remainingLength -= count * primitiveSize;
+        }
+        remainingLength = length;
+        final Primitive[] primitives = new Primitive[primitiveCount];
+        for (Primitive.Type primitiveType: primitiveTypes) {
+            if (remainingLength <= 0) break;
+            final int primitiveSize = primitiveType.size();
+            final int count = remainingLength / primitiveSize;
+            if (count > 0) {
+                final int substringLength = count * primitiveSize;
+                iLoadPrimitiveArray(offset, substringLength, primitiveSize,
+                        (index, word) -> { primitives[index] = new Primitive(primitiveType, word); });
+                remainingLength -= substringLength;
+                offset += substringLength;
+            }
+        }
+        return primitives;
+    }
+    
+    private void iLoadPrimitiveArray(int offset, int length,
             int primitiveSize,
             IntLongConsumer setPrimitiveArrayElementFromUnsignedLong) {
         assert isValidOffset(offset);
@@ -2389,7 +2462,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return all of the bits in this {@code BitString} as a new BitString.
+     * Returns all of the bits in this {@code BitString} as a new BitString.
      * 
      * @return a copy of this {@code BitString}
      */
@@ -2398,7 +2471,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return a substring of this {@code BitString} as a new BitString.
+     * Returns a substring of this {@code BitString} as a new BitString.
      * 
      * This substring starts at offset 'offset' of this {@code BitString} and
      * extends to the end of this {@code BitString}.
@@ -2414,7 +2487,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return a substring of this {@code BitString} as a new BitString.
+     * Returns a substring of this {@code BitString} as a new BitString.
      *
      * The substring starts at offset 'offset' of this {@code BitString} and has a
      * length of 'length'.
@@ -2436,7 +2509,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return a Field of this {@code BitString} as a new BitString.
+     * Returns a Field of this {@code BitString} as a new BitString.
      * 
      * @param field a Field of this {@code BitString}
      * @return a Field as a substring of this {@code BitString}
@@ -2450,7 +2523,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Return the bit at the specified offset in this {@code BitString}.
+     * Returns the bit at the specified offset in this {@code BitString}.
      * 
      * @param bitOffset the offset of the bit to be returned
      * @return the bit at the specified offset
@@ -2464,7 +2537,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * return the bit at the specified offset in a substring of this
+     * Return the bit at the specified offset in a substring of this
      * {@code BitString}. The bit offset is relative to the start of the substring.
      * 
      * The substring starts at offset 'offset' of this {@code BitString} and has a
@@ -2487,7 +2560,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * return the bit at the specified offset in a Field of this
+     * Returns the bit at the specified offset in a Field of this
      * {@code BitString}. The bit offset is relative to the start of the field.
      * 
      * @param bitOffset the offset of the bit to be returned
@@ -2503,7 +2576,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * get the boolean primitive at the specified offset.
+     * Returns the boolean primitive at the specified offset.
      * 
      * @param offset the offset of the boolean primitive
      * @return a boolean primitive
@@ -2515,7 +2588,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * get an array of boolean primitives at the specified offset.
+     * Returns an array of boolean primitives at the specified offset.
      * 
      * @param offset the offset of the array of booleans
      * @param count  the length of the array of booleans
@@ -2528,12 +2601,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public boolean[] getBooleanArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, 1, count);
+        checkAvailableSpace(offset, length() - offset, (long)count, count);
         return iToBooleanArray(offset, count);
     }
     
     /**
-     * get the byte primitive at the specified offset.
+     * Returns the byte primitive at the specified offset.
      * 
      * @param offset the offset of the boolean primitive
      * @return a byte primitive
@@ -2544,12 +2617,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public byte getByte(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Byte.SIZE);
-        return (byte)(iGetPrimitive(offset, Byte.SIZE));
+        checkAvailableSpace(offset, length() - offset, Byte.SIZE);
+        return (byte)(iGetPrimitiveWord(offset, Byte.SIZE));
     }
     
     /**
-     * get an array of byte primitives at the specified offset.
+     * Returns an array of byte primitives at the specified offset.
      * 
      * @param offset the offset of the array of bytes
      * @param count  the length of the array of bytes
@@ -2561,12 +2634,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public byte[] getByteArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Byte.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Byte.SIZE, count);
         return iToByteArray(offset, count * Byte.SIZE);
     }
     
     /**
-     * get the character primitive at the specified offset.
+     * Returns the character primitive at the specified offset.
      * 
      * @param offset the offset of the character primitive
      * @return a character primitive
@@ -2577,12 +2650,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public char getChar(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Character.SIZE);
-        return (char)(iGetPrimitive(offset, Character.SIZE));
+        checkAvailableSpace(offset, length() - offset, Character.SIZE);
+        return (char)(iGetPrimitiveWord(offset, Character.SIZE));
     }
     
     /**
-     * get an array of character primitives at the specified offset.
+     * Returns an array of character primitives at the specified offset.
      * 
      * @param offset the offset of the array of characters
      * @param count  the length of the array of characters
@@ -2594,12 +2667,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public char[] getCharArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Character.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Character.SIZE, count);
         return iToCharArray(offset, count * Character.SIZE);
     }
     
     /**
-     * get the double primitive at the specified offset.
+     * Returns the double primitive at the specified offset.
      * 
      * @param offset the offset of the double primitive
      * @return a double primitive
@@ -2610,12 +2683,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public double getDouble(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE);
-        return Double.longBitsToDouble((long)(iGetPrimitive(offset, Long.SIZE)));
+        checkAvailableSpace(offset, length() - offset, Long.SIZE);
+        return Double.longBitsToDouble((long)(iGetPrimitiveWord(offset, Long.SIZE)));
     }
     
     /**
-     * get an array of double primitives at the specified offset.
+     * Returns an array of double primitives at the specified offset.
      * 
      * @param offset the offset of the array of doubles
      * @param count  the length of the array of doubles
@@ -2627,12 +2700,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public double[] getDoubleArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Long.SIZE, count);
         return iToDoubleArray(offset, count * Long.SIZE);
     }
     
     /**
-     * get the float primitive at the specified offset.
+     * Returns the float primitive at the specified offset.
      * 
      * @param offset the offset of the float primitive
      * @return a float primitive
@@ -2643,12 +2716,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public float getFloat(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE);
-        return Float.intBitsToFloat((int)(iGetPrimitive(offset, Integer.SIZE)));
+        checkAvailableSpace(offset, length() - offset, Integer.SIZE);
+        return Float.intBitsToFloat((int)(iGetPrimitiveWord(offset, Integer.SIZE)));
     }
     
     /**
-     * get an array of float primitives at the specified offset.
+     * Returns an array of float primitives at the specified offset.
      * 
      * @param offset the offset of the array of floats
      * @param count  the length of the array of floats
@@ -2660,12 +2733,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public float[] getFloatArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Integer.SIZE, count);
         return iToFloatArray(offset, count * Integer.SIZE);
     }
     
     /**
-     * get the integer primitive at the specified offset.
+     * Returns the integer primitive at the specified offset.
      * 
      * @param offset the offset of the integer primitive
      * @return an integer primitive
@@ -2676,12 +2749,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public int getInt(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE);
-        return (int)(iGetPrimitive(offset, Integer.SIZE));
+        checkAvailableSpace(offset, length() - offset, Integer.SIZE);
+        return (int)(iGetPrimitiveWord(offset, Integer.SIZE));
     }
     
     /**
-     * get an array of integer primitives at the specified offset.
+     * Returns an array of integer primitives at the specified offset.
      * 
      * @param offset the offset of the array of integers
      * @param count  the length of the array of integers
@@ -2693,12 +2766,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public int[] getIntArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Integer.SIZE, count);
         return iToIntArray(offset, count * Integer.SIZE);
     }
     
     /**
-     * get the long primitive at the specified offset.
+     * Returns the long primitive at the specified offset.
      * 
      * @param offset the offset of the long primitive
      * @return a long primitive
@@ -2709,12 +2782,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public long getLong(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE);
-        return (long)(iGetPrimitive(offset, Long.SIZE));
+        checkAvailableSpace(offset, length() - offset, Long.SIZE);
+        return (long)(iGetPrimitiveWord(offset, Long.SIZE));
     }
     
     /**
-     * get an array of long primitives at the specified offset.
+     * Returns an array of long primitives at the specified offset.
      * 
      * @param offset the offset of the array of longs
      * @param count  the length of the array of longs
@@ -2726,12 +2799,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public long[] getLongArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Long.SIZE, count);
         return iToLongArray(offset, count * Long.SIZE);
     }
     
     /**
-     * get the short primitive at the specified offset.
+     * Returns the short primitive at the specified offset.
      * 
      * @param offset the offset of the short primitive
      * @return a short primitive
@@ -2742,12 +2815,12 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public short getShort(int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Short.SIZE);
-        return (short)(iGetPrimitive(offset, Short.SIZE));
+        checkAvailableSpace(offset, length() - offset, Short.SIZE);
+        return (short)(iGetPrimitiveWord(offset, Short.SIZE));
     }
     
     /**
-     * get an array of short primitives at the specified offset.
+     * Returns an array of short primitives at the specified offset.
      * 
      * @param offset the offset of the array of shorts
      * @param count  the length of the array of shorts
@@ -2759,12 +2832,139 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public short[] getShortArray(int offset, int count) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Short.SIZE, count);
+        checkAvailableSpace(offset, length() - offset, count * (long)Short.SIZE, count);
         return iToShortArray(offset, count * Short.SIZE);
     }
     
     /**
-     * put the specified BitString at the start of this {@code BitString}.
+     * Returns a Primitive of the specified type at the specified offset.
+     * 
+     * @param type   the type of primitive to return
+     * @param offset the offset of the Primitive
+     * @return a Primitive of the specified type
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code offset + type.size() > length()}
+     */
+    public Primitive getPrimitive(Primitive.Type type, int offset) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, length() - offset, type.size());
+        return new Primitive(type, iGetPrimitiveWord(offset, type.size()));
+    }
+    
+    /**
+     * Returns a Primitive of the specified type from the specified Field.
+     * 
+     * @param type  the type of primitive to return
+     * @param field a Field of this {@code BitString}
+     * @return a Primitive of the specified type
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code field.offset() + type.size() > field.length()}
+     */
+    public Primitive getPrimitive(Primitive.Type type, Field field) {
+        final int offset = field.offset();
+        final int length = field.length(this);
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkAvailableSpace(offset, length, type.size());
+        return new Primitive(type, iGetPrimitiveWord(offset, type.size()));
+    }
+    
+    /**
+     * Returns a Primitive array of the specified type and specified count at
+     * the specified offset.
+     * 
+     * @param type   the type of Primitive array to return
+     * @param offset the offset of the Primitive array
+     * @param count  the number of array elements to return
+     * @return a Primitive array of the specified type
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset > 0 && offset >= length()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code offset + count * type.size() > length()}
+     */
+    public Primitive[] getPrimitiveArray(Primitive.Type type, int offset, int count) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, length() - offset, count * (long)type.size(), count);
+        return iToPrimitiveArray(type, offset, count);
+    }
+    
+    /**
+     * Returns a Primitive array of the specified type and specified count from the
+     * specified Field.
+     * 
+     * @param type  the type of Primitive array to return
+     * @param field a Field of this {@code BitString}
+     * @param count the number of array elements to return
+     * @return a Primitive array of the specified type
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code field.offset() + count * type.size() > field.length()}
+     */
+    public Primitive[] getPrimitiveArray(Primitive.Type type, Field field, int count) {
+        final int offset = field.offset();
+        final int length = field.length(this);
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkAvailableSpace(offset, length, count * (long)type.size(), count);
+        return iToPrimitiveArray(type, offset, count);
+    }
+    
+    /**
+     * Returns a Primitive array, at the specified offset, whose primitive elements
+     * are of the types specified in the types argument. The length of the returned
+     * Primitive array is equal to the length of the specified array of Primitive
+     * types.
+     * 
+     * @param types  an array of Primitive Types
+     * @param offset the offset of the Primitive array
+     * @return a Primitive array of the specified types
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset > 0 && offset >= length()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code offset + Primitive.arrayCumulativeSize(types) > length()}
+     */
+    public Primitive[] getPrimitiveArray(Primitive.Type[] types, int offset) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, length() - offset, Primitive.arrayCumulativeSize(types), types.length);
+        return iToPrimitiveArray(types, offset, types.length);
+    }
+    
+    /**
+     * Returns a Primitive array, from the specified Field, whose primitive elements
+     * are of the types specified in the types argument. The length of the returned
+     * Primitive array is equal to the length of the specified array of Primitive
+     * types.
+     * 
+     * @param types an array of Primitive Types
+     * @param field a Field of this {@code BitString}
+     * @return a Primitive array of the specified types
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code field.offset() + Primitive.arrayCumulativeSize(types) > field.length()}
+     */
+    public Primitive[] getPrimitiveArray(Primitive.Type[] types, Field field) {
+        final int offset = field.offset();
+        final int length = field.length(this);
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkAvailableSpace(offset, length - offset, Primitive.arrayCumulativeSize(types), types.length);
+        return iToPrimitiveArray(types, offset, types.length);
+    }
+    
+    /**
+     * puts the specified BitString at the start of this {@code BitString}.
      * 
      * @param that the argument BitString to be placed at the start this
      *             {@code BitString}
@@ -2774,61 +2974,72 @@ public abstract class BitString implements Cloneable, Serializable  {
      */
     public BitString put(BitString that) {
         final int length = that.length();
-        checkAvailableSpace(0, length);
+        checkAvailableSpace(0, length(), length);
         iCopy(0, length, that, 0);
         return this;
     }
     
     /**
-     * put the specified BitString, at the specified offset, in this
+     * puts the specified BitString, at the specified offset, in this
      * {@code BitString}.
      * 
-     * @param offset the offset of where to put the argument BitString
      * @param that   the argument BitString to be placed in this {@code BitString}
+     * @param offset the offset of where to put the argument BitString
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + that.length() > length()}
      */
-    public BitString put(int offset, BitString that) {
+    public BitString put(BitString that, int offset) {
         checkThisOffset(offset);
         final int length = that.length();
-        checkAvailableSpace(offset, length);
+        checkAvailableSpace(offset, this.length() - offset, length);
         iCopy(offset, length, that, 0);
         return this;
     }
     
     
-    public BitString put(int offset, BitString that, int thatOffset, int thatLength) {
+    public BitString put(BitString that, int thatOffset, int thatLength, int offset) {
         checkThisOffset(offset);
-        checkArgOffset(thatOffset);
-        checkArgLength(thatOffset, thatLength);
-        checkAvailableSpace(offset, thatLength);
+        that.checkArgOffset(thatOffset);
+        that.checkArgLength(thatOffset, thatLength);
+        checkAvailableSpace(offset, length() - offset, thatLength);
         iCopy(offset, thatLength, that, thatOffset);
         return this;
     }
     
-    public BitString put(int offset, BitString that, Field thatField) {
-        return put(offset, that, thatField.offset(), thatField.length(that));
+    public BitString put(BitString that, Field thatField, Field thisField) {
+        final int thisOffset = thisField.offset();
+        final int thisLength = thisField.length(this);
+        final int thatOffset = thatField.offset();
+        final int thatLength = thatField.length(that);
+        checkThisOffset(thisOffset);
+        checkThisLength(thisOffset, thisLength);
+        that.checkArgOffset(thatOffset);
+        that.checkArgLength(thatOffset, thatLength);
+        checkAvailableSpace(thisOffset, thisLength, thatLength);
+        iCopy(thisOffset, thatLength, that, thatOffset);
+        return this;
     }
     
     /**
-     * Put the specified bit, at the specified offset, in this {@code BitString}.
+     * Puts the specified bit, at the specified offset, in this {@code BitString}.
      * 
+     * @param bit       the bit
      * @param bitOffset the offset of where to put the bit
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
      */
-    public BitString putBit(int bitOffset, boolean bit) {
+    public BitString putBit(boolean bit, int bitOffset) {
         checkThisOffset(bitOffset);
         iBitOp(UnaryOp.set(bit), bitOffset);
         return this;
     }
     
     /**
-     * Put the specified bit at the specified offset in a substring of this
+     * Puts the specified bit at the specified offset in a substring of this
      * {@code BitString}.
      * 
      * The substring starts at offset 'offset' of this {@code BitString} and has a
@@ -2836,19 +3047,19 @@ public abstract class BitString implements Cloneable, Serializable  {
      * 
      * Note, the bitOffset is relative to the start of the substring.
      * 
-     * @param bitOffset the offset of where to put the bit
      * @param bit       the bit
+     * @param bitOffset the offset of where to put the bit
      * @param offset    the start of this substring
      * @param length    the length of this substring
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
-     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
+     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length}
      *                                         or
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws IllegalArgumentException        if
      *                                         {@code length < 0 || length > length() - offset}
      */
-    public BitString putBit(int bitOffset, boolean bit, int offset, int length) {
+    public BitString putBit(boolean bit, int bitOffset, int offset, int length) {
         checkThisOffset(offset);
         checkThisLength(offset, length);
         checkRelativeOffset(bitOffset, length);
@@ -2857,53 +3068,53 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Put the specified bit at the specified offset in a Field of this
+     * Puts the specified bit at the specified offset in a Field of this
      * {@code BitString}. The bit offset is relative to the start of the field.
      * 
-     * @param bitOffset the offset of where to put the bit
      * @param bit the bit
+     * @param bitOffset the offset of where to put the bit
      * @param field a Field of this {@code BitString}
      * @return this {@code BitString}
      * @throws StringIndexOutOfBoundsException if
-     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= length()}
+     *                                         {@code bitOffset < 0 || bitOffset > 0 && bitOffset >= field.length()}
      *                                         or
      *                                         {@code field.offset() > 0 && field.offset() >= length()}
      * @throws IllegalArgumentException        if
      *                                         {@code field.length() > length() - field.offset()}
      */
-    public BitString putBit(int bitOffset, boolean bit, Field field) {
-        return putBit(bitOffset, bit, field.offset(), field.length(this));
+    public BitString putBit(boolean bit, int bitOffset, Field field) {
+        return putBit(bit, bitOffset, field.offset(), field.length(this));
     }
     
     /**
-     * put the specified boolean primitive at the specified offset.
+     * puts the specified boolean value at the specified offset.
      * 
-     * @param offset    the offset of where to put the boolean primitive
-     * @param primitive the boolean primitive
+     * @param booleanValue the boolean value
+     * @param offset       the offset of where to put the boolean value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      */
-    public BitString putBoolean(int offset, boolean primitive) {
+    public BitString putBoolean(boolean booleanValue, int offset) {
         checkThisOffset(offset);
-        iBitOp(UnaryOp.set(primitive), offset);
+        iBitOp(UnaryOp.set(booleanValue), offset);
         return this;
     }
     
     /**
-     * put an array of boolean primitives at the specified offset.
+     * puts an array of boolean values at the specified offset.
      * 
-     * @param offset   the offset of where to put the array of booleans
      * @param booleans the array of booleans
+     * @param offset   the offset of where to put the array of booleans
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + booleans.length > length()}
      */
-    public BitString putBooleanArray(int offset, boolean[] booleans) {
+    public BitString putBooleanArray(boolean[] booleans, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, 1, booleans.length);
+        checkAvailableSpace(offset, length() - offset, (long)booleans.length, booleans.length);
         for (int index = 0; index < booleans.length; index++) {
             iBitOp(UnaryOp.set(booleans[index]), offset);
             offset++;
@@ -2912,280 +3123,365 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * put the specified byte primitive at the specified offset.
+     * puts the specified byte value at the specified offset.
      * 
-     * @param offset    the offset of where to put the byte primitive
-     * @param primitive the byte primitive
+     * @param byteValue the byte value
+     * @param offset    the offset of where to put the byte value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Byte.SIZE > length()}
      */
-    public BitString putByte(int offset, byte primitive) {
+    public BitString putByte(byte byteValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Byte.SIZE);
-        iPutPrimitive(offset, Byte.SIZE, Byte.toUnsignedLong(primitive));
+        checkAvailableSpace(offset, length() - offset, Byte.SIZE);
+        iPutPrimitiveWord(offset, Byte.SIZE, Byte.toUnsignedLong(byteValue));
         return this;
     }
     
     /**
-     * put an array of byte primitives at the specified offset.
+     * puts an array of byte values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of bytes
      * @param bytes  the array of bytes
+     * @param offset the offset of where to put the array of bytes
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Byte.SIZE > length()}
      */
-    public BitString putByteArray(int offset, byte[] bytes) {
+    public BitString putByteArray(byte[] bytes, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Byte.SIZE, bytes.length);
+        checkAvailableSpace(offset, length() - offset, bytes.length * (long)Byte.SIZE, bytes.length);
         for (int index = 0; index < bytes.length; index++) {
-            iPutPrimitive(offset, Byte.SIZE, Byte.toUnsignedLong(bytes[index]));
+            iPutPrimitiveWord(offset, Byte.SIZE, Byte.toUnsignedLong(bytes[index]));
             offset += Byte.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified character primitive at the specified offset.
+     * puts the specified character value at the specified offset.
      * 
-     * @param offset    the offset of where to put the character primitive
-     * @param primitive the character primitive
+     * @param charValue the character value
+     * @param offset    the offset of where to put the character value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Character.SIZE > length()}
      */
-    public BitString putChar(int offset, char primitive) {
+    public BitString putChar(char charValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Character.SIZE);
-        iPutPrimitive(offset, Character.SIZE, (long)primitive);
+        checkAvailableSpace(offset, length() - offset, Character.SIZE);
+        iPutPrimitiveWord(offset, Character.SIZE, (long)charValue);
         return this;
     }
     
     /**
-     * put an array of character primitives at the specified offset.
+     * puts an array of character values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of characters
      * @param chars  the array of characters
+     * @param offset the offset of where to put the array of characters
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Character.SIZE > length()}
      */
-    public BitString putCharArray(int offset, char[] chars) {
+    public BitString putCharArray(char[] chars, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Character.SIZE, chars.length);
+        checkAvailableSpace(offset, length() - offset, chars.length * (long)Character.SIZE, chars.length);
         for (int index = 0; index < chars.length; index++) {
-            iPutPrimitive(offset, Character.SIZE, (long)chars[index]);
+            iPutPrimitiveWord(offset, Character.SIZE, (long)chars[index]);
             offset += Character.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified double primitive at the specified offset.
+     * puts the specified double value at the specified offset.
      * 
-     * @param offset    the offset of where to put the double primitive
-     * @param primitive the double primitive
+     * @param doubleValue the double value
+     * @param offset      the offset of where to put the double value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Double.SIZE > length()}
      */
-    public BitString putDouble(int offset, double primitive) {
+    public BitString putDouble(double doubleValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE);
-        iPutPrimitive(offset, Long.SIZE, Double.doubleToRawLongBits(primitive));
+        checkAvailableSpace(offset, length() - offset, Long.SIZE);
+        iPutPrimitiveWord(offset, Long.SIZE, Double.doubleToRawLongBits(doubleValue));
         return this;
     }
     
     /**
-     * put an array of double primitives at the specified offset.
+     * puts an array of double values at the specified offset.
      * 
-     * @param offset  the offset of where to put the array of doubles
      * @param doubles the array of doubles
+     * @param offset  the offset of where to put the array of doubles
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Double.SIZE > length()}
      */
-    public BitString putDoubleArray(int offset, double[] doubles) {
+    public BitString putDoubleArray(double[] doubles, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE, doubles.length);
+        checkAvailableSpace(offset, length() - offset, doubles.length * (long)Long.SIZE, doubles.length);
         for (int index = 0; index < doubles.length; index++) {
-            iPutPrimitive(offset, Long.SIZE, Double.doubleToRawLongBits(doubles[index]));
+            iPutPrimitiveWord(offset, Long.SIZE, Double.doubleToRawLongBits(doubles[index]));
             offset += Long.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified float primitive at the specified offset.
+     * puts the specified float value at the specified offset.
      * 
-     * @param offset    the offset of where to put the float primitive
-     * @param primitive the float primitive
+     * @param floatValue the float value
+     * @param offset     the offset of where to put the float value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Float.SIZE > length()}
      */
-    public BitString putFloat(int offset, float primitive) {
+    public BitString putFloat(float floatValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE);
-        iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(primitive)));
+        checkAvailableSpace(offset, length() - offset, Integer.SIZE);
+        iPutPrimitiveWord(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(floatValue)));
         return this;
     }
     
     /**
-     * put an array of float primitives at the specified offset.
+     * puts an array of float values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of floats
      * @param floats the array of floats
+     * @param offset the offset of where to put the array of floats
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Float.SIZE > length()}
      */
-    public BitString putFloatArray(int offset, float[] floats) {
+    public BitString putFloatArray(float[] floats, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE, floats.length);
+        checkAvailableSpace(offset, length() - offset, floats.length * (long)Integer.SIZE, floats.length);
         for (int index = 0; index < floats.length; index++) {
-            iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])));
+            iPutPrimitiveWord(offset, Integer.SIZE, Integer.toUnsignedLong(Float.floatToRawIntBits(floats[index])));
             offset += Integer.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified integer primitive at the specified offset.
+     * puts the specified integer value at the specified offset.
      * 
-     * @param offset    the offset of where to put the integer primitive
-     * @param primitive the integer primitive
+     * @param intValue the integer value
+     * @param offset   the offset of where to put the integer value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Integer.SIZE > length()}
      */
-    public BitString putInt(int offset, int primitive) {
+    public BitString putInt(int intValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE);
-        iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(primitive));
+        checkAvailableSpace(offset, length() - offset, Integer.SIZE);
+        iPutPrimitiveWord(offset, Integer.SIZE, Integer.toUnsignedLong(intValue));
         return this;
     }
     
     /**
-     * put an array of integer primitives at the specified offset.
+     * puts an array of integer values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of integers
      * @param ints   the array of integers
+     * @param offset the offset of where to put the array of integers
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Integer.SIZE > length()}
      */
-    public BitString putIntArray(int offset, int[] ints) {
+    public BitString putIntArray(int[] ints, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Integer.SIZE, ints.length);
+        checkAvailableSpace(offset, length() - offset, ints.length * (long)Integer.SIZE, ints.length);
         for (int index = 0; index < ints.length; index++) {
-            iPutPrimitive(offset, Integer.SIZE, Integer.toUnsignedLong(ints[index]));
+            iPutPrimitiveWord(offset, Integer.SIZE, Integer.toUnsignedLong(ints[index]));
             offset += Integer.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified long primitive at the specified offset.
+     * puts the specified long value at the specified offset.
      * 
-     * @param offset    the offset of where to put the long primitive
-     * @param primitive the long primitive
+     * @param longValue the long value
+     * @param offset    the offset of where to put the long value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Long.SIZE > length()}
      */
-    public BitString putLong(int offset, long primitive) {
+    public BitString putLong(long longValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE);
-        iPutPrimitive(offset, Long.SIZE, primitive);
+        checkAvailableSpace(offset, length() - offset, Long.SIZE);
+        iPutPrimitiveWord(offset, Long.SIZE, longValue);
         return this;
     }
     
     /**
-     * put an array of long primitives at the specified offset.
+     * puts an array of long values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of longs
      * @param longs  the array of longs
+     * @param offset the offset of where to put the array of longs
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Long.SIZE > length()}
      */
-    public BitString putLongArray(int offset, long[] longs) {
+    public BitString putLongArray(long[] longs, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Long.SIZE, longs.length);
+        checkAvailableSpace(offset, length() - offset, longs.length * (long)Long.SIZE, longs.length);
         for (int index = 0; index < longs.length; index++) {
-            iPutPrimitive(offset, Long.SIZE, longs[index]);
+            iPutPrimitiveWord(offset, Long.SIZE, longs[index]);
             offset += Long.SIZE;
         }
         return this;
     }
     
     /**
-     * put the specified short primitive at the specified offset.
+     * puts the specified short value at the specified offset.
      * 
-     * @param offset    the offset of where to put the short primitive
-     * @param primitive the short primitive
+     * @param shortValue the short value
+     * @param offset     the offset of where to put the short value
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + Short.SIZE > length()}
      */
-    public BitString putShort(int offset, short primitive) {
+    public BitString putShort(short shortValue, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Short.SIZE);
-        iPutPrimitive(offset, Short.SIZE, Short.toUnsignedLong(primitive));
+        checkAvailableSpace(offset, length() - offset, Short.SIZE);
+        iPutPrimitiveWord(offset, Short.SIZE, Short.toUnsignedLong(shortValue));
         return this;
     }
     
     /**
-     * put an array of short primitives at the specified offset.
+     * puts an array of short values at the specified offset.
      * 
-     * @param offset the offset of where to put the array of shorts
      * @param shorts  the array of shorts
+     * @param offset the offset of where to put the array of shorts
      * @return this BitString
      * @throws StringIndexOutOfBoundsException if
      *                                         {@code offset < 0 || offset > 0 && offset >= length()}
      * @throws UnsupportedOperationException   if
      *                                         {@code offset + count * Short.SIZE > length()}
      */
-    public BitString putShortArray(int offset, short[] shorts) {
+    public BitString putShortArray(short[] shorts, int offset) {
         checkThisOffset(offset);
-        checkAvailableSpace(offset, Short.SIZE, shorts.length);
+        checkAvailableSpace(offset, length() - offset, shorts.length * (long)Short.SIZE, shorts.length);
         for (int index = 0; index < shorts.length; index++) {
-            iPutPrimitive(offset, Short.SIZE, Short.toUnsignedLong(shorts[index]));
+            iPutPrimitiveWord(offset, Short.SIZE, Short.toUnsignedLong(shorts[index]));
             offset += Short.SIZE;
         }
         return this;
     }
     
     /**
-     * Set all of the bits in this {@code BitString} to {@code ZERO}.
+     * Puts the value of the specified Primitive at the specified offset.
+     * 
+     * @param primitive the Primitive
+     * @param offset the offset of where to put the value of the Primitive
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code offset + primitive.type().size() > length()}
+     */
+    public BitString putPrimitive(Primitive primitive, int offset) {
+        final int primitiveSize = primitive.type().size();
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, length() - offset, primitiveSize);
+        iPutPrimitiveWord(offset, primitiveSize, primitive.longValue());
+        return this;
+    }
+    
+    /**
+     * Puts the value of the specified Primitive in the specified Field.
+     * 
+     * @param primitive the Primitive
+     * @param field the Field where to put the value of the Primitive
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code primitive.type().size() > field.length()}
+     */
+    public BitString putPrimitive(Primitive primitive, Field field) {
+        final int offset = field.offset();
+        final int length = field.length(this);
+        final int primitiveSize = primitive.type().size();
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkAvailableSpace(offset, length, primitiveSize);
+        iPutPrimitiveWord(offset, primitiveSize, primitive.longValue());
+        return this;
+    }
+    
+    /**
+     * Puts the values of the specified array of Primitives at the specified offset.
+     * 
+     * @param primitives the array of Primitives
+     * @param offset     the offset of where to put the array of Primitive values
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code offset + Primitive.arrayCumulativeSize(primitives) > length()}
+     */
+    public BitString putPrimitiveArray(Primitive[] primitives, int offset) {
+        checkThisOffset(offset);
+        checkAvailableSpace(offset, length() - offset, Primitive.arrayCumulativeSize(primitives), primitives.length);
+        iPutPrimitiveArray(offset, primitives);
+        return this;
+    }
+    
+    /**
+     * Puts the values of the specified array of Primitives in the specified Field.
+     * 
+     * @param primitives the array of Primitives
+     * @param field      the Field where to put the values of the array of
+     *                   Primitives
+     * @return this BitString
+     * @throws StringIndexOutOfBoundsException if
+     *                                         {@code field.offset() > 0 && field.offset() >= length()}
+     * @throws IllegalArgumentException        if
+     *                                         {@code field.length() > length() - field.offset()}
+     * @throws UnsupportedOperationException   if
+     *                                         {@code Primitive.arrayCumulativeSize(primitives) > field.length()}
+     */
+    public BitString putPrimitiveArray(Primitive[] primitives, Field field) {
+        final int offset = field.offset();
+        final int length = field.length(this);
+        checkThisOffset(offset);
+        checkThisLength(offset, length);
+        checkAvailableSpace(offset, length, Primitive.arrayCumulativeSize(primitives), primitives.length);
+        iPutPrimitiveArray(offset, primitives);
+        return this;
+    }
+    
+    /**
+     * Sets all of the bits in this {@code BitString} to {@code ZERO}.
      * 
      * @return this {@code BitString}
      */
@@ -3195,7 +3491,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Set all of the bits in a Field of this {@code BitString} to {@code ZERO}.
+     * Sets all of the bits in a Field of this {@code BitString} to {@code ZERO}.
      * 
      * @param field a Field of this {@code BitString}
      * @return this {@code BitString}
@@ -3214,7 +3510,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Set the single bit at the specified offset to {@code ZERO}.
+     * Sets the single bit at the specified offset to {@code ZERO}.
      * 
      * @param bitOffset the offset of the bit to clear
      * @return this {@code BitString}
@@ -3228,7 +3524,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Set the single bit at the specified offset in a Field of this BitString to
+     * Sets the single bit at the specified offset in a Field of this BitString to
      * {@code ZERO}.
      * 
      * Note, the bitOffset is relative to the start of the Field.
@@ -3301,7 +3597,7 @@ public abstract class BitString implements Cloneable, Serializable  {
     }
     
     /**
-     * Set the single bit at the specified offset in a Field of this BitString the
+     * Sets the single bit at the specified offset in a Field of this BitString the
      * complement of its current value.
      * 
      * Note, the bitOffset is relative to the start of the Field.
@@ -4968,27 +5264,6 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iNumberOfLeadingOnes(0, length());
     }
     
-//    /**
-//     * Returns the number of leading {@code ONES} of the specified substring of this
-//     * {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of leading {@code ONES} of the substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfLeadingOnes(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOfLeadingOnes(offset, length);
-//    }
-    
     /**
      * Returns the number of leading {@code ONES} of the specified Field of this
      * {@code BitString}.
@@ -5017,27 +5292,6 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iNumberOfLeadingZeros(0, length());
     }
     
-//    /**
-//     * Returns the number of leading {@code ZEROS} of the specified substring of
-//     * this {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of leading {@code ZEROS} of the substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfLeadingZeros(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOfLeadingZeros(offset, length);
-//    }
-    
     /**
      * Returns the number of leading {@code ZEROS} of the specified Field of this
      * {@code BitString}.
@@ -5056,28 +5310,6 @@ public abstract class BitString implements Cloneable, Serializable  {
         checkThisLength(offset, length);
         return iNumberOfLeadingZeros(offset, length);
     }
-
-//    
-//    /**
-//     * Returns the number of {@code ONES} in the specified substring of this
-//     * {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of {@code ONES} in the specified substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfOnes(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOf(ONE, offset, length);
-//    }
     
     /**
      * Returns the number of trailing {@code ONES} of this {@code BitString}.
@@ -5087,27 +5319,6 @@ public abstract class BitString implements Cloneable, Serializable  {
     public int numberOfTrailingOnes() {
          return iNumberOfTrailingOnes(0, length());
     }
-    
-//    /**
-//     * Returns the number of trailing {@code ONES} of the specified substring of
-//     * this {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of trailing {@code ONES} of the substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfTrailingOnes(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOfTrailingOnes(offset, length);
-//    }
     
     /**
      * Returns the number of trailing {@code ONES} of the specified Field of this
@@ -5137,27 +5348,6 @@ public abstract class BitString implements Cloneable, Serializable  {
         return iNumberOfTrailingZeros(0, length());
     }
     
-//    /**
-//     * Returns the number of trailing {@code ZEROS} of the specified substring of
-//     * this {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of trailing {@code ZEROS} of the substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfTrailingZeros(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOfTrailingZeros(offset, length);
-//    }
-    
     /**
      * Returns the number of trailing {@code ZEROS} of the specified Field of this
      * {@code BitString}.
@@ -5176,28 +5366,6 @@ public abstract class BitString implements Cloneable, Serializable  {
         checkThisLength(offset, length);
         return iNumberOfTrailingZeros(offset, length);
     }
-
-//    
-//    /**
-//     * Returns the number of {@code ZEROS} in the specified substring of this
-//     * {@code BitString}.
-//     * 
-//     * The specified substring starts at offset 'offset' of this {@code BitString}
-//     * and has a length of 'length'.
-//     * 
-//     * @param offset the start of the substring
-//     * @param length the length of the substring
-//     * @return the number of {@code ZEROS} in the specified substring
-//     * @throws StringIndexOutOfBoundsException if
-//     *                                         {@code offset < 0 || offset > 0 && offset >= length()}
-//     * @throws IllegalArgumentException        if
-//     *                                         {@code length < 0 || length > length() - offset}
-//     */
-//    public int numberOfZeros(int offset, int length) {
-//        checkThisOffset(offset);
-//        checkThisLength(offset, length);
-//        return iNumberOf(ZERO, offset, length);
-//    }
     
     /**
      * Returns the number of bits in this {@code BitString} that have the same value
@@ -6755,10 +6923,22 @@ public abstract class BitString implements Cloneable, Serializable  {
      * then the last short of the array is padded on the right by
      * {@code 16*shorts.length - s.length()} ZEROS.
      *
-     * @return a int array containing all the bits in this BitString
+     * @return a short array containing all the bits in this BitString
      */
     public short[] toShortArray() {
         return iToShortArray(0, length());
+    }
+    
+    /**
+     * Returns a new Primitive array containing all the bits in this BitString.
+     * The Primitive array consists of LONG values, INT values, SHORT values,
+     * BYTE values, and BOOLEAN values, in that order, such that the cumulative
+     * sizes of all the primitive sizes exactly equal the length of this {@code BitString}.
+     *
+     * @return a Primitive array containing all the bits in this BitString
+     */
+    public Primitive[] toPrimitiveArray() {
+        return iToPrimitiveArray(0, length());
     }
     
     /**
@@ -6960,6 +7140,14 @@ public abstract class BitString implements Cloneable, Serializable  {
             return this.length;
         }
         
+        public boolean isAll() {
+            return false;
+        }
+        
+        public Field at(int offset) {
+            return new Field(offset, this.length); 
+        }
+        
         public static Field indexRange(int fromIndex, int toIndex) {
             if (fromIndex < 0) throw new IndexOutOfBoundsException("fromIndex is negative; index="+fromIndex);
             if (toIndex < 0) throw new IndexOutOfBoundsException("toIndex is negative; index="+toIndex);
@@ -6968,22 +7156,23 @@ public abstract class BitString implements Cloneable, Serializable  {
         }
         
         @Override
+        public String toString() {
+            return offset() + "," + length();
+        }
+
+        @Override
         public int hashCode() {
             return Objects.hash(length, offset);
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
-            if (!(obj instanceof Field)) return false;
-            if (obj instanceof Field.All) return false;
-            final Field that = (Field)obj;
-            return this.offset() == that.length() && this.length() == that.length();
-        }
-        
-        @Override
-        public String toString() {
-            return offset() + "," + length();
+            if (obj == null) return false;
+            if (getClass() != obj.getClass()) return false;
+            Field other = (Field) obj;
+            //return length == other.length && offset == other.offset;
+            return this.offset() == other.offset() && this.length() == other.length();
         }
 
         private static class All extends Field {
@@ -6992,17 +7181,466 @@ public abstract class BitString implements Cloneable, Serializable  {
                 super(0, 0);
             }
             
+            private All(int offset) {
+                super(offset, 0);
+            }
+            
             @Override
             int length(BitString bitString) {
-                return bitString.length();
+                return bitString.length() - offset();
             }
             
             @Override
-            public boolean equals(Object obj) {
-                if (!(obj instanceof Field.All)) return false;
-                return super.equals(obj);
+            public boolean isAll() {
+                return true;
             }
             
+            @Override
+            public Field at(int offset) {
+                return new All(offset);
+            }
+
+            @Override
+            public int hashCode() {
+                return super.hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj) return true;
+                if (!super.equals(obj)) return false;
+                //if (getClass() != obj.getClass()) return false;
+                return true;
+            }
+            
+//            @Override
+//            public boolean equals(Object obj) {
+//                if (!(obj instanceof Field.All)) return false;
+//                return super.equals(obj);
+//            }
+            
+            
+        }
+        
+    }
+    
+    /**
+     * The Primitive class wraps a value of a primitive type (boolean, byte, char,
+     * double, float, int, long, and short) in an object. All primitive types are
+     * encapsulated in a single field of type long.
+     * 
+     * @author James Pfeifer
+     *
+     */
+    public static class Primitive {
+        
+        /**
+         * Primitive types.
+         * 
+         * @author James Pfeifer
+         *
+         */
+        public enum Type {
+            /**
+             * Boolean primitive type.
+             */
+            BOOLEAN (1,
+                    primitive -> { return Boolean.valueOf(primitive.booleanValue()); },
+                    primitive -> { return Byte.valueOf(primitive.booleanValue() ? (byte)1 : 0); },
+                    primitive -> { return primitive.booleanValue() ? "1" : "0"; }
+                    ),
+            /**
+             * Byte primitive type.
+             */
+            BYTE    (Byte.SIZE,
+                    primitive -> { return Byte.valueOf(primitive.byteValue()); },
+                    primitive -> { return Byte.valueOf(primitive.byteValue()); },
+                    primitive -> { return Byte.toString(primitive.byteValue()); }
+                    ),
+            /**
+             * Character (char) primitive type.
+             */
+            CHAR    (Character.SIZE,
+                    primitive -> { return Character.valueOf(primitive.charValue()); },
+                    primitive -> { return Short.valueOf(primitive.shortValue()); },
+                    primitive -> { return Character.toString(primitive.charValue()); }
+                    ),
+            /**
+             * Double primitive type.
+             */
+            DOUBLE  (Double.SIZE,
+                    primitive -> { return Double.valueOf(primitive.doubleValue()); },
+                    primitive -> { return Double.valueOf(primitive.doubleValue()); },
+                    primitive -> { return Double.toString(primitive.doubleValue()); }
+                    ),
+            /**
+             * Float primitive type.
+             */
+            FLOAT   (Float.SIZE,
+                    primitive -> { return Float.valueOf(primitive.floatValue()); },
+                    primitive -> { return Float.valueOf(primitive.floatValue()); },
+                    primitive -> { return Float.toString(primitive.floatValue()); }
+                    ),
+            /**
+             * Integer (int) primitive type.
+             */
+            INT     (Integer.SIZE,
+                    primitive -> { return Integer.valueOf(primitive.intValue()); },
+                    primitive -> { return Integer.valueOf(primitive.intValue()); },
+                    primitive -> { return Integer.toString(primitive.intValue()); }
+                    ),
+            /**
+             * Long primitive type.
+             */
+            LONG    (Long.SIZE,
+                    primitive -> { return Long.valueOf(primitive.longValue()); },
+                    primitive -> { return Long.valueOf(primitive.longValue()); },
+                    primitive -> { return Long.toString(primitive.longValue()); }
+                    ),
+            /**
+             * Short primitive type.
+             */
+            SHORT   (Short.SIZE,
+                    primitive -> { return Short.valueOf(primitive.shortValue()); },
+                    primitive -> { return Short.valueOf(primitive.shortValue()); },
+                    primitive -> { return Short.toString(primitive.shortValue()); }
+                    );
+            private final int size;
+            private final Function<Primitive, Object> toObjectFunction;
+            private final Function<Primitive, Number> toNumberFunction;
+            private final Function<Primitive, String> toStringFunction;
+            private Type(int size,
+                    Function<Primitive, Object> toObjectFunction,
+                    Function<Primitive, Number> toNumberFunction,
+                    Function<Primitive, String> toStringFunction) {
+                this.size = size;
+                this.toObjectFunction = toObjectFunction;
+                this.toNumberFunction = toNumberFunction;
+                this.toStringFunction = toStringFunction;
+            }
+            int size() { return this.size; }
+            private Function<Primitive, Object> toObjectFunction() { return this.toObjectFunction; }
+            private Function<Primitive, Number> toNumberFunction() { return this.toNumberFunction; }
+            private Function<Primitive, String> toStringFunction() { return this.toStringFunction; }
+        }
+        
+        private final Type type;
+        private final long longValue;
+        
+        private Primitive(Type type, long longValue) {
+            this.type = type;
+            this.longValue = longValue;
+        }
+        
+        /**
+         * Returns the sum of all the sizes of the primitives in the specified array of
+         * primitives.
+         * 
+         * @param primitives an array of primitives
+         * @return the sum of all the sizes in an array of primitives
+         */
+        public static long arrayCumulativeSize(Primitive[] primitives) {
+            long size = 0L;
+            for (Primitive primitive: primitives) size += primitive.type().size();
+            return size;
+        }
+        
+        /**
+         * Returns the sum of all the sizes of the primitive types in the specified
+         * array of primitive types.
+         * 
+         * @param types an array of primitive typess
+         * @return the sum of all the sizes in an array of primitive typess
+         */
+        public static long arrayCumulativeSize(Primitive.Type[] types) {
+            long size = 0L;
+            for (Primitive.Type type: types) size += type.size();
+            return size;
+        }
+        
+        /**
+         * returns the type of primitive that was initially used to construct the
+         * primitive object.
+         * 
+         * @return the type of primitive contained in this primitive
+         */
+        public Type type() {
+            return this.type;
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified boolean value.
+         * 
+         * @param booleanValue the boolean value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(boolean booleanValue) {
+            return new Primitive(Type.BOOLEAN, booleanValue ? 1L : 0L);
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified byte value.
+         * 
+         * @param byteValue the byte value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(byte byteValue) {
+            return new Primitive(Type.BYTE, Byte.toUnsignedLong(byteValue));
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified char value.
+         * 
+         * @param charValue the character value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(char charValue) {
+            return new Primitive(Type.CHAR, (long)charValue);
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified double value.
+         * 
+         * @param doubleValue the double value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(double doubleValue) {
+            return new Primitive(Type.DOUBLE, Double.doubleToRawLongBits(doubleValue));
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified float value.
+         * 
+         * @param floatValue the float value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(float floatValue) {
+            return new Primitive(Type.FLOAT, Integer.toUnsignedLong(Float.floatToRawIntBits(floatValue)));
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified int value.
+         * 
+         * @param intValue the integer value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(int intValue) {
+            return new Primitive(Type.INT, Integer.toUnsignedLong(intValue));
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified long value.
+         * 
+         * @param longValue the long value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(long longValue) {
+            return new Primitive(Type.LONG, longValue);
+        }
+        
+        /**
+         * Returns a new Primitive constructed from the specified short value.
+         * 
+         * @param shortValue the short value used to construct this Primitive
+         * @return a new Primitive
+         */
+        public static Primitive valueOf(short shortValue) {
+            return new Primitive(Type.SHORT, Short.toUnsignedLong(shortValue));
+        }
+
+        /**
+         * Returns {@code true} if this Primitive was constructed from a boolean value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a boolean value
+         */
+        public boolean isBoolean() {
+            return type == Type.BOOLEAN ? true : false;
+        }
+        
+        /**
+         * Returns {@code true} if this Primitive was constructed from a byte value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a byte value
+         */
+        public boolean isByte() {
+            return type == Type.BYTE ? true : false;
+        }
+
+        /**
+         * Returns {@code true} if this Primitive was constructed from a char value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a char value
+         */
+        public boolean isCharacter() {
+            return type == Type.CHAR ? true : false;
+        }
+        
+        /**
+         * Returns {@code true} if this Primitive was constructed from a double value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a double value
+         */
+        public boolean isDouble() {
+            return type == Type.DOUBLE ? true : false;
+        }
+
+        /**
+         * Returns {@code true} if this Primitive was constructed from a float value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a float value
+         */
+        public boolean isFloat() {
+            return type == Type.FLOAT ? true : false;
+        }
+        
+        /**
+         * Returns {@code true} if this Primitive was constructed from an int value.
+         * 
+         * @return {@code true} if this Primitive was constructed from an int value
+         */
+        public boolean isInteger() {
+            return type == Type.INT ? true : false;
+        }
+
+        /**
+         * Returns {@code true} if this Primitive was constructed from a long value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a long value
+         */
+        public boolean isLong() {
+            return type == Type.LONG ? true : false;
+        }
+        
+        /**
+         * Returns {@code true} if this Primitive was constructed from a short value.
+         * 
+         * @return {@code true} if this Primitive was constructed from a short value
+         */
+        public boolean isShort() {
+            return type == Type.SHORT ? true : false;
+        }
+        
+        /**
+         * Returns the boolean value of this Primitive. Only the last (right most) bit
+         * of the internal long field is returned as a boolean.
+         * 
+         * @return the boolean value of this Primitive
+         */
+        public boolean booleanValue() {
+            return (longValue & 1L) == 0 ? false : true;
+        }
+        
+        /**
+         * Returns the byte value of this Primitive. Only the last (right most) 8 bits
+         * of the internal long field is returned as a byte.
+         * 
+         * @return the byte value of this Primitive
+         */
+        public byte byteValue() {
+            return (byte) longValue; 
+        }
+        
+        /**
+         * Returns the char value of this Primitive. Only the last (right most) 16 bits
+         * of the internal long field is returned as a char.
+         * 
+         * @return the char value of this Primitive
+         */
+        public char charValue() {
+            return (char) longValue; 
+        }
+        
+        /**
+         * Returns the double value of this Primitive. The internal long field is
+         * considered to be a representation of a floating-point value according to the
+         * IEEE 754 floating-point "double format" bit layout.
+         * 
+         * @return the double value of this Primitive
+         */
+        public double doubleValue() {
+            return Double.longBitsToDouble(longValue);
+        }
+        
+        /**
+         * Returns the float value of this Primitive. The last (right most) 32 bits of
+         * the internal long field is considered to be a representation of a
+         * floating-point value according to the IEEE 754 floating-point "single format"
+         * bit layout.
+         * 
+         * @return the float value of this Primitive
+         */
+        public float floatValue() {
+            return Float.intBitsToFloat((int) longValue);
+        }
+        
+        /**
+         * Returns the int value of this Primitive. Only the last (right most) 32 bits
+         * of the internal long field is returned as an int.
+         * 
+         * @return the int value of this Primitive
+         */
+        public int intValue() {
+            return (int) longValue;
+        }
+        
+        /**
+         * Returns the long value of this Primitive. The internal long field is returned
+         * as is.
+         * 
+         * @return the char value of this Primitive
+         */
+        public long longValue() {
+            return longValue;
+        }
+        
+        /**
+         * Returns the short value of this Primitive. Only the last (right most) 16 bits
+         * of the internal long field is returned as a short.
+         * 
+         * @return the short value of this Primitive
+         */
+        public short shortValue() {
+            return (short) longValue;
+        }
+        
+        /**
+         * Returns a Number object (Byte, Double, Float, Integer, Long, or Short)
+         * corresponding to this Primitive's type. A Primitive of type BOOLEAN is
+         * returned as a Byte and a Primitive of type CHAR is returned as a Short.
+         * 
+         * @return a Number object corresponding to this Primitive's type
+         */
+        public Number toNumber() {
+            return type.toNumberFunction().apply(this);
+        }
+        
+        /**
+         * Returns a primitive wrapper object (Boolean, Byte, Character, Double, Float,
+         * Integer, Long, or Short) corresponding to this Primitive's type.
+         * 
+         * @return a primitive wrapper object corresponding to this Primitive's type
+         */
+        public Object toObject() {
+            return type.toObjectFunction().apply(this);
+        }
+        
+        @Override
+        public String toString() {
+            return type.toStringFunction().apply(this);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(longValue, type);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null) return false;
+            if (this.getClass() != obj.getClass()) return false;
+            Primitive other = (Primitive) obj;
+            return this.longValue == other.longValue && this.type == other.type;
         }
         
     }
@@ -7160,7 +7798,8 @@ public abstract class BitString implements Cloneable, Serializable  {
             checkForModificationException();
             long baseCapacity = capacity - this.stringLength + base.length();
             if (baseCapacity > Integer.MAX_VALUE) baseCapacity = Integer.MAX_VALUE;
-            return base.ensureCapacity((int)baseCapacity);
+            base.ensureCapacity((int)baseCapacity);
+            return capacity();
         }
         
         @Override

@@ -43,6 +43,8 @@ import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.function.IntToLongFunction;
 
+import net.pfeifdom.java.util.BitString.Primitive;
+
 /**
  * Creates a BitString that is backed by an array of bytes.
  * 
@@ -163,8 +165,8 @@ public class ByteBitString extends BitString {
 //        }
 //    }
     
-    public static ByteBitString valueOf(boolean primitiveBoolean) {
-        return new ByteBitString(new byte[] {(byte)(primitiveBoolean ? 0x80 : 0x00)}, 1);
+    public static ByteBitString valueOf(boolean booleanValue) {
+        return new ByteBitString(new byte[] {(byte)(booleanValue ? 0x80 : 0x00)}, 1);
     }
     
     /**
@@ -192,8 +194,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(bytes, booleans.length);
     }
     
-    public static ByteBitString valueOf(byte primitiveByte) {
-        return new ByteBitString(new byte[] {primitiveByte}, Byte.SIZE);
+    public static ByteBitString valueOf(byte byteValue) {
+        return new ByteBitString(new byte[] {byteValue}, Byte.SIZE);
     }
     
     /**
@@ -221,8 +223,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(Arrays.copyOf(bytes, bytes.length), length);
     }
     
-    public static ByteBitString valueOf(char primitiveChar) {
-        return new ByteBitString(unpackChars(new char[] {primitiveChar}), Character.SIZE);
+    public static ByteBitString valueOf(char charValue) {
+        return new ByteBitString(unpackChars(new char[] {charValue}), Character.SIZE);
     }
     
     /**
@@ -246,8 +248,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackChars(chars), length);
     }
     
-    public static ByteBitString valueOf(double primitiveDouble) {
-        return new ByteBitString(unpackDoubles(new double[] {primitiveDouble}), Double.SIZE);
+    public static ByteBitString valueOf(double doubleValue) {
+        return new ByteBitString(unpackDoubles(new double[] {doubleValue}), Double.SIZE);
     }
     
     /**
@@ -272,8 +274,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackDoubles(doubles), length);
     }
     
-    public static ByteBitString valueOf(float primitiveFloat) {
-        return new ByteBitString(unpackFloats(new float[] {primitiveFloat}), Float.SIZE);
+    public static ByteBitString valueOf(float floatValue) {
+        return new ByteBitString(unpackFloats(new float[] {floatValue}), Float.SIZE);
     }
     
     /**
@@ -298,8 +300,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackFloats(floats), length);
     }
     
-    public static ByteBitString valueOf(int primitiveInt) {
-        return new ByteBitString(unpackInts(new int[] {primitiveInt}), Integer.SIZE);
+    public static ByteBitString valueOf(int intValue) {
+        return new ByteBitString(unpackInts(new int[] {intValue}), Integer.SIZE);
     }
     
     /**
@@ -322,8 +324,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackInts(ints), length);
     }
     
-    public static ByteBitString valueOf(long primitiveLong) {
-        return new ByteBitString(unpackLongs(new long[] {primitiveLong}), Long.SIZE);
+    public static ByteBitString valueOf(long longValue) {
+        return new ByteBitString(unpackLongs(new long[] {longValue}), Long.SIZE);
     }
     
     /**
@@ -347,8 +349,8 @@ public class ByteBitString extends BitString {
         return new ByteBitString(unpackLongs(longs), length);
     }
     
-    public static ByteBitString valueOf(short primitiveShort) {
-        return new ByteBitString(unpackShorts(new short[] {primitiveShort}), Short.SIZE);
+    public static ByteBitString valueOf(short shortValue) {
+        return new ByteBitString(unpackShorts(new short[] {shortValue}), Short.SIZE);
     }
     
     /**
@@ -371,6 +373,31 @@ public class ByteBitString extends BitString {
         if (shorts.length > MAX_SHORTS) throw new IllegalArgumentException("short array is too large");
         final int length = (shorts.length == MAX_SHORTS) ? Integer.MAX_VALUE : shorts.length * Short.SIZE;
         return new ByteBitString(unpackShorts(shorts), length);
+    }
+    
+    public static ByteBitString valueOf(Primitive primitive) {
+        final int primitiveSize = primitive.type().size();
+        final ByteBitString bitString = new ByteBitString(primitiveSize);
+        bitString.iPutPrimitiveWord(0, primitiveSize, primitive.longValue());
+        return bitString;
+    }
+    
+    /**
+     * Return a new BitString containing all the bits in the given primitive array.
+     * 
+     * @param primitives a primitive array containing a sequence of bits to be used
+     *                   as the initial bits of the new BitString
+     * @return a {@code BitString} containing all the bits in the primitive array
+     */
+    public static ByteBitString valueOf(Primitive[] primitives) {
+        final long primitivesCumulativeSize = Primitive.arrayCumulativeSize(primitives);
+        if (primitivesCumulativeSize > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("primitive array cumulative size is too large: "
+                                                + primitivesCumulativeSize + " > " + Integer.MAX_VALUE);
+        }
+        final ByteBitString bitString = new ByteBitString((int)primitivesCumulativeSize);
+        bitString.iPutPrimitiveArray(0, primitives);
+        return bitString;
     }
     
     /**
